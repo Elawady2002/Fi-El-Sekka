@@ -7,7 +7,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/ios_components.dart';
 import '../../domain/entities/trip_type.dart';
 import '../providers/booking_provider.dart';
-import '../../../tracking/presentation/pages/confirmation_page.dart';
+import '../../../payment/presentation/pages/payment_page.dart';
 import '../../../subscription/presentation/widgets/subscription_plans_sheet.dart';
 
 class BookingPage extends ConsumerStatefulWidget {
@@ -186,7 +186,7 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                 ],
               ),
               child: IOSButton(
-                text: 'كمل الحجز',
+                text: 'ادفع',
                 onPressed:
                     bookingNotifier.isBookingComplete &&
                         bookingNotifier.isSameDayBookingAllowed
@@ -194,7 +194,11 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                         Navigator.push(
                           context,
                           CupertinoPageRoute(
-                            builder: (_) => const ConfirmationPage(),
+                            builder: (_) => PaymentPage(
+                              planName: bookingState.tripType.displayName,
+                              amount: bookingState.tripType.price
+                                  .toStringAsFixed(0),
+                            ),
                           ),
                         );
                       }

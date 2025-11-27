@@ -738,7 +738,7 @@ class _LocationSelectionDrawerState extends State<LocationSelectionDrawer> {
 
           // Progress Indicator
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical:12),
             child: AnimatedProgressSlider(
               currentStep: selectedUniversity != null
                   ? 2

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/ios_components.dart';
+import '../../../tracking/presentation/pages/confirmation_page.dart';
+import '../widgets/payment_proof_sheet.dart';
 
 class PaymentPage extends StatefulWidget {
   final String planName;
@@ -181,25 +183,23 @@ class _PaymentPageState extends State<PaymentPage>
                 ],
               ),
               child: IOSButton(
-                text: 'تأكيد الدفع',
+                text: 'الدفع',
                 onPressed: () {
-                  // TODO: Implement payment confirmation logic
-                  showCupertinoDialog(
+                  showModalBottomSheet(
                     context: context,
-                    builder: (context) => CupertinoAlertDialog(
-                      title: const Text('تم استلام طلبك'),
-                      content: const Text(
-                        'سيتم مراجعة الدفع وتفعيل الباقة خلال 24 ساعة.',
-                      ),
-                      actions: [
-                        CupertinoDialogAction(
-                          child: const Text('تمام'),
-                          onPressed: () {
-                            Navigator.pop(context); // Close dialog
-                            Navigator.pop(context); // Close PaymentPage
-                          },
-                        ),
-                      ],
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (context) => PaymentProofSheet(
+                      onConfirm: () {
+                        // Navigate to ConfirmationPage (Invoice)
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          CupertinoPageRoute(
+                            builder: (_) => const ConfirmationPage(),
+                          ),
+                          (route) => false,
+                        );
+                      },
                     ),
                   );
                 },

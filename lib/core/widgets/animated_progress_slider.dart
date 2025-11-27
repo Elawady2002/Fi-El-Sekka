@@ -51,7 +51,7 @@ class _AnimatedProgressSliderState extends State<AnimatedProgressSlider>
     return Material(
       color: Colors.transparent,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         decoration: BoxDecoration(
           color: Colors.black,
           borderRadius: BorderRadius.circular(24),

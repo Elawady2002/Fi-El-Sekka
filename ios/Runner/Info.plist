@@ -49,6 +49,8 @@
 		<string>نحتاج موقعك لعرض الخريطة وتحديد نقاط الالتقاط</string>
 		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 		<string>نحتاج موقعك لتتبع الباص والوصول في الوقت المناسب</string>
+		<key>NSPhotoLibraryUsageDescription</key>
+		<string>نحتاج الوصول إلى الصور لرفع إثبات الدفع</string>
 		<key>io.flutter.embedded_views_preview</key>
 		<true/>
 		<key>UIStatusBarHidden</key>
