@@ -53,30 +53,39 @@ class _SubscriptionPlansSheetState extends State<SubscriptionPlansSheet> {
     return Container(
       decoration: const BoxDecoration(
         color: AppTheme.backgroundColor,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 20,
+            offset: Offset(0, -5),
+          ),
+        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           // Handle Bar
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Container(
             width: 40,
-            height: 4,
+            height: 5,
             decoration: BoxDecoration(
-              color: Colors.grey[300],
-              borderRadius: BorderRadius.circular(2),
+              color: Colors.grey.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(10),
             ),
           ),
 
           // Header
           Padding(
-            padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
+            padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
             child: Column(
               children: [
                 Text(
                   'باقات الطلاب',
-                  style: AppTheme.textTheme.titleLarge?.copyWith(),
+                  style: AppTheme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(

@@ -140,7 +140,7 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                       icon: CupertinoIcons.arrow_up_circle_fill,
                       onTap: () => _showTimePicker(
                         title: 'اختار ميعاد الذهاب',
-                        times: departureTimes,
+                        items: departureTimes,
                         onSelect: bookingNotifier.selectDepartureTime,
                       ),
                     ),
@@ -157,7 +157,7 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                       icon: CupertinoIcons.arrow_down_circle_fill,
                       onTap: () => _showTimePicker(
                         title: 'اختار ميعاد العودة',
-                        times: returnTimes,
+                        items: returnTimes,
                         onSelect: bookingNotifier.selectReturnTime,
                       ),
                     ),
@@ -533,47 +533,107 @@ class _BookingPageState extends ConsumerState<BookingPage> {
 
   void _showTimePicker({
     required String title,
-    required List<String> times,
+    required List<String> items,
     required void Function(String?) onSelect,
   }) {
     showCupertinoModalPopup(
       context: context,
       builder: (_) => Container(
-        height: 320,
-        color: CupertinoColors.systemBackground.resolveFrom(context),
+        height: 340,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 20,
+              offset: Offset(0, -5),
+            ),
+          ],
+        ),
         child: Column(
           children: [
+            const SizedBox(height: 12),
+            // Drag Handle
+            Container(
+              width: 40,
+              height: 5,
+              decoration: BoxDecoration(
+                color: Colors.grey.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Header with Buttons
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  CupertinoButton(
-                    padding: EdgeInsets.zero,
-                    child: const Text('إلغاء'),
-                    onPressed: () => Navigator.pop(context),
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Text(
+                      'إلغاء',
+                      style: AppTheme.textTheme.bodyLarge?.copyWith(
+                        color: const Color(0xFFFF3B30),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
-                  Text(title, style: AppTheme.textTheme.titleMedium),
-                  CupertinoButton(
-                    padding: EdgeInsets.zero,
-                    child: const Text('تم'),
-                    onPressed: () => Navigator.pop(context),
+                  Text(
+                    title,
+                    style: AppTheme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Text(
+                      'تم',
+                      style: AppTheme.textTheme.bodyLarge?.copyWith(
+                        color: Colors.black,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ],
               ),
             ),
-            const Divider(height: 1),
+
+            const SizedBox(height: 20),
+
+            // Picker
             Expanded(
               child: CupertinoPicker.builder(
-                itemExtent: 32,
+                itemExtent: 48,
+                magnification: 1.1,
+                useMagnifier: true,
+                backgroundColor: Colors.transparent,
+                selectionOverlay: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
                 onSelectedItemChanged: (index) {
-                  onSelect(times[index]);
+                  onSelect(items[index]);
                 },
-                childCount: times.length,
-                itemBuilder: (context, index) =>
-                    Center(child: Text(times[index])),
+                childCount: items.length,
+                itemBuilder: (context, index) => Center(
+                  child: Text(
+                    items[index],
+                    style: AppTheme.textTheme.titleMedium?.copyWith(
+                      color: Colors.black,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
               ),
             ),
+            SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
           ],
         ),
       ),
