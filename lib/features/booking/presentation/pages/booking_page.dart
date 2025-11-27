@@ -623,11 +623,17 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                 },
                 childCount: items.length,
                 itemBuilder: (context, index) => Center(
-                  child: Text(
-                    items[index],
-                    style: AppTheme.textTheme.titleMedium?.copyWith(
-                      color: Colors.black,
-                      fontWeight: FontWeight.w600,
+                  child: GestureDetector(
+                    onTap: () {
+                      onSelect(items[index]);
+                      Navigator.pop(context);
+                    },
+                    child: Text(
+                      items[index],
+                      style: AppTheme.textTheme.titleMedium?.copyWith(
+                        color: Colors.black,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ),

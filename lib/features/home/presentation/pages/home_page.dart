@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../booking/presentation/pages/booking_page.dart';
 import '../../../../core/widgets/ios_components.dart';
+import '../../../../core/widgets/animated_progress_slider.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -446,21 +447,6 @@ class _LocationSelectionDrawerState extends State<LocationSelectionDrawer> {
     'Arab Academy': ['Academy Gate 1', 'Academy Gate 2'],
   };
 
-  Widget _buildStepDot({required bool isActive, required bool isCompleted}) {
-    return Container(
-      width: 12,
-      height: 12,
-      decoration: BoxDecoration(
-        color: isCompleted ? AppTheme.primaryColor : Colors.white,
-        shape: BoxShape.circle,
-        border: Border.all(
-          color: isActive ? AppTheme.primaryColor : AppTheme.dividerColor,
-          width: 2,
-        ),
-      ),
-    );
-  }
-
   Widget _buildSelectionCard({
     required String title,
     required String? value,
@@ -639,15 +625,21 @@ class _LocationSelectionDrawerState extends State<LocationSelectionDrawer> {
                 ),
                 onSelectedItemChanged: (int index) => selectedIndex = index,
                 childCount: items.length,
-                itemBuilder: (context, index) => Center(
-                  child: Text(
-                    items[index],
-                    style: AppTheme.textTheme.titleMedium?.copyWith(
-                      color: Colors.black,
-                      fontWeight: FontWeight.w600,
+                itemBuilder: (context, index) => GestureDetector(
+                  onTap: () {
+                    onSelected(items[index]);
+                    Navigator.pop(context);
+                  },
+                  child: Center(
+                    child: Text(
+                      items[index],
+                      style: AppTheme.textTheme.titleMedium?.copyWith(
+                        color: Colors.black,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ),
@@ -673,19 +665,30 @@ class _LocationSelectionDrawerState extends State<LocationSelectionDrawer> {
       height: MediaQuery.of(context).size.height * 0.85,
       decoration: const BoxDecoration(
         color: AppTheme.backgroundColor,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
       ),
       child: Column(
         children: [
+          const SizedBox(height: 12),
+          // Drag Handle
+          Container(
+            width: 40,
+            height: 5,
+            decoration: BoxDecoration(
+              color: Colors.grey.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+          const SizedBox(height: 20),
+
           // Header
           Container(
-            padding: const EdgeInsets.all(32),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             decoration: BoxDecoration(
-              color: Colors.white,
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 32,
+                  blurRadius: 10,
                   offset: const Offset(0, 2),
                 ),
               ],
@@ -697,7 +700,7 @@ class _LocationSelectionDrawerState extends State<LocationSelectionDrawer> {
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: AppTheme.backgroundColor,
+                      color: Colors.transparent,
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: const Icon(
@@ -735,38 +738,13 @@ class _LocationSelectionDrawerState extends State<LocationSelectionDrawer> {
 
           // Progress Indicator
           Container(
-            padding: const EdgeInsets.all(20),
-            child: Row(
-              children: [
-                _buildStepDot(
-                  isActive: selectedCity != null,
-                  isCompleted: selectedCity != null,
-                ),
-                Expanded(
-                  child: Container(
-                    height: 2,
-                    color: selectedUniversity != null
-                        ? AppTheme.primaryColor
-                        : AppTheme.dividerColor,
-                  ),
-                ),
-                _buildStepDot(
-                  isActive: selectedUniversity != null,
-                  isCompleted: selectedUniversity != null,
-                ),
-                Expanded(
-                  child: Container(
-                    height: 2,
-                    color: selectedStation != null
-                        ? AppTheme.primaryColor
-                        : AppTheme.dividerColor,
-                  ),
-                ),
-                _buildStepDot(
-                  isActive: selectedStation != null,
-                  isCompleted: selectedStation != null,
-                ),
-              ],
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            child: AnimatedProgressSlider(
+              currentStep: selectedUniversity != null
+                  ? 2
+                  : (selectedCity != null ? 1 : 0),
+              totalSteps: 3,
+              labels: const ['المدينة', 'الجامعة', 'المحطة'],
             ),
           ),
 
