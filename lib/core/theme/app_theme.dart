@@ -1,0 +1,213 @@
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+class AppTheme {
+  // InDrive Colors - Adjusted for better contrast
+  static const Color primaryColor = Color(
+    0xFFA8E600,
+  ); // Darker Green for visibility
+  static const Color primaryDark = Color(0xFF90CC00);
+  static const Color primaryLight = Color(0xFFC7FF00);
+
+  static const Color backgroundColor = Colors.white;
+  static const Color surfaceColor = Colors.white;
+  static const Color cardColor = Colors.white;
+
+  static const Color textPrimary = Color(0xFF000000);
+  static const Color textSecondary = Color(0xFF666666);
+  static const Color textTertiary = Color(0xFF999999);
+
+  static const Color dividerColor = Color(0xFFE0E0E0);
+  static const Color errorColor = Color(0xFFFF3B30);
+  static const Color successColor = Color(0xFF4CAF50);
+
+  // Dimensions
+  static const double cardRadius = 16.0;
+  static const double buttonRadius = 12.0;
+  static const double defaultPadding = 16.0;
+  static const double bottomSheetRadius = 24.0;
+
+  // InDrive-style Shadows
+  static List<BoxShadow> get cardShadow => [
+    BoxShadow(
+      color: Colors.black.withValues(alpha: 0.08),
+      blurRadius: 16,
+      offset: const Offset(0, 4),
+    ),
+    BoxShadow(
+      color: Colors.black.withValues(alpha: 0.04),
+      blurRadius: 8,
+      offset: const Offset(0, 2),
+    ),
+  ];
+
+  static List<BoxShadow> get floatingShadow => [
+    BoxShadow(
+      color: Colors.black.withValues(alpha: 0.12),
+      blurRadius: 24,
+      offset: const Offset(0, 8),
+    ),
+  ];
+
+  static List<BoxShadow> get bottomSheetShadow => [
+    BoxShadow(
+      color: Colors.black.withValues(alpha: 0.15),
+      blurRadius: 30,
+      offset: const Offset(0, -4),
+    ),
+  ];
+
+  // Text Theme with Google Fonts (Cairo for Arabic)
+  static TextTheme get textTheme => GoogleFonts.cairoTextTheme(
+    const TextTheme(
+      // Extra large for prices
+      displayLarge: TextStyle(
+        fontSize: 48,
+        fontWeight: FontWeight.w700,
+        color: textPrimary,
+        decoration: TextDecoration.none,
+        decorationColor: Colors.transparent,
+        height: 1.2,
+      ),
+      // Large titles
+      displayMedium: TextStyle(
+        fontSize: 34,
+        fontWeight: FontWeight.w700,
+        color: textPrimary,
+        decoration: TextDecoration.none,
+        decorationColor: Colors.transparent,
+        height: 1.2,
+      ),
+      // Section titles
+      titleLarge: TextStyle(
+        fontSize: 24,
+        fontWeight: FontWeight.w600,
+        color: textPrimary,
+        decoration: TextDecoration.none,
+        decorationColor: Colors.transparent,
+        height: 1.3,
+      ),
+      // Card titles
+      titleMedium: TextStyle(
+        fontSize: 18,
+        fontWeight: FontWeight.w600,
+        color: textPrimary,
+        decoration: TextDecoration.none,
+        decorationColor: Colors.transparent,
+        height: 1.3,
+      ),
+      // Regular text
+      bodyLarge: TextStyle(
+        fontSize: 17,
+        fontWeight: FontWeight.w400,
+        color: textPrimary,
+        decoration: TextDecoration.none,
+        decorationColor: Colors.transparent,
+        height: 1.4,
+      ),
+      // Secondary text
+      bodyMedium: TextStyle(
+        fontSize: 15,
+        fontWeight: FontWeight.w400,
+        color: textSecondary,
+        decoration: TextDecoration.none,
+        decorationColor: Colors.transparent,
+        height: 1.4,
+      ),
+      // Small text
+      bodySmall: TextStyle(
+        fontSize: 13,
+        fontWeight: FontWeight.w400,
+        color: textTertiary,
+        decoration: TextDecoration.none,
+        decorationColor: Colors.transparent,
+        height: 1.3,
+      ),
+      // Removed headline styles as per instruction.
+      // In Material 3, headline styles are typically mapped to display and title.
+      // Explicitly setting them to null to ensure they are not used.
+      headlineLarge: null,
+      headlineMedium: null,
+      headlineSmall: null,
+    ),
+  );
+
+  static ThemeData get lightTheme {
+    return ThemeData(
+      useMaterial3: true,
+      platform: TargetPlatform.iOS,
+      primaryColor: primaryColor,
+      scaffoldBackgroundColor: backgroundColor,
+      dividerColor: dividerColor,
+      cardColor: cardColor,
+
+      textTheme: textTheme,
+
+      colorScheme: const ColorScheme.light(
+        primary: primaryColor,
+        secondary: primaryColor,
+        surface: surfaceColor,
+        error: errorColor,
+        onPrimary: Colors.black,
+        onSecondary: Colors.black,
+        onSurface: textPrimary,
+      ),
+
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+        titleTextStyle: TextStyle(
+          color: textPrimary,
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+        ),
+        iconTheme: IconThemeData(color: textPrimary),
+        scrolledUnderElevation: 0,
+      ),
+
+      cupertinoOverrideTheme: const CupertinoThemeData(
+        primaryColor: primaryColor,
+        scaffoldBackgroundColor: backgroundColor,
+        barBackgroundColor: surfaceColor,
+        textTheme: CupertinoTextThemeData(primaryColor: textPrimary),
+      ),
+
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: primaryColor,
+          foregroundColor: Colors.black,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(buttonRadius),
+          ),
+          textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+        ),
+      ),
+
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: const Color(0xFFF5F5F5),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: primaryColor, width: 2),
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: 16,
+        ),
+        hintStyle: const TextStyle(color: textTertiary, fontSize: 17),
+      ),
+    );
+  }
+}
