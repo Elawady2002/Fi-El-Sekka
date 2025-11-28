@@ -240,9 +240,10 @@ class _ConfirmationPageState extends ConsumerState<ConfirmationPage>
                             });
 
                             // Haptic feedback to simulate tearing texture
+                            // Increased intensity and adjusted interval for better feel
                             if (_dragOffsetY > 0 && _dragOffsetY < 100) {
-                              if (_dragOffsetY % 5 < 1) {
-                                HapticFeedback.selectionClick();
+                              if (_dragOffsetY % 8 < 2) {
+                                HapticFeedback.mediumImpact();
                               }
                             }
                           },
