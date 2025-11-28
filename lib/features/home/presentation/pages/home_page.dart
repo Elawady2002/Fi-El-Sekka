@@ -6,6 +6,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../booking/presentation/pages/booking_page.dart';
 import '../../../../core/widgets/ios_components.dart';
 import '../../../../core/widgets/animated_progress_slider.dart';
+import '../../../profile/presentation/pages/profile_page.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -46,23 +47,33 @@ class _HomePageState extends ConsumerState<HomePage> {
                       ),
                     ],
                   ),
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        CupertinoPageRoute(
+                          builder: (context) => const ProfilePage(),
                         ),
-                      ],
-                    ),
-                    child: const Icon(
-                      CupertinoIcons.person_fill,
-                      color: Colors.black,
-                      size: 24,
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        CupertinoIcons.person_fill,
+                        color: Colors.black,
+                        size: 24,
+                      ),
                     ),
                   ),
                 ],
@@ -738,7 +749,7 @@ class _LocationSelectionDrawerState extends State<LocationSelectionDrawer> {
 
           // Progress Indicator
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical:12),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             child: AnimatedProgressSlider(
               currentStep: selectedUniversity != null
                   ? 2
