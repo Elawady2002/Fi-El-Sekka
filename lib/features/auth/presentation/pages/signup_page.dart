@@ -102,36 +102,88 @@ class _SignupPageState extends ConsumerState<SignupPage> {
                 ),
               ).animate().fadeIn(delay: 200.ms).slideX(),
               const SizedBox(height: 32),
-              CustomInput(
-                controller: _nameController,
-                hintText: "الاسم بالكامل",
-                prefixIcon: CupertinoIcons.person,
-              ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.2, end: 0),
-              const SizedBox(height: 16),
-              CustomInput(
-                controller: _emailController,
-                hintText: "البريد الإلكتروني",
-                prefixIcon: CupertinoIcons.mail,
-                keyboardType: TextInputType.emailAddress,
-              ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.2, end: 0),
-              const SizedBox(height: 16),
-              CustomInput(
-                controller: _phoneController,
-                hintText: "رقم الموبايل",
-                prefixIcon: CupertinoIcons.phone,
-                keyboardType: TextInputType.phone,
-              ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.2, end: 0),
-              const SizedBox(height: 16),
-              CustomInput(
-                controller: _passwordController,
-                hintText: "كلمة السر",
-                prefixIcon: CupertinoIcons.lock,
-                isPassword: true,
-                suffixIcon: Icon(
-                  CupertinoIcons.eye_slash,
-                  color: AppTheme.textSecondary,
+              Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    CustomInput(
+                          controller: _nameController,
+                          hintText: "الاسم بالكامل",
+                          prefixIcon: CupertinoIcons.person,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'الرجاء إدخال الاسم';
+                            }
+                            return null;
+                          },
+                        )
+                        .animate()
+                        .fadeIn(delay: 300.ms)
+                        .slideY(begin: 0.2, end: 0),
+                    const SizedBox(height: 16),
+                    CustomInput(
+                          controller: _emailController,
+                          hintText: "البريد الإلكتروني",
+                          prefixIcon: CupertinoIcons.mail,
+                          keyboardType: TextInputType.emailAddress,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'الرجاء إدخال البريد الإلكتروني';
+                            }
+                            if (!value.contains('@')) {
+                              return 'البريد الإلكتروني غير صحيح';
+                            }
+                            return null;
+                          },
+                        )
+                        .animate()
+                        .fadeIn(delay: 400.ms)
+                        .slideY(begin: 0.2, end: 0),
+                    const SizedBox(height: 16),
+                    CustomInput(
+                          controller: _phoneController,
+                          hintText: "رقم الموبايل",
+                          prefixIcon: CupertinoIcons.phone,
+                          keyboardType: TextInputType.phone,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'الرجاء إدخال رقم الموبايل';
+                            }
+                            if (value.length < 11) {
+                              return 'رقم الموبايل غير صحيح';
+                            }
+                            return null;
+                          },
+                        )
+                        .animate()
+                        .fadeIn(delay: 500.ms)
+                        .slideY(begin: 0.2, end: 0),
+                    const SizedBox(height: 16),
+                    CustomInput(
+                          controller: _passwordController,
+                          hintText: "كلمة السر",
+                          prefixIcon: CupertinoIcons.lock,
+                          isPassword: true,
+                          suffixIcon: Icon(
+                            CupertinoIcons.eye_slash,
+                            color: AppTheme.textSecondary,
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'الرجاء إدخال كلمة السر';
+                            }
+                            if (value.length < 6) {
+                              return 'كلمة السر يجب أن تكون 6 أحرف على الأقل';
+                            }
+                            return null;
+                          },
+                        )
+                        .animate()
+                        .fadeIn(delay: 600.ms)
+                        .slideY(begin: 0.2, end: 0),
+                  ],
                 ),
-              ).animate().fadeIn(delay: 600.ms).slideY(begin: 0.2, end: 0),
+              ),
               const SizedBox(height: 32),
               _isLoading
                   ? const Center(child: CupertinoActivityIndicator())

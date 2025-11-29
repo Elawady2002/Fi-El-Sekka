@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 
 import '../theme/app_theme.dart';
@@ -28,36 +29,55 @@ class CustomInput extends StatelessWidget {
       decoration: BoxDecoration(
         boxShadow: [
           BoxShadow(
-            color: AppTheme.textSecondary.withValues(alpha: 0.5),
+            color: AppTheme.textSecondary.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: CupertinoTextField(
+      child: TextFormField(
         controller: controller,
         obscureText: isPassword,
         keyboardType: keyboardType,
-        placeholder: hintText,
-        placeholderStyle: const TextStyle(color: CupertinoColors.systemGrey),
+        validator: validator,
         style: const TextStyle(color: AppTheme.textPrimary, fontSize: 16),
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
-        decoration: BoxDecoration(
-          color: CupertinoColors.white,
-          borderRadius: BorderRadius.circular(12),
+        decoration: InputDecoration(
+          hintText: hintText,
+          hintStyle: const TextStyle(color: CupertinoColors.systemGrey),
+          fillColor: Colors.white,
+          filled: true,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 16,
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(
+              color: AppTheme.primaryColor,
+              width: 1.5,
+            ),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Colors.red, width: 1),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Colors.red, width: 1.5),
+          ),
+          prefixIcon: prefixIcon != null
+              ? Icon(prefixIcon, color: CupertinoColors.systemGrey)
+              : null,
+          suffixIcon: suffixIcon,
         ),
-        prefix: prefixIcon != null
-            ? Padding(
-                padding: const EdgeInsets.only(right: 12),
-                child: Icon(prefixIcon, color: CupertinoColors.systemGrey),
-              )
-            : null,
-        suffix: suffixIcon != null
-            ? Padding(
-                padding: const EdgeInsets.only(left: 12),
-                child: suffixIcon,
-              )
-            : null,
       ),
     );
   }

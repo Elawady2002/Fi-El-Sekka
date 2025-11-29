@@ -87,7 +87,6 @@ class _PersonalDataPageState extends ConsumerState<PersonalDataPage> {
                     return;
                   }
 
-                  // TODO: When user repository is ready, save data to Supabase
                   // For now, just show success message
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
