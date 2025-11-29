@@ -5,15 +5,71 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/custom_button.dart';
 import '../../../../core/widgets/custom_input.dart';
+import '../../../../core/widgets/custom_toast.dart';
 import '../providers/auth_provider.dart';
 import 'signup_page.dart';
 import '../../../home/presentation/pages/home_page.dart';
 
-class LoginPage extends ConsumerWidget {
+class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends ConsumerState<LoginPage> {
+  final _emailController =
+      TextEditingController(); // Changed from phone to email for Supabase
+  final _passwordController = TextEditingController();
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleLogin() async {
+    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+      _showError('الرجاء إدخال البريد الإلكتروني وكلمة المرور');
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final error = await ref
+          .read(authProvider.notifier)
+          .login(_emailController.text.trim(), _passwordController.text);
+
+      if (mounted) {
+        setState(() => _isLoading = false);
+
+        if (error == null) {
+          // Success
+          Navigator.pushReplacement(
+            context,
+            CupertinoPageRoute(builder: (_) => const HomePage()),
+          );
+        } else {
+          _showError(error);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        _showError('حدث خطأ غير متوقع: $e');
+      }
+    }
+  }
+
+  void _showError(String message) {
+    CustomToast.show(context, message, isError: true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return CupertinoPageScaffold(
       backgroundColor: AppTheme.backgroundColor,
       child: SafeArea(
@@ -39,19 +95,21 @@ class LoginPage extends ConsumerWidget {
               ).animate().fadeIn(delay: 200.ms).slideX(),
               const SizedBox(height: 48),
               CustomInput(
-                hintText: "رقم الموبايل",
-                keyboardType: TextInputType.phone,
-                prefixIcon: CupertinoIcons.phone,
+                controller: _emailController,
+                hintText: "البريد الإلكتروني", // Changed to Email
+                keyboardType: TextInputType.emailAddress,
+                prefixIcon: CupertinoIcons.mail,
               ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.2, end: 0),
               const SizedBox(height: 16),
               CustomInput(
+                controller: _passwordController,
                 hintText: "كلمة السر",
                 isPassword: true,
                 prefixIcon: CupertinoIcons.lock,
               ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.2, end: 0),
               const SizedBox(height: 24),
               Align(
-                alignment: Alignment.centerLeft, // Changed for RTL
+                alignment: Alignment.centerLeft,
                 child: TextButton(
                   onPressed: () {},
                   child: Text(
@@ -65,24 +123,12 @@ class LoginPage extends ConsumerWidget {
                 ),
               ).animate().fadeIn(delay: 500.ms),
               const SizedBox(height: 24),
-              CustomButton(
-                text: "تسجيل الدخول",
-                onPressed: () async {
-                  try {
-                    await ref
-                        .read(authProvider.notifier)
-                        .login('user@example.com', 'password');
-                    if (context.mounted) {
-                      Navigator.pushReplacement(
-                        context,
-                        CupertinoPageRoute(builder: (_) => const HomePage()),
-                      );
-                    }
-                  } catch (e) {
-                    // Handle error
-                  }
-                },
-              ).animate().fadeIn(delay: 600.ms).slideY(begin: 0.2, end: 0),
+              _isLoading
+                  ? const Center(child: CupertinoActivityIndicator())
+                  : CustomButton(text: "تسجيل الدخول", onPressed: _handleLogin)
+                        .animate()
+                        .fadeIn(delay: 600.ms)
+                        .slideY(begin: 0.2, end: 0),
               const SizedBox(height: 24),
               Wrap(
                 alignment: WrapAlignment.center,

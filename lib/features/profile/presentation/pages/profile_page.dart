@@ -1,7 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_theme.dart';
 import 'personal_data_page.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../auth/presentation/pages/login_page.dart';
 import 'saved_places_page.dart';
 import 'wallet_page.dart';
 import 'payment_methods_page.dart';
@@ -9,11 +12,11 @@ import 'ride_history_page.dart';
 import 'statistics_page.dart';
 import 'help_center_page.dart';
 
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     // Using a soft off-white background for a cleaner, easier-on-the-eyes look
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F7),
@@ -143,40 +146,14 @@ class ProfilePage extends StatelessWidget {
                 icon: CupertinoIcons.phone,
                 title: 'تواصل معنا',
                 onTap: () {
-                  // TODO: Implement contact support
-                  showCupertinoDialog(
-                    context: context,
-                    builder: (context) => CupertinoAlertDialog(
-                      title: const Text('تواصل معنا'),
-                      content: const Text('سيتم إضافة طرق التواصل قريباً'),
-                      actions: [
-                        CupertinoDialogAction(
-                          child: const Text('حسناً'),
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                      ],
-                    ),
-                  );
+                  _showContactDialog(context);
                 },
               ),
               _MenuItem(
                 icon: CupertinoIcons.doc_text,
                 title: 'الشروط والأحكام',
                 onTap: () {
-                  // TODO: Implement terms page
-                  showCupertinoDialog(
-                    context: context,
-                    builder: (context) => CupertinoAlertDialog(
-                      title: const Text('الشروط والأحكام'),
-                      content: const Text('سيتم إضافة الشروط والأحكام قريباً'),
-                      actions: [
-                        CupertinoDialogAction(
-                          child: const Text('حسناً'),
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                      ],
-                    ),
-                  );
+                  _showTermsDialog(context);
                 },
               ),
             ]),
@@ -191,7 +168,7 @@ class ProfilePage extends StatelessWidget {
                 // No shadow, just a clean flat look
               ),
               child: TextButton(
-                onPressed: () => _showLogoutDialog(context),
+                onPressed: () => _showLogoutDialog(context, ref),
                 style: TextButton.styleFrom(
                   padding: const EdgeInsets.all(16),
                   shape: RoundedRectangleBorder(
@@ -266,26 +243,114 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  void _showLogoutDialog(BuildContext context) {
+  void _showContactDialog(BuildContext context) {
     showCupertinoDialog(
       context: context,
       builder: (context) => CupertinoAlertDialog(
+        title: const Text('تواصل معنا'),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(height: 8),
+            Text('يمكنك التواصل معنا عبر:'),
+            SizedBox(height: 12),
+            Text(
+              'البريد الإلكتروني:\nsupport@fielsekka.com',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'الهاتف:\n01000000000',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        actions: [
+          CupertinoDialogAction(
+            child: const Text('حسناً'),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showTermsDialog(BuildContext context) {
+    showCupertinoDialog(
+      context: context,
+      builder: (context) => CupertinoAlertDialog(
+        title: const Text('الشروط والأحكام'),
+        content: const SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(height: 8),
+              Text(
+                '1. استخدام الخدمة مخصص للطلاب فقط\n\n'
+                '2. يجب الالتزام بمواعيد الرحلات\n\n'
+                '3. الدفع مقدماً قبل الحجز\n\n'
+                '4. يمكن إلغاء الحجز قبل 24 ساعة\n\n'
+                '5. الحفاظ على النظافة داخل الباص',
+                textAlign: TextAlign.right,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          CupertinoDialogAction(
+            child: const Text('حسناً'),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showLogoutDialog(BuildContext context, WidgetRef ref) {
+    showCupertinoDialog(
+      context: context,
+      builder: (dialogContext) => CupertinoAlertDialog(
         title: const Text('تسجيل الخروج'),
         content: const Text('هل أنت متأكد أنك تريد تسجيل الخروج؟'),
         actions: [
           CupertinoDialogAction(
             child: const Text('إلغاء'),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
           ),
           CupertinoDialogAction(
             isDestructiveAction: true,
             child: const Text('خروج'),
-            onPressed: () {
-              // TODO: Implement logout logic
-              Navigator.pop(context); // Close dialog
-              Navigator.of(
-                context,
-              ).pushNamedAndRemoveUntil('/', (route) => false);
+            onPressed: () async {
+              Navigator.pop(dialogContext); // Close dialog
+
+              // Call logout from auth provider
+              final error = await ref.read(authProvider.notifier).logout();
+
+              if (error == null && context.mounted) {
+                // Logout successful, navigate to login
+                Navigator.of(context).pushAndRemoveUntil(
+                  CupertinoPageRoute(builder: (_) => const LoginPage()),
+                  (route) => false,
+                );
+              } else if (context.mounted) {
+                // Show error if logout failed
+                showCupertinoDialog(
+                  context: context,
+                  builder: (context) => CupertinoAlertDialog(
+                    title: const Text('خطأ'),
+                    content: Text(error ?? 'حدث خطأ أثناء تسجيل الخروج'),
+                    actions: [
+                      CupertinoDialogAction(
+                        child: const Text('حسناً'),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                );
+              }
             },
           ),
         ],

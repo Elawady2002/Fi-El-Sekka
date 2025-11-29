@@ -1,13 +1,78 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/custom_button.dart';
 import '../../../../core/widgets/custom_input.dart';
-import 'otp_page.dart';
+import '../../../../core/widgets/custom_toast.dart';
+import '../providers/auth_provider.dart';
+import '../../../home/presentation/pages/home_page.dart';
 
-class SignupPage extends StatelessWidget {
+class SignupPage extends ConsumerStatefulWidget {
   const SignupPage({super.key});
+
+  @override
+  ConsumerState<SignupPage> createState() => _SignupPageState();
+}
+
+class _SignupPageState extends ConsumerState<SignupPage> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _passwordController = TextEditingController();
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleSignup() async {
+    if (_formKey.currentState!.validate()) {
+      setState(() => _isLoading = true);
+
+      try {
+        final error = await ref
+            .read(authProvider.notifier)
+            .signup(
+              _nameController.text.trim(),
+              _emailController.text.trim(),
+              _passwordController.text.trim(),
+              _phoneController.text.trim(),
+            );
+
+        if (mounted) {
+          setState(() => _isLoading = false);
+
+          if (error == null) {
+            // Navigate directly to HomePage
+            Navigator.pushAndRemoveUntil(
+              context,
+              CupertinoPageRoute(builder: (_) => const HomePage()),
+              (route) => false,
+            );
+          } else {
+            _showError(error);
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() => _isLoading = false);
+          _showError('حدث خطأ غير متوقع: $e');
+        }
+      }
+    }
+  }
+
+  void _showError(String message) {
+    CustomToast.show(context, message, isError: true);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,24 +102,28 @@ class SignupPage extends StatelessWidget {
                 ),
               ).animate().fadeIn(delay: 200.ms).slideX(),
               const SizedBox(height: 32),
-              const CustomInput(
+              CustomInput(
+                controller: _nameController,
                 hintText: "الاسم بالكامل",
                 prefixIcon: CupertinoIcons.person,
               ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.2, end: 0),
               const SizedBox(height: 16),
-              const CustomInput(
+              CustomInput(
+                controller: _emailController,
                 hintText: "البريد الإلكتروني",
                 prefixIcon: CupertinoIcons.mail,
                 keyboardType: TextInputType.emailAddress,
               ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.2, end: 0),
               const SizedBox(height: 16),
-              const CustomInput(
+              CustomInput(
+                controller: _phoneController,
                 hintText: "رقم الموبايل",
                 prefixIcon: CupertinoIcons.phone,
                 keyboardType: TextInputType.phone,
               ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.2, end: 0),
               const SizedBox(height: 16),
-              const CustomInput(
+              CustomInput(
+                controller: _passwordController,
                 hintText: "كلمة السر",
                 prefixIcon: CupertinoIcons.lock,
                 isPassword: true,
@@ -64,15 +133,12 @@ class SignupPage extends StatelessWidget {
                 ),
               ).animate().fadeIn(delay: 600.ms).slideY(begin: 0.2, end: 0),
               const SizedBox(height: 32),
-              CustomButton(
-                text: "إنشاء حساب",
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    CupertinoPageRoute(builder: (context) => const OtpPage()),
-                  );
-                },
-              ).animate().fadeIn(delay: 700.ms).slideY(begin: 0.2, end: 0),
+              _isLoading
+                  ? const Center(child: CupertinoActivityIndicator())
+                  : CustomButton(text: "إنشاء حساب", onPressed: _handleSignup)
+                        .animate()
+                        .fadeIn(delay: 700.ms)
+                        .slideY(begin: 0.2, end: 0),
               const SizedBox(height: 24),
               Wrap(
                 alignment: WrapAlignment.center,

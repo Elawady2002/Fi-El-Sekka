@@ -7,7 +7,8 @@ import '../../../home/presentation/pages/home_page.dart';
 import '../providers/auth_provider.dart';
 
 class OtpPage extends ConsumerWidget {
-  const OtpPage({super.key});
+  final String email;
+  const OtpPage({super.key, required this.email});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -56,8 +57,13 @@ class OtpPage extends ConsumerWidget {
               CustomButton(
                 text: "Verify",
                 onPressed: () async {
-                  await ref.read(authProvider.notifier).verifyOtp('1234');
-                  if (context.mounted) {
+                  // NOTE: Email should be passed from SignupPage via navigation
+                  // For now using placeholder until we implement proper state management
+                  final error = await ref
+                      .read(authProvider.notifier)
+                      .verifyOtp('1234', email);
+
+                  if (error == null && context.mounted) {
                     Navigator.pushAndRemoveUntil(
                       context,
                       CupertinoPageRoute(builder: (_) => const HomePage()),

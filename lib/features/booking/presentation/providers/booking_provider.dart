@@ -1,5 +1,8 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../domain/entities/trip_type.dart';
+import '../../domain/entities/city_entity.dart';
+import '../../domain/entities/university_entity.dart';
+import '../../domain/entities/station_entity.dart';
 
 part 'booking_provider.g.dart';
 
@@ -36,6 +39,18 @@ class BookingState extends _$BookingState {
     state = state.copyWith(selectedReturnTime: time);
   }
 
+  void setLocationData({
+    required CityEntity city,
+    required UniversityEntity university,
+    required StationEntity station,
+  }) {
+    state = state.copyWith(
+      selectedCity: city,
+      selectedUniversity: university,
+      selectedStation: station,
+    );
+  }
+
   bool get isSameDayBookingAllowed {
     final now = DateTime.now();
     if (isSameDay(now, state.selectedDate)) {
@@ -70,6 +85,9 @@ class BookingStateModel {
   final DateTime selectedDate;
   final String? selectedDepartureTime;
   final String? selectedReturnTime;
+  final CityEntity? selectedCity;
+  final UniversityEntity? selectedUniversity;
+  final StationEntity? selectedStation;
 
   BookingStateModel({
     required this.tripType,
@@ -77,6 +95,9 @@ class BookingStateModel {
     required this.selectedDate,
     this.selectedDepartureTime,
     this.selectedReturnTime,
+    this.selectedCity,
+    this.selectedUniversity,
+    this.selectedStation,
   });
 
   BookingStateModel copyWith({
@@ -85,6 +106,9 @@ class BookingStateModel {
     DateTime? selectedDate,
     String? selectedDepartureTime,
     String? selectedReturnTime,
+    CityEntity? selectedCity,
+    UniversityEntity? selectedUniversity,
+    StationEntity? selectedStation,
   }) {
     return BookingStateModel(
       tripType: tripType ?? this.tripType,
@@ -93,6 +117,9 @@ class BookingStateModel {
       selectedDepartureTime:
           selectedDepartureTime ?? this.selectedDepartureTime,
       selectedReturnTime: selectedReturnTime ?? this.selectedReturnTime,
+      selectedCity: selectedCity ?? this.selectedCity,
+      selectedUniversity: selectedUniversity ?? this.selectedUniversity,
+      selectedStation: selectedStation ?? this.selectedStation,
     );
   }
 }

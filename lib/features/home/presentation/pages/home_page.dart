@@ -7,6 +7,11 @@ import '../../../booking/presentation/pages/booking_page.dart';
 import '../../../../core/widgets/ios_components.dart';
 import '../../../../core/widgets/animated_progress_slider.dart';
 import '../../../profile/presentation/pages/profile_page.dart';
+import '../providers/home_provider.dart';
+import '../../../booking/domain/entities/city_entity.dart';
+import '../../../booking/domain/entities/university_entity.dart';
+import '../../../booking/domain/entities/station_entity.dart';
+import '../../../booking/presentation/providers/booking_provider.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -416,47 +421,20 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 }
 
-// Location Selection Drawer (Kept as is, just ensuring it's available)
-class LocationSelectionDrawer extends StatefulWidget {
+// Location Selection Drawer
+class LocationSelectionDrawer extends ConsumerStatefulWidget {
   const LocationSelectionDrawer({super.key});
 
   @override
-  State<LocationSelectionDrawer> createState() =>
+  ConsumerState<LocationSelectionDrawer> createState() =>
       _LocationSelectionDrawerState();
 }
 
-class _LocationSelectionDrawerState extends State<LocationSelectionDrawer> {
-  String? selectedCity;
-  String? selectedUniversity;
-  String? selectedStation;
-
-  final cities = ['Cairo', 'Alexandria', 'Giza', 'Madinaty'];
-
-  final universitiesByCity = {
-    'Cairo': ['Cairo University', 'Ain Shams University'],
-    'Madinaty': ['American University (AUC)', 'German University (GUC)'],
-    'Giza': ['Cairo University - Giza', 'October 6 University'],
-    'Alexandria': ['Alexandria University', 'Arab Academy'],
-  };
-
-  final stationsByUniversity = {
-    'Cairo University': ['Main Gate', 'Engineering Gate', 'Medicine Gate'],
-    'Ain Shams University': [
-      'Main Entrance',
-      'Engineering Gate',
-      'Medicine Gate',
-    ],
-    'American University (AUC)': ['AUC Gate 1', 'AUC Gate 2'],
-    'German University (GUC)': ['GUC Gate 1', 'GUC Gate 2', 'GUC Gate 3'],
-    'Cairo University - Giza': [
-      'Giza Main Gate',
-      'Arts Building',
-      'Science Building',
-    ],
-    'October 6 University': ['October Main Gate', 'Engineering Building'],
-    'Alexandria University': ['Alex Main Gate', 'Medical Campus'],
-    'Arab Academy': ['Academy Gate 1', 'Academy Gate 2'],
-  };
+class _LocationSelectionDrawerState
+    extends ConsumerState<LocationSelectionDrawer> {
+  CityEntity? selectedCity;
+  UniversityEntity? selectedUniversity;
+  StationEntity? selectedStation;
 
   Widget _buildSelectionCard({
     required String title,
@@ -464,15 +442,17 @@ class _LocationSelectionDrawerState extends State<LocationSelectionDrawer> {
     required String placeholder,
     required IconData icon,
     required VoidCallback onTap,
+    bool isLoading = false,
+    bool isEnabled = true,
   }) {
     final isSelected = value != null;
 
     return GestureDetector(
-      onTap: onTap,
+      onTap: isEnabled ? onTap : null,
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isEnabled ? Colors.white : Colors.grey.shade100,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSelected ? AppTheme.primaryColor : AppTheme.dividerColor,
@@ -498,7 +478,13 @@ class _LocationSelectionDrawerState extends State<LocationSelectionDrawer> {
                     : AppTheme.backgroundColor,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: Colors.black, size: 24),
+              child: isLoading
+                  ? const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Icon(icon, color: Colors.black, size: 24),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -539,10 +525,11 @@ class _LocationSelectionDrawerState extends State<LocationSelectionDrawer> {
     );
   }
 
-  void _showPicker({
+  void _showPicker<T>({
     required String title,
-    required List<String> items,
-    required ValueChanged<String> onSelected,
+    required List<T> items,
+    required String Function(T) labelBuilder,
+    required ValueChanged<T> onSelected,
   }) {
     if (items.isEmpty) return;
     int selectedIndex = 0;
@@ -643,7 +630,7 @@ class _LocationSelectionDrawerState extends State<LocationSelectionDrawer> {
                   },
                   child: Center(
                     child: Text(
-                      items[index],
+                      labelBuilder(items[index]),
                       style: AppTheme.textTheme.titleMedium?.copyWith(
                         color: Colors.black,
                         fontWeight: FontWeight.w600,
@@ -664,13 +651,13 @@ class _LocationSelectionDrawerState extends State<LocationSelectionDrawer> {
 
   @override
   Widget build(BuildContext context) {
-    final List<String> availableUniversities = selectedCity != null
-        ? List<String>.from(universitiesByCity[selectedCity!] ?? [])
-        : [];
-
-    final List<String> stations = selectedUniversity != null
-        ? stationsByUniversity[selectedUniversity!] ?? []
-        : [];
+    final citiesAsync = ref.watch(citiesProvider);
+    final universitiesAsync = selectedCity != null
+        ? ref.watch(universitiesProvider(selectedCity!.id))
+        : const AsyncValue.data(<UniversityEntity>[]);
+    final stationsAsync = selectedUniversity != null
+        ? ref.watch(stationsProvider(selectedUniversity!.id))
+        : const AsyncValue.data(<StationEntity>[]);
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.85,
@@ -751,9 +738,11 @@ class _LocationSelectionDrawerState extends State<LocationSelectionDrawer> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             child: AnimatedProgressSlider(
-              currentStep: selectedUniversity != null
-                  ? 2
-                  : (selectedCity != null ? 1 : 0),
+              currentStep: selectedStation != null
+                  ? 3
+                  : (selectedUniversity != null
+                        ? 2
+                        : (selectedCity != null ? 1 : 0)),
               totalSteps: 3,
               labels: const ['المدينة', 'الجامعة', 'المحطة'],
             ),
@@ -764,58 +753,105 @@ class _LocationSelectionDrawerState extends State<LocationSelectionDrawer> {
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               children: [
-                _buildSelectionCard(
-                  title: 'المدينة',
-                  value: selectedCity,
-                  placeholder: 'اختار المدينة',
-                  icon: CupertinoIcons.building_2_fill,
-                  onTap: () => _showPicker(
-                    title: 'اختار المدينة',
-                    items: cities,
-                    onSelected: (val) {
-                      setState(() {
-                        selectedCity = val;
-                        selectedUniversity = null;
-                        selectedStation = null;
-                      });
-                    },
-                  ),
-                ),
-                if (selectedCity != null) ...[
-                  const SizedBox(height: 12),
-                  _buildSelectionCard(
-                    title: 'الجامعة',
-                    value: selectedUniversity,
-                    placeholder: 'اختار الجامعة',
-                    icon: CupertinoIcons.book_fill,
-                    onTap: () => _showPicker(
-                      title: 'اختار الجامعة',
-                      items: availableUniversities,
-                      onSelected: (val) {
+                // City Selection
+                citiesAsync.when(
+                  data: (cities) => _buildSelectionCard(
+                    title: 'المدينة',
+                    value: selectedCity?.nameAr,
+                    placeholder: 'اختار المدينة',
+                    icon: CupertinoIcons.building_2_fill,
+                    onTap: () => _showPicker<CityEntity>(
+                      title: 'اختار المدينة',
+                      items: cities,
+                      labelBuilder: (city) => city.nameAr,
+                      onSelected: (city) {
                         setState(() {
-                          selectedUniversity = val;
+                          selectedCity = city;
+                          selectedUniversity = null;
                           selectedStation = null;
                         });
                       },
                     ),
                   ),
+                  loading: () => _buildSelectionCard(
+                    title: 'المدينة',
+                    value: null,
+                    placeholder: 'جاري التحميل...',
+                    icon: CupertinoIcons.building_2_fill,
+                    onTap: () {},
+                    isLoading: true,
+                    isEnabled: false,
+                  ),
+                  error: (err, stack) => Text('Error: $err'),
+                ),
+
+                if (selectedCity != null) ...[
+                  const SizedBox(height: 12),
+                  // University Selection
+                  universitiesAsync.when(
+                    data: (universities) => _buildSelectionCard(
+                      title: 'الجامعة',
+                      value: selectedUniversity?.nameAr,
+                      placeholder: 'اختار الجامعة',
+                      icon: CupertinoIcons.book_fill,
+                      onTap: () => _showPicker<UniversityEntity>(
+                        title: 'اختار الجامعة',
+                        items: universities,
+                        labelBuilder: (uni) => uni.nameAr,
+                        onSelected: (uni) {
+                          setState(() {
+                            selectedUniversity = uni;
+                            selectedStation = null;
+                          });
+                        },
+                      ),
+                    ),
+                    loading: () => _buildSelectionCard(
+                      title: 'الجامعة',
+                      value: null,
+                      placeholder: 'جاري التحميل...',
+                      icon: CupertinoIcons.book_fill,
+                      onTap: () {},
+                      isLoading: true,
+                      isEnabled: false,
+                    ),
+                    error: (err, stack) => Text('Error: $err'),
+                  ),
                 ],
+
                 if (selectedUniversity != null) ...[
                   const SizedBox(height: 12),
-                  _buildSelectionCard(
-                    title: 'المحطة',
-                    value: selectedStation,
-                    placeholder: 'اختار المحطة',
-                    icon: CupertinoIcons.location_fill,
-                    onTap: () => _showPicker(
-                      title: 'اختار المحطة',
-                      items: stations,
-                      onSelected: (val) {
-                        setState(() {
-                          selectedStation = val;
-                        });
-                      },
+                  // Station Selection
+                  stationsAsync.when(
+                    data: (stations) => _buildSelectionCard(
+                      title: 'المحطة',
+                      value: selectedStation?.nameAr,
+                      placeholder: 'اختار المحطة',
+                      icon: CupertinoIcons.location_fill,
+                      onTap: () => _showPicker<StationEntity>(
+                        title: 'اختار المحطة',
+                        items: stations,
+                        labelBuilder: (station) => station.nameAr,
+                        onSelected: (station) {
+                          setState(() {
+                            selectedStation = station;
+                          });
+                          setState(() {
+                            selectedStation = station;
+                          });
+                        },
+                      ),
                     ),
+                    loading: () => _buildSelectionCard(
+                      title: 'المحطة',
+                      value: null,
+                      placeholder: 'جاري التحميل...',
+                      icon: CupertinoIcons.location_fill,
+                      onTap: () {},
+                      isLoading: true,
+                      isEnabled: false,
+                    ),
+                    error: (err, stack) => Text('Error: $err'),
                   ),
                 ],
                 const SizedBox(height: 20),
@@ -840,6 +876,15 @@ class _LocationSelectionDrawerState extends State<LocationSelectionDrawer> {
               text: 'متابعة',
               onPressed: selectedStation != null
                   ? () {
+                      // Set location data in Booking Provider
+                      ref
+                          .read(bookingStateProvider.notifier)
+                          .setLocationData(
+                            city: selectedCity!,
+                            university: selectedUniversity!,
+                            station: selectedStation!,
+                          );
+
                       Navigator.pop(context);
                       Navigator.push(
                         context,

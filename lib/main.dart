@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:my_app/features/auth/presentation/pages/onboarding_page.dart';
 import 'core/theme/app_theme.dart';
+import 'core/config/supabase_config.dart';
 import 'dart:async';
 import 'dart:developer';
 
@@ -10,6 +12,26 @@ void main() {
   runZonedGuarded(
     () async {
       WidgetsFlutterBinding.ensureInitialized();
+
+      try {
+        // Load environment variables
+        await dotenv.load(fileName: '.env');
+        log('Environment variables loaded successfully', name: 'AppLaunch');
+
+        // Initialize Supabase
+        await SupabaseConfig.initialize();
+        log('Supabase initialized successfully', name: 'AppLaunch');
+      } catch (error, stack) {
+        log(
+          'CRITICAL ERROR during initialization',
+          error: error,
+          stackTrace: stack,
+          name: 'AppLaunch',
+        );
+        // You might want to show an error screen here
+        // For now, we'll continue to allow the app to run
+      }
+
       runApp(const ProviderScope(child: MyApp()));
     },
     (error, stack) {

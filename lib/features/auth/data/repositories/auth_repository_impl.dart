@@ -1,0 +1,114 @@
+import 'package:dartz/dartz.dart';
+import '../../../../core/error/failures.dart';
+import '../../../../core/domain/entities/user_entity.dart';
+import '../../domain/repositories/auth_repository.dart';
+import '../datasources/supabase_auth_data_source.dart';
+
+/// Implementation of AuthRepository using Supabase
+class AuthRepositoryImpl implements AuthRepository {
+  final SupabaseAuthDataSource _dataSource;
+
+  AuthRepositoryImpl({SupabaseAuthDataSource? dataSource})
+    : _dataSource = dataSource ?? SupabaseAuthDataSource();
+
+  @override
+  Future<Either<Failure, UserEntity>> signUp({
+    required String email,
+    required String password,
+    required String fullName,
+    required String phone,
+    String? studentId,
+    String? universityId,
+  }) async {
+    try {
+      final user = await _dataSource.signUp(
+        email: email,
+        password: password,
+        fullName: fullName,
+        phone: phone,
+        studentId: studentId,
+        universityId: universityId,
+      );
+      return Right(user.toEntity());
+    } catch (e) {
+      return Left(_handleError(e));
+    }
+  }
+
+  @override
+  Future<Either<Failure, UserEntity>> signIn({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      final user = await _dataSource.signIn(email: email, password: password);
+      return Right(user.toEntity());
+    } catch (e) {
+      return Left(_handleError(e));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> signOut() async {
+    try {
+      await _dataSource.signOut();
+      return const Right(null);
+    } catch (e) {
+      return Left(_handleError(e));
+    }
+  }
+
+  @override
+  Future<Either<Failure, UserEntity?>> getCurrentUser() async {
+    try {
+      final user = await _dataSource.getCurrentUser();
+      return Right(user?.toEntity());
+    } catch (e) {
+      return Left(_handleError(e));
+    }
+  }
+
+  @override
+  Stream<UserEntity?> authStateChanges() {
+    return _dataSource.authStateChanges().map((user) => user?.toEntity());
+  }
+
+  @override
+  Future<Either<Failure, UserEntity>> verifyOtp({
+    required String email,
+    required String otp,
+  }) async {
+    try {
+      final user = await _dataSource.verifyOtp(email: email, otp: otp);
+      return Right(user.toEntity());
+    } catch (e) {
+      return Left(_handleError(e));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> resendOtp({required String email}) async {
+    try {
+      await _dataSource.resendOtp(email: email);
+      return const Right(null);
+    } catch (e) {
+      return Left(_handleError(e));
+    }
+  }
+
+  /// Handle errors and convert to appropriate Failure types
+  Failure _handleError(Object error) {
+    final errorMessage = error.toString();
+
+    if (errorMessage.contains('Authentication error')) {
+      return AuthFailure(message: errorMessage);
+    } else if (errorMessage.contains('Database error')) {
+      return ServerFailure(message: errorMessage);
+    } else if (errorMessage.contains('network') ||
+        errorMessage.contains('connection')) {
+      return NetworkFailure(message: errorMessage);
+    } else {
+      return UnknownFailure(message: errorMessage);
+    }
+  }
+}

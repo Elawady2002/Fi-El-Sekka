@@ -1,15 +1,16 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_theme.dart';
 
-class PersonalDataPage extends StatefulWidget {
+class PersonalDataPage extends ConsumerStatefulWidget {
   const PersonalDataPage({super.key});
 
   @override
-  State<PersonalDataPage> createState() => _PersonalDataPageState();
+  ConsumerState<PersonalDataPage> createState() => _PersonalDataPageState();
 }
 
-class _PersonalDataPageState extends State<PersonalDataPage> {
+class _PersonalDataPageState extends ConsumerState<PersonalDataPage> {
   final _nameController = TextEditingController(text: 'عبد الله');
   final _phoneController = TextEditingController(text: '01012345678');
   final _emailController = TextEditingController(text: 'abdallah@example.com');
@@ -62,9 +63,37 @@ class _PersonalDataPageState extends State<PersonalDataPage> {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
-                  // TODO: Implement save logic
+                  // Validate inputs
+                  if (_nameController.text.trim().isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('الرجاء إدخال الاسم')),
+                    );
+                    return;
+                  }
+
+                  if (_phoneController.text.trim().isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('الرجاء إدخال رقم الهاتف')),
+                    );
+                    return;
+                  }
+
+                  if (_emailController.text.trim().isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('الرجاء إدخال البريد الإلكتروني'),
+                      ),
+                    );
+                    return;
+                  }
+
+                  // TODO: When user repository is ready, save data to Supabase
+                  // For now, just show success message
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('تم حفظ التغييرات بنجاح')),
+                    const SnackBar(
+                      content: Text('تم حفظ التغييرات بنجاح'),
+                      backgroundColor: Colors.green,
+                    ),
                   );
                   Navigator.pop(context);
                 },
