@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/config/supabase_config.dart';
 import '../models/user_model.dart';
@@ -5,9 +6,9 @@ import '../models/user_model.dart';
 /// Supabase authentication data source
 /// Handles all direct communication with Supabase Auth
 class SupabaseAuthDataSource {
-  final SupabaseClient _client;
+  SupabaseClient get _client => SupabaseConfig.client;
 
-  SupabaseAuthDataSource() : _client = SupabaseConfig.client;
+  SupabaseAuthDataSource();
 
   /// Sign up a new user with email and password
   Future<UserModel> signUp({
@@ -219,6 +220,69 @@ class SupabaseAuthDataSource {
       throw Exception('Failed to resend OTP: ${e.message}');
     } catch (e) {
       throw Exception('Unexpected error while resending OTP: $e');
+    }
+  }
+
+  /// Update user profile
+  Future<UserModel> updateProfile({
+    required String userId,
+    required String fullName,
+    required String phone,
+    String? avatarUrl,
+  }) async {
+    try {
+      final updates = {
+        'full_name': fullName,
+        'phone': phone,
+        'avatar_url': avatarUrl, // Always include, even if null
+      };
+
+      // Update user data in users table
+      final response = await _client
+          .from('users')
+          .update(updates)
+          .eq('id', userId)
+          .select()
+          .single();
+
+      // Also update Supabase Auth metadata if needed
+      await _client.auth.updateUser(UserAttributes(data: updates));
+
+      return UserModel.fromJson(response);
+    } on PostgrestException catch (e) {
+      throw Exception('Database error: ${e.message}');
+    } on AuthException catch (e) {
+      throw Exception('Auth update error: ${e.message}');
+    } catch (e) {
+      throw Exception('Unexpected error during profile update: $e');
+    }
+  }
+
+  /// Upload profile image
+  Future<String> uploadProfileImage({
+    required File image,
+    required String userId,
+  }) async {
+    try {
+      final fileExt = image.path.split('.').last;
+      final fileName =
+          '$userId/avatar_${DateTime.now().millisecondsSinceEpoch}.$fileExt';
+      final filePath = fileName;
+
+      await _client.storage
+          .from('avatars')
+          .upload(
+            filePath,
+            image,
+            fileOptions: const FileOptions(cacheControl: '3600', upsert: false),
+          );
+
+      final imageUrl = _client.storage.from('avatars').getPublicUrl(filePath);
+      return imageUrl;
+    } on StorageException catch (e) {
+      throw Exception('Storage error: ${e.message}');
+    } catch (e) {
+      throw Exception('Unexpected error during image upload: $e');
     }
   }
 }

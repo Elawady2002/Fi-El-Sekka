@@ -1,6 +1,8 @@
+import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../../core/theme/app_theme.dart';
 import 'personal_data_page.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
@@ -404,47 +406,165 @@ class ProfilePage extends ConsumerWidget {
   }
 }
 
-class _ProfileHeader extends StatelessWidget {
+class _ProfileHeader extends ConsumerStatefulWidget {
   const _ProfileHeader();
 
   @override
+  ConsumerState<_ProfileHeader> createState() => _ProfileHeaderState();
+}
+
+class _ProfileHeaderState extends ConsumerState<_ProfileHeader> {
+  bool _isUploading = false;
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      setState(() {
+        _isUploading = true;
+      });
+
+      final file = File(pickedFile.path);
+      final error = await ref
+          .read(authProvider.notifier)
+          .uploadProfileImage(file);
+
+      if (mounted) {
+        setState(() {
+          _isUploading = false;
+        });
+
+        if (error != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(error), backgroundColor: Colors.red),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('تم تحديث الصورة بنجاح'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _removeImage() async {
+    // Show confirmation dialog
+    final confirmed = await showCupertinoDialog<bool>(
+      context: context,
+      builder: (context) => CupertinoAlertDialog(
+        title: const Text('حذف الصورة'),
+        content: const Text('هل تريد حذف صورة الملف الشخصي؟'),
+        actions: [
+          CupertinoDialogAction(
+            child: const Text('إلغاء'),
+            onPressed: () => Navigator.pop(context, false),
+          ),
+          CupertinoDialogAction(
+            isDestructiveAction: true,
+            child: const Text('حذف'),
+            onPressed: () => Navigator.pop(context, true),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      setState(() {
+        _isUploading = true;
+      });
+
+      final error = await ref.read(authProvider.notifier).removeProfileImage();
+
+      if (mounted) {
+        setState(() {
+          _isUploading = false;
+        });
+
+        if (error != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(error), backgroundColor: Colors.red),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('تم حذف الصورة بنجاح'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final user = ref.watch(authProvider);
+    final userName = user?.fullName ?? 'مستخدم';
+    final university = user?.universityId ?? 'غير محدد';
+    final avatarUrl = user?.avatarUrl;
+
     return Column(
       children: [
         Stack(
           alignment: Alignment.center,
           children: [
-            Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.grey[200],
-                image: const DecorationImage(
-                  image: AssetImage('assets/images/avatar_placeholder.png'),
-                  fit: BoxFit.cover,
+            // Avatar image - always opens image picker when tapped
+            GestureDetector(
+              onTap: _isUploading ? null : _pickImage,
+              child: Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.grey[200],
+                  image: avatarUrl != null
+                      ? DecorationImage(
+                          image: NetworkImage(avatarUrl),
+                          fit: BoxFit.cover,
+                        )
+                      : const DecorationImage(
+                          image: AssetImage(
+                            'assets/images/avatar_placeholder.png',
+                          ),
+                          fit: BoxFit.cover,
+                        ),
                 ),
-              ),
-              child: const Icon(
-                CupertinoIcons.person_fill,
-                size: 40,
-                color: Colors.grey,
+                child: _isUploading
+                    ? const Center(child: CircularProgressIndicator())
+                    : null,
               ),
             ),
+            // Icon button - uploads if no image, deletes if image exists
             Positioned(
               bottom: 0,
               right: 0,
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryColor,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0xFFF5F5F7), width: 3),
-                ),
-                child: const Icon(
-                  CupertinoIcons.camera_fill,
-                  size: 14,
-                  color: Colors.black,
+              child: GestureDetector(
+                onTap: _isUploading
+                    ? null
+                    : (avatarUrl != null ? _removeImage : _pickImage),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: avatarUrl != null
+                        ? const Color(0xFFFF3B30)
+                        : AppTheme.primaryColor,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: const Color(0xFFF5F5F7),
+                      width: 3,
+                    ),
+                  ),
+                  child: Icon(
+                    avatarUrl != null
+                        ? CupertinoIcons.trash_fill
+                        : CupertinoIcons.camera_fill,
+                    size: 14,
+                    color: avatarUrl != null ? Colors.white : Colors.black,
+                  ),
                 ),
               ),
             ),
@@ -452,7 +572,7 @@ class _ProfileHeader extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         Text(
-          'عبد الله',
+          userName,
           style: AppTheme.textTheme.headlineSmall?.copyWith(
             fontWeight: FontWeight.bold,
             color: Colors.black,
@@ -460,7 +580,7 @@ class _ProfileHeader extends StatelessWidget {
         ),
         const SizedBox(height: 4),
         Text(
-          'الجامعة الألمانية (GUC)',
+          university,
           style: AppTheme.textTheme.bodyMedium?.copyWith(
             color: AppTheme.textSecondary,
           ),

@@ -1,7 +1,9 @@
+import 'dart:io';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../../core/domain/entities/user_entity.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../data/repositories/auth_repository_impl.dart';
+import '../../../../core/config/supabase_config.dart';
 
 part 'auth_provider.g.dart';
 
@@ -18,6 +20,11 @@ class Auth extends _$Auth {
 
   @override
   UserEntity? build() {
+    // Check if Supabase is initialized
+    if (!SupabaseConfig.isInitialized) {
+      return null;
+    }
+
     _repository = ref.read(authRepositoryProvider);
 
     // Listen to auth state changes
@@ -119,6 +126,73 @@ class Auth extends _$Auth {
       (_) {
         return null; // Success
       },
+    );
+  }
+
+  /// Update user profile
+  Future<String?> updateProfile({
+    required String fullName,
+    required String phone,
+    String? avatarUrl,
+  }) async {
+    final currentUser = state;
+    if (currentUser == null) {
+      return 'User not authenticated';
+    }
+
+    final result = await _repository.updateProfile(
+      userId: currentUser.id,
+      fullName: fullName,
+      phone: phone,
+      avatarUrl: avatarUrl,
+    );
+
+    return result.fold(
+      (failure) {
+        return failure.message;
+      },
+      (user) {
+        state = user;
+        return null; // Success
+      },
+    );
+  }
+
+  /// Upload profile image
+  Future<String?> uploadProfileImage(File image) async {
+    final currentUser = state;
+    if (currentUser == null) {
+      return 'User not authenticated';
+    }
+
+    // 1. Upload image
+    final uploadResult = await _repository.uploadProfileImage(
+      image: image,
+      userId: currentUser.id,
+    );
+
+    return uploadResult.fold((failure) => failure.message, (imageUrl) async {
+      // 2. Update user profile with new image URL
+      return updateProfile(
+        fullName: currentUser.fullName,
+        phone: currentUser.phone,
+        avatarUrl: imageUrl,
+      );
+    });
+  }
+
+  /// Remove profile image
+  Future<String?> removeProfileImage() async {
+    final currentUser = state;
+    if (currentUser == null) {
+      return 'User not authenticated';
+    }
+
+    // Update user profile with null avatar URL
+    return updateProfile(
+      fullName: currentUser.fullName,
+      phone: currentUser.phone,
+      avatarUrl: null,
     );
   }
 
