@@ -23,7 +23,7 @@ final authRepositoryProvider = AutoDisposeProvider<AuthRepository>.internal(
 );
 
 typedef AuthRepositoryRef = AutoDisposeProviderRef<AuthRepository>;
-String _$authHash() => r'aa95f5a4c817ca31caeeb605e2073c66f78bf3d0';
+String _$authHash() => r'875d0d80813075095817b17c44d4ab287cdeb30f';
 
 /// Authentication state provider
 ///

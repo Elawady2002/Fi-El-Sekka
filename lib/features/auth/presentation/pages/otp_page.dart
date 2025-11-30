@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -15,13 +16,10 @@ class OtpPage extends ConsumerWidget {
     final screenWidth = MediaQuery.of(context).size.width;
     final digitSize = (screenWidth - 120) / 4; // 4 digits with spacing
 
-    return CupertinoPageScaffold(
+    return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
-      navigationBar: const CupertinoNavigationBar(
-        backgroundColor: AppTheme.backgroundColor,
-        border: null,
-      ),
-      child: SafeArea(
+      appBar: AppBar(backgroundColor: AppTheme.backgroundColor, elevation: 0),
+      body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
           child: Column(

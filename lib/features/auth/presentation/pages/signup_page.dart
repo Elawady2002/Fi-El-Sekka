@@ -76,13 +76,9 @@ class _SignupPageState extends ConsumerState<SignupPage> {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoPageScaffold(
+    return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
-      navigationBar: const CupertinoNavigationBar(
-        backgroundColor: AppTheme.backgroundColor,
-        border: null,
-      ),
-      child: SafeArea(
+      body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
           child: Column(

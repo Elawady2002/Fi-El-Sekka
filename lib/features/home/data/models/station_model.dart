@@ -4,7 +4,7 @@ import '../../../booking/domain/entities/university_entity.dart'; // For Locatio
 class StationModel extends StationEntity {
   const StationModel({
     required super.id,
-    required super.universityId,
+    required super.cityId, // Changed from universityId to cityId
     required super.nameAr,
     required super.nameEn,
     required super.location,
@@ -15,7 +15,8 @@ class StationModel extends StationEntity {
   factory StationModel.fromJson(Map<String, dynamic> json) {
     return StationModel(
       id: json['id'] as String,
-      universityId: json['university_id'] as String,
+      cityId:
+          json['city_id'] as String, // Changed from university_id to city_id
       nameAr: json['name_ar'] as String,
       nameEn: json['name_en'] as String,
       location: Location.fromJson(json['location'] as Map<String, dynamic>),
@@ -27,7 +28,7 @@ class StationModel extends StationEntity {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'university_id': universityId,
+      'city_id': cityId, // Changed from university_id to cityId
       'name_ar': nameAr,
       'name_en': nameEn,
       'location': location.toJson(),

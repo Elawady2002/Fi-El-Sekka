@@ -203,7 +203,7 @@ class _UniversitiesProviderElement
   String get cityId => (origin as UniversitiesProvider).cityId;
 }
 
-String _$stationsHash() => r'f778561afd7ec23cf5fd2785025a532a64784426';
+String _$stationsHash() => r'6adb20c10dddabafc452a6507e2436cb288fcdfb';
 
 /// See also [stations].
 @ProviderFor(stations)
@@ -216,10 +216,10 @@ class StationsFamily extends Family<AsyncValue<List<StationEntity>>> {
 
   /// See also [stations].
   StationsProvider call(
-    String universityId,
+    String cityId,
   ) {
     return StationsProvider(
-      universityId,
+      cityId,
     );
   }
 
@@ -228,7 +228,7 @@ class StationsFamily extends Family<AsyncValue<List<StationEntity>>> {
     covariant StationsProvider provider,
   ) {
     return call(
-      provider.universityId,
+      provider.cityId,
     );
   }
 
@@ -251,11 +251,11 @@ class StationsFamily extends Family<AsyncValue<List<StationEntity>>> {
 class StationsProvider extends AutoDisposeFutureProvider<List<StationEntity>> {
   /// See also [stations].
   StationsProvider(
-    String universityId,
+    String cityId,
   ) : this._internal(
           (ref) => stations(
             ref as StationsRef,
-            universityId,
+            cityId,
           ),
           from: stationsProvider,
           name: r'stationsProvider',
@@ -265,7 +265,7 @@ class StationsProvider extends AutoDisposeFutureProvider<List<StationEntity>> {
                   : _$stationsHash,
           dependencies: StationsFamily._dependencies,
           allTransitiveDependencies: StationsFamily._allTransitiveDependencies,
-          universityId: universityId,
+          cityId: cityId,
         );
 
   StationsProvider._internal(
@@ -275,10 +275,10 @@ class StationsProvider extends AutoDisposeFutureProvider<List<StationEntity>> {
     required super.allTransitiveDependencies,
     required super.debugGetCreateSourceHash,
     required super.from,
-    required this.universityId,
+    required this.cityId,
   }) : super.internal();
 
-  final String universityId;
+  final String cityId;
 
   @override
   Override overrideWith(
@@ -293,7 +293,7 @@ class StationsProvider extends AutoDisposeFutureProvider<List<StationEntity>> {
         dependencies: null,
         allTransitiveDependencies: null,
         debugGetCreateSourceHash: null,
-        universityId: universityId,
+        cityId: cityId,
       ),
     );
   }
@@ -305,21 +305,21 @@ class StationsProvider extends AutoDisposeFutureProvider<List<StationEntity>> {
 
   @override
   bool operator ==(Object other) {
-    return other is StationsProvider && other.universityId == universityId;
+    return other is StationsProvider && other.cityId == cityId;
   }
 
   @override
   int get hashCode {
     var hash = _SystemHash.combine(0, runtimeType.hashCode);
-    hash = _SystemHash.combine(hash, universityId.hashCode);
+    hash = _SystemHash.combine(hash, cityId.hashCode);
 
     return _SystemHash.finish(hash);
   }
 }
 
 mixin StationsRef on AutoDisposeFutureProviderRef<List<StationEntity>> {
-  /// The parameter `universityId` of this provider.
-  String get universityId;
+  /// The parameter `cityId` of this provider.
+  String get cityId;
 }
 
 class _StationsProviderElement
@@ -328,7 +328,7 @@ class _StationsProviderElement
   _StationsProviderElement(super.provider);
 
   @override
-  String get universityId => (origin as StationsProvider).universityId;
+  String get cityId => (origin as StationsProvider).cityId;
 }
 
 String _$routesHash() => r'1884592ec15ad5f8f82e9820bc5991ab6e7410f7';

@@ -11,7 +11,9 @@ abstract class HomeRepository {
   Future<Either<Failure, List<UniversityEntity>>> getUniversities(
     String cityId,
   );
-  Future<Either<Failure, List<StationEntity>>> getStations(String universityId);
+  Future<Either<Failure, List<StationEntity>>> getStations(
+    String cityId,
+  ); // Changed from universityId to cityId
   Future<Either<Failure, List<RouteEntity>>> getRoutes(String universityId);
   Future<Either<Failure, List<ScheduleEntity>>> getSchedules(String routeId);
 }

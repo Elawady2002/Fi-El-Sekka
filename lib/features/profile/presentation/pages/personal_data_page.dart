@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 
 class PersonalDataPage extends ConsumerStatefulWidget {
   const PersonalDataPage({super.key});
@@ -11,9 +12,26 @@ class PersonalDataPage extends ConsumerStatefulWidget {
 }
 
 class _PersonalDataPageState extends ConsumerState<PersonalDataPage> {
-  final _nameController = TextEditingController(text: 'عبد الله');
-  final _phoneController = TextEditingController(text: '01012345678');
-  final _emailController = TextEditingController(text: 'abdallah@example.com');
+  late final TextEditingController _nameController;
+  late final TextEditingController _phoneController;
+  late final TextEditingController _emailController;
+
+  @override
+  void initState() {
+    super.initState();
+    final user = ref.read(authProvider);
+    _nameController = TextEditingController(text: user?.fullName ?? '');
+    _phoneController = TextEditingController(text: user?.phone ?? '');
+    _emailController = TextEditingController(text: user?.email ?? '');
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _phoneController.dispose();
+    _emailController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -87,14 +105,44 @@ class _PersonalDataPageState extends ConsumerState<PersonalDataPage> {
                     return;
                   }
 
-                  // For now, just show success message
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('تم حفظ التغييرات بنجاح'),
-                      backgroundColor: Colors.green,
-                    ),
+                  // Show loading indicator
+                  showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (context) =>
+                        const Center(child: CircularProgressIndicator()),
                   );
-                  Navigator.pop(context);
+
+                  // Call update profile
+                  ref
+                      .read(authProvider.notifier)
+                      .updateProfile(
+                        fullName: _nameController.text.trim(),
+                        phone: _phoneController.text.trim(),
+                      )
+                      .then((error) {
+                        // Hide loading indicator
+                        Navigator.pop(context);
+
+                        if (error != null) {
+                          // Show error
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(error),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        } else {
+                          // Show success
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('تم حفظ التغييرات بنجاح'),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                          Navigator.pop(context);
+                        }
+                      });
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.primaryColor,

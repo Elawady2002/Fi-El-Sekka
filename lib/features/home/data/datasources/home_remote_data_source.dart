@@ -8,7 +8,9 @@ import '../models/schedule_model.dart';
 abstract class HomeRemoteDataSource {
   Future<List<CityModel>> getCities();
   Future<List<UniversityModel>> getUniversities(String cityId);
-  Future<List<StationModel>> getStations(String universityId);
+  Future<List<StationModel>> getStations(
+    String cityId,
+  ); // Changed from universityId to cityId
   Future<List<RouteModel>> getRoutes(String universityId);
   Future<List<ScheduleModel>> getSchedules(String routeId);
 }
@@ -42,11 +44,12 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
   }
 
   @override
-  Future<List<StationModel>> getStations(String universityId) async {
+  Future<List<StationModel>> getStations(String cityId) async {
+    // Changed from universityId to cityId
     final response = await _client
         .from('stations')
         .select()
-        .eq('university_id', universityId)
+        .eq('city_id', cityId) // Changed from university_id to city_id
         .eq('is_active', true)
         .order('name_ar');
 

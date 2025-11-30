@@ -23,6 +23,8 @@ class HomePage extends ConsumerStatefulWidget {
 class _HomePageState extends ConsumerState<HomePage> {
   @override
   Widget build(BuildContext context) {
+    print('DEBUG: HomePage build called');
+    // Get screen size for responsive layout
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       body: SafeArea(
@@ -531,7 +533,7 @@ class _LocationSelectionDrawerState
     required String Function(T) labelBuilder,
     required ValueChanged<T> onSelected,
   }) {
-    if (items.isEmpty) return;
+    // Removed empty check - every city now has universities and stations
     int selectedIndex = 0;
     showCupertinoModalPopup(
       context: context,
@@ -655,8 +657,12 @@ class _LocationSelectionDrawerState
     final universitiesAsync = selectedCity != null
         ? ref.watch(universitiesProvider(selectedCity!.id))
         : const AsyncValue.data(<UniversityEntity>[]);
-    final stationsAsync = selectedUniversity != null
-        ? ref.watch(stationsProvider(selectedUniversity!.id))
+    final stationsAsync =
+        selectedCity !=
+            null // Changed from selectedUniversity to selectedCity
+        ? ref.watch(
+            stationsProvider(selectedCity!.id),
+          ) // Changed from selectedUniversity!.id to selectedCity!.id
         : const AsyncValue.data(<StationEntity>[]);
 
     return Container(

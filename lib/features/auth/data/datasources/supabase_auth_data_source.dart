@@ -95,7 +95,13 @@ class SupabaseAuthDataSource {
           .from('users')
           .select()
           .eq('id', userId)
-          .single();
+          .maybeSingle(); // Use maybeSingle() to handle 0 or 1 results
+
+      if (response == null) {
+        throw Exception(
+          'حساب المستخدم غير موجود في قاعدة البيانات. يرجى التواصل مع الدعم.',
+        );
+      }
 
       return UserModel.fromJson(response);
     } on AuthException catch (e) {
@@ -106,8 +112,12 @@ class SupabaseAuthDataSource {
       }
       throw Exception('Authentication error: ${e.message}');
     } on PostgrestException catch (e) {
+      print('Database error in signIn: ${e.message}');
+      print('Error code: ${e.code}');
+      print('Error details: ${e.details}');
       throw Exception('Database error: ${e.message}');
     } catch (e) {
+      print('Unexpected error in signIn: $e');
       throw Exception('Unexpected error during sign in: $e');
     }
   }
@@ -137,12 +147,23 @@ class SupabaseAuthDataSource {
           .from('users')
           .select()
           .eq('id', userId)
-          .single();
+          .maybeSingle(); // Use maybeSingle() instead of single() to handle 0 or 1 results
+
+      if (response == null) {
+        // User not found in database, but has auth session
+        // This shouldn't happen, but we'll return null gracefully
+        print('WARNING: User $userId has auth session but no database record');
+        return null;
+      }
 
       return UserModel.fromJson(response);
     } on PostgrestException catch (e) {
+      print('Database error in getCurrentUser: ${e.message}');
+      print('Error code: ${e.code}');
+      print('Error details: ${e.details}');
       throw Exception('Database error: ${e.message}');
     } catch (e) {
+      print('Unexpected error in getCurrentUser: $e');
       // No user authenticated
       return null;
     }
@@ -162,10 +183,18 @@ class SupabaseAuthDataSource {
             .from('users')
             .select()
             .eq('id', userId)
-            .single();
+            .maybeSingle(); // Use maybeSingle() to handle 0 or 1 results
+
+        if (response == null) {
+          print(
+            'WARNING: User $userId has auth session but no database record',
+          );
+          return null;
+        }
 
         return UserModel.fromJson(response);
       } catch (e) {
+        print('Error in authStateChanges: $e');
         return null;
       }
     });
@@ -200,14 +229,20 @@ class SupabaseAuthDataSource {
           .from('users')
           .select()
           .eq('id', userId)
-          .single();
+          .maybeSingle(); // Use maybeSingle() to handle 0 or 1 results
+
+      if (response == null) {
+        throw Exception('فشل في جلب بيانات المستخدم بعد التحقق.');
+      }
 
       return UserModel.fromJson(response);
     } on AuthException catch (e) {
       throw Exception('OTP verification error: ${e.message}');
     } on PostgrestException catch (e) {
+      print('Database error in verifyOtp: ${e.message}');
       throw Exception('Database error: ${e.message}');
     } catch (e) {
+      print('Unexpected error in verifyOtp: $e');
       throw Exception('Unexpected error during OTP verification: $e');
     }
   }
@@ -243,17 +278,25 @@ class SupabaseAuthDataSource {
           .update(updates)
           .eq('id', userId)
           .select()
-          .single();
+          .maybeSingle(); // Use maybeSingle() to handle 0 or 1 results
+
+      if (response == null) {
+        throw Exception('فشل في تحديث بيانات المستخدم.');
+      }
 
       // Also update Supabase Auth metadata if needed
       await _client.auth.updateUser(UserAttributes(data: updates));
 
       return UserModel.fromJson(response);
     } on PostgrestException catch (e) {
+      print('Database error in updateProfile: ${e.message}');
+      print('Error code: ${e.code}');
+      print('Error details: ${e.details}');
       throw Exception('Database error: ${e.message}');
     } on AuthException catch (e) {
       throw Exception('Auth update error: ${e.message}');
     } catch (e) {
+      print('Unexpected error in updateProfile: $e');
       throw Exception('Unexpected error during profile update: $e');
     }
   }

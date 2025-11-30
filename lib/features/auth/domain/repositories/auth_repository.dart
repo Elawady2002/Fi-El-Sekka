@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:dartz/dartz.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/domain/entities/user_entity.dart';
@@ -40,4 +41,18 @@ abstract class AuthRepository {
 
   /// Resend OTP code
   Future<Either<Failure, void>> resendOtp({required String email});
+
+  /// Update user profile
+  Future<Either<Failure, UserEntity>> updateProfile({
+    required String userId,
+    required String fullName,
+    required String phone,
+    String? avatarUrl,
+  });
+
+  /// Upload profile image
+  Future<Either<Failure, String>> uploadProfileImage({
+    required File image,
+    required String userId,
+  });
 }

@@ -48,10 +48,12 @@ Future<List<UniversityEntity>> universities(
 @riverpod
 Future<List<StationEntity>> stations(
   StationsRef ref,
-  String universityId,
+  String cityId, // Changed from universityId to cityId
 ) async {
   final repository = ref.watch(homeRepositoryProvider);
-  final result = await repository.getStations(universityId);
+  final result = await repository.getStations(
+    cityId,
+  ); // Changed from universityId to cityId
   return result.fold(
     (failure) => throw Exception(failure.message),
     (stations) => stations,

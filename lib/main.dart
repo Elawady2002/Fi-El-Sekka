@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:my_app/features/auth/presentation/pages/onboarding_page.dart';
 import 'core/theme/app_theme.dart';
 import 'core/config/supabase_config.dart';
+import 'core/widgets/auth_wrapper.dart';
 import 'dart:async';
 import 'dart:developer';
 
@@ -45,11 +45,11 @@ void main() {
   );
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp(
       title: 'Fi El Sekka',
       debugShowCheckedModeBanner: false,
@@ -64,7 +64,7 @@ class MyApp extends StatelessWidget {
         Locale('ar', 'EG'), // Egyptian Arabic
       ],
       locale: const Locale('ar', 'EG'), // Force Arabic
-      home: const OnboardingPage(),
+      home: const AuthWrapper(),
     );
   }
 }

@@ -20,6 +20,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
   @override
   Widget build(BuildContext context) {
+    print('DEBUG: OnboardingPage build called');
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(

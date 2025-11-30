@@ -37,10 +37,12 @@ class HomeRepositoryImpl implements HomeRepository {
 
   @override
   Future<Either<Failure, List<StationEntity>>> getStations(
-    String universityId,
+    String cityId, // Changed from universityId to cityId
   ) async {
     try {
-      final stations = await remoteDataSource.getStations(universityId);
+      final stations = await remoteDataSource.getStations(
+        cityId,
+      ); // Changed from universityId to cityId
       return Right(stations);
     } catch (e) {
       return Left(ServerFailure(message: e.toString()));

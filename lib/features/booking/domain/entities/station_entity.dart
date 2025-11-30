@@ -20,7 +20,7 @@ enum StationType {
 /// Station entity - represents a pickup/dropoff station
 class StationEntity extends Equatable {
   final String id;
-  final String universityId;
+  final String cityId; // Changed from universityId to cityId
   final String nameAr;
   final String nameEn;
   final Location location;
@@ -29,7 +29,7 @@ class StationEntity extends Equatable {
 
   const StationEntity({
     required this.id,
-    required this.universityId,
+    required this.cityId, // Changed from universityId to cityId
     required this.nameAr,
     required this.nameEn,
     required this.location,
@@ -40,7 +40,7 @@ class StationEntity extends Equatable {
   @override
   List<Object?> get props => [
     id,
-    universityId,
+    cityId, // Changed from universityId to cityId
     nameAr,
     nameEn,
     location,

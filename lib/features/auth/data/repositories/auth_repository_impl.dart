@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:dartz/dartz.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/domain/entities/user_entity.dart';
@@ -91,6 +92,42 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       await _dataSource.resendOtp(email: email);
       return const Right(null);
+    } catch (e) {
+      return Left(_handleError(e));
+    }
+  }
+
+  @override
+  Future<Either<Failure, UserEntity>> updateProfile({
+    required String userId,
+    required String fullName,
+    required String phone,
+    String? avatarUrl,
+  }) async {
+    try {
+      final user = await _dataSource.updateProfile(
+        userId: userId,
+        fullName: fullName,
+        phone: phone,
+        avatarUrl: avatarUrl,
+      );
+      return Right(user.toEntity());
+    } catch (e) {
+      return Left(_handleError(e));
+    }
+  }
+
+  @override
+  Future<Either<Failure, String>> uploadProfileImage({
+    required File image,
+    required String userId,
+  }) async {
+    try {
+      final imageUrl = await _dataSource.uploadProfileImage(
+        image: image,
+        userId: userId,
+      );
+      return Right(imageUrl);
     } catch (e) {
       return Left(_handleError(e));
     }
