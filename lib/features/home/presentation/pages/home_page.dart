@@ -12,6 +12,7 @@ import '../../../booking/domain/entities/city_entity.dart';
 import '../../../booking/domain/entities/university_entity.dart';
 import '../../../booking/domain/entities/station_entity.dart';
 import '../../../booking/presentation/providers/booking_provider.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -45,12 +46,19 @@ class _HomePageState extends ConsumerState<HomePage> {
                           color: AppTheme.textSecondary,
                         ),
                       ),
-                      Text(
-                        'عبد الله',
-                        style: AppTheme.textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                        ),
+                      Consumer(
+                        builder: (context, ref, child) {
+                          final user = ref.watch(authProvider);
+                          final firstName =
+                              user?.fullName.split(' ').first ?? 'يا صديقي';
+                          return Text(
+                            firstName,
+                            style: AppTheme.textTheme.headlineMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
+                          );
+                        },
                       ),
                     ],
                   ),
@@ -63,24 +71,41 @@ class _HomePageState extends ConsumerState<HomePage> {
                         ),
                       );
                     },
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.05),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
+                    child: Consumer(
+                      builder: (context, ref, child) {
+                        final user = ref.watch(authProvider);
+                        return Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.05),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                            image: user?.avatarUrl != null
+                                ? DecorationImage(
+                                    image: NetworkImage(user!.avatarUrl!),
+                                    fit: BoxFit.cover,
+                                  )
+                                : null,
                           ),
-                        ],
-                      ),
-                      child: const Icon(
-                        CupertinoIcons.person_fill,
-                        color: Colors.black,
-                        size: 24,
-                      ),
+                          child: user?.avatarUrl == null
+                              ? const Padding(
+                                  padding: EdgeInsets.all(8.0),
+                                  child: Icon(
+                                    CupertinoIcons.person_fill,
+                                    color: Colors.black,
+                                    size: 24,
+                                  ),
+                                )
+                              : null,
+                        );
+                      },
                     ),
                   ),
                 ],
@@ -219,16 +244,6 @@ class _HomePageState extends ConsumerState<HomePage> {
       ),
       child: Stack(
         children: [
-          // Background Pattern (Optional)
-          Positioned(
-            right: -20,
-            top: -20,
-            child: Icon(
-              CupertinoIcons.bus,
-              size: 150,
-              color: Colors.white.withValues(alpha: 0.05),
-            ),
-          ),
           Padding(
             padding: const EdgeInsets.all(24),
             child: Column(
@@ -701,17 +716,34 @@ class _LocationSelectionDrawerState
               children: [
                 GestureDetector(
                   onTap: () => Navigator.pop(context),
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.transparent,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(
-                      CupertinoIcons.xmark,
-                      color: Colors.black,
-                      size: 20,
-                    ),
+                  child: Consumer(
+                    builder: (context, ref, child) {
+                      final user = ref.watch(authProvider);
+                      return Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          image: user?.avatarUrl != null
+                              ? DecorationImage(
+                                  image: NetworkImage(user!.avatarUrl!),
+                                  fit: BoxFit.cover,
+                                )
+                              : null,
+                        ),
+                        child: user?.avatarUrl == null
+                            ? Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Icon(
+                                  CupertinoIcons.person_fill,
+                                  color: AppTheme.primaryColor,
+                                  size: 24,
+                                ),
+                              )
+                            : null,
+                      );
+                    },
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -744,18 +776,13 @@ class _LocationSelectionDrawerState
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             child: AnimatedProgressSlider(
-              currentStep: () {
-                // Debug logging
-                final step = selectedStation != null
-                    ? 3
-                    : (selectedUniversity != null
-                          ? 2
-                          : (selectedCity != null ? 1 : 0));
-                print(
-                  'Progress: City=${selectedCity?.nameAr}, Uni=${selectedUniversity?.nameAr}, Station=${selectedStation?.nameAr}, Step=$step',
-                );
-                return step;
-              }(),
+              currentStep: selectedStation != null
+                  ? 2 // Final step (Station)
+                  : (selectedUniversity != null
+                        ? 1 // University step
+                        : (selectedCity != null
+                              ? 0
+                              : -1)), // City step or initial (-1)
               totalSteps: 3,
               labels: const ['المدينة', 'الجامعة', 'المحطة'],
             ),

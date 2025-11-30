@@ -119,6 +119,7 @@ class _PersonalDataPageState extends ConsumerState<PersonalDataPage> {
                       .updateProfile(
                         fullName: _nameController.text.trim(),
                         phone: _phoneController.text.trim(),
+                        avatarUrl: ref.read(authProvider)?.avatarUrl,
                       )
                       .then((error) {
                         // Hide loading indicator

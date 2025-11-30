@@ -115,7 +115,9 @@ class _AnimatedProgressSliderState extends State<AnimatedProgressSlider>
                 final double availableWidth = width - (padding * 2);
                 final double stepWidth =
                     availableWidth / (widget.totalSteps - 1);
-                final double targetFillWidth = widget.currentStep * stepWidth;
+                final double targetFillWidth =
+                    (widget.currentStep < 0 ? 0 : widget.currentStep) *
+                    stepWidth;
 
                 return SizedBox(
                   height: 60, // Increased height to prevent clipping
