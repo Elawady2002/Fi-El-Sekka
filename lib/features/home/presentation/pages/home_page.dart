@@ -744,11 +744,18 @@ class _LocationSelectionDrawerState
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             child: AnimatedProgressSlider(
-              currentStep: selectedStation != null
-                  ? 3
-                  : (selectedUniversity != null
-                        ? 2
-                        : (selectedCity != null ? 1 : 0)),
+              currentStep: () {
+                // Debug logging
+                final step = selectedStation != null
+                    ? 3
+                    : (selectedUniversity != null
+                          ? 2
+                          : (selectedCity != null ? 1 : 0));
+                print(
+                  'Progress: City=${selectedCity?.nameAr}, Uni=${selectedUniversity?.nameAr}, Station=${selectedStation?.nameAr}, Step=$step',
+                );
+                return step;
+              }(),
               totalSteps: 3,
               labels: const ['المدينة', 'الجامعة', 'المحطة'],
             ),
@@ -839,9 +846,6 @@ class _LocationSelectionDrawerState
                         items: stations,
                         labelBuilder: (station) => station.nameAr,
                         onSelected: (station) {
-                          setState(() {
-                            selectedStation = station;
-                          });
                           setState(() {
                             selectedStation = station;
                           });
