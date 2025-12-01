@@ -1,15 +1,18 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../booking/presentation/providers/booking_provider.dart';
+import '../../../booking/domain/entities/booking_entity.dart';
 
-class RideHistoryPage extends StatefulWidget {
+class RideHistoryPage extends ConsumerStatefulWidget {
   const RideHistoryPage({super.key});
 
   @override
-  State<RideHistoryPage> createState() => _RideHistoryPageState();
+  ConsumerState<RideHistoryPage> createState() => _RideHistoryPageState();
 }
 
-class _RideHistoryPageState extends State<RideHistoryPage>
+class _RideHistoryPageState extends ConsumerState<RideHistoryPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
@@ -65,54 +68,74 @@ class _RideHistoryPageState extends State<RideHistoryPage>
   }
 
   Widget _buildUpcomingRides() {
-    return ListView(
-      padding: const EdgeInsets.all(20),
-      children: [
-        _buildRideCard(
-          'الجامعة الألمانية',
-          'التجمع الخامس',
-          'غداً، 08:00 ص',
-          '50 ج.م',
-          'مؤكدة',
-          AppTheme.successColor,
-        ),
-      ],
+    final bookingsAsync = ref.watch(userBookingsProvider);
+
+    return bookingsAsync.when(
+      data: (bookings) {
+        final upcomingBookings = bookings
+            .where(
+              (b) =>
+                  b.bookingDate.isAfter(DateTime.now()) &&
+                  (b.status == BookingStatus.pending ||
+                      b.status == BookingStatus.confirmed),
+            )
+            .toList();
+
+        if (upcomingBookings.isEmpty) {
+          return _buildEmptyState('لا توجد رحلات قادمة');
+        }
+
+        return ListView.separated(
+          padding: const EdgeInsets.all(20),
+          itemCount: upcomingBookings.length,
+          separatorBuilder: (_, _) => const SizedBox(height: 16),
+          itemBuilder: (context, index) {
+            final booking = upcomingBookings[index];
+            return _buildRideCard(booking);
+          },
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stack) => _buildErrorState(),
     );
   }
 
   Widget _buildPastRides() {
-    return ListView(
-      padding: const EdgeInsets.all(20),
-      children: [
-        _buildRideCard(
-          'الجامعة الألمانية',
-          'التجمع الخامس',
-          'أمس، 05:00 م',
-          '50 ج.م',
-          'مكتملة',
-          Colors.grey,
-        ),
-        const SizedBox(height: 16),
-        _buildRideCard(
-          'التجمع الخامس',
-          'الجامعة الألمانية',
-          'أمس، 07:30 ص',
-          '50 ج.م',
-          'ملغاة',
-          Colors.red,
-        ),
-      ],
+    final bookingsAsync = ref.watch(userBookingsProvider);
+
+    return bookingsAsync.when(
+      data: (bookings) {
+        final pastBookings = bookings
+            .where(
+              (b) =>
+                  b.bookingDate.isBefore(DateTime.now()) ||
+                  b.status == BookingStatus.cancelled ||
+                  b.status == BookingStatus.completed,
+            )
+            .toList();
+
+        if (pastBookings.isEmpty) {
+          return _buildEmptyState('لا توجد رحلات سابقة');
+        }
+
+        return ListView.separated(
+          padding: const EdgeInsets.all(20),
+          itemCount: pastBookings.length,
+          separatorBuilder: (_, _) => const SizedBox(height: 16),
+          itemBuilder: (context, index) {
+            final booking = pastBookings[index];
+            return _buildRideCard(booking);
+          },
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stack) => _buildErrorState(),
     );
   }
 
-  Widget _buildRideCard(
-    String from,
-    String to,
-    String date,
-    String price,
-    String status,
-    Color statusColor,
-  ) {
+  Widget _buildRideCard(BookingEntity booking) {
+    final statusInfo = _getStatusInfo(booking.status);
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -123,33 +146,21 @@ class _RideHistoryPageState extends State<RideHistoryPage>
         children: [
           Row(
             children: [
-              Column(
-                children: [
-                  const Icon(
-                    Icons.circle,
-                    size: 12,
-                    color: AppTheme.primaryColor,
-                  ),
-                  Container(height: 24, width: 2, color: Colors.grey[300]),
-                  const Icon(Icons.location_on, size: 16, color: Colors.red),
-                ],
-              ),
-              const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      from,
+                      'التاريخ: ${booking.bookingDate.day}/${booking.bookingDate.month}/${booking.bookingDate.year}',
                       style: AppTheme.textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 8),
                     Text(
-                      to,
-                      style: AppTheme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
+                      'نوع الرحلة: ${_getTripTypeLabel(booking.tripType)}',
+                      style: AppTheme.textTheme.bodySmall?.copyWith(
+                        color: AppTheme.textSecondary,
                       ),
                     ),
                   ],
@@ -159,7 +170,7 @@ class _RideHistoryPageState extends State<RideHistoryPage>
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    price,
+                    '${booking.totalPrice.toStringAsFixed(0)} ج.م',
                     style: AppTheme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: AppTheme.primaryDark,
@@ -172,13 +183,13 @@ class _RideHistoryPageState extends State<RideHistoryPage>
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: statusColor.withValues(alpha: 0.1),
+                      color: statusInfo['color'].withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      status,
+                      statusInfo['label'],
                       style: AppTheme.textTheme.bodySmall?.copyWith(
-                        color: statusColor,
+                        color: statusInfo['color'],
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -187,21 +198,74 @@ class _RideHistoryPageState extends State<RideHistoryPage>
               ),
             ],
           ),
-          const Divider(height: 24),
-          Row(
-            children: [
-              const Icon(CupertinoIcons.calendar, size: 16, color: Colors.grey),
-              const SizedBox(width: 8),
-              Text(
-                date,
-                style: AppTheme.textTheme.bodySmall?.copyWith(
-                  color: AppTheme.textSecondary,
-                ),
-              ),
-            ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(String message) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(CupertinoIcons.ticket, size: 64, color: AppTheme.textSecondary),
+          const SizedBox(height: 16),
+          Text(
+            message,
+            style: AppTheme.textTheme.titleMedium?.copyWith(
+              color: AppTheme.textSecondary,
+            ),
           ),
         ],
       ),
     );
+  }
+
+  Widget _buildErrorState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            CupertinoIcons.exclamationmark_triangle,
+            size: 64,
+            color: AppTheme.errorColor,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'حدث خطأ في تحميل الرحلات',
+            style: AppTheme.textTheme.titleMedium?.copyWith(
+              color: AppTheme.errorColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Map<String, dynamic> _getStatusInfo(BookingStatus status) {
+    switch (status) {
+      case BookingStatus.confirmed:
+        return {'label': 'مؤكد', 'color': AppTheme.successColor};
+      case BookingStatus.pending:
+        return {'label': 'قيد الانتظار', 'color': Colors.orange};
+      case BookingStatus.cancelled:
+        return {'label': 'ملغي', 'color': AppTheme.errorColor};
+      case BookingStatus.completed:
+        return {'label': 'مكتمل', 'color': Colors.grey};
+    }
+  }
+
+  String _getTripTypeLabel(String tripType) {
+    switch (tripType) {
+      case 'departure_only':
+        return 'ذهاب فقط';
+      case 'return_only':
+        return 'عودة فقط';
+      case 'round_trip':
+        return 'ذهاب وعودة';
+      default:
+        return tripType;
+    }
   }
 }

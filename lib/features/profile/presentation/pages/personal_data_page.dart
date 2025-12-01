@@ -121,12 +121,14 @@ class _PersonalDataPageState extends ConsumerState<PersonalDataPage> {
                         phone: _phoneController.text.trim(),
                         avatarUrl: ref.read(authProvider)?.avatarUrl,
                       )
-                      .then((error) {
+                      .then((error) async {
                         // Hide loading indicator
+                        if (!mounted) return;
                         Navigator.pop(context);
 
                         if (error != null) {
                           // Show error
+                          if (!mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(error),
@@ -135,12 +137,14 @@ class _PersonalDataPageState extends ConsumerState<PersonalDataPage> {
                           );
                         } else {
                           // Show success
+                          if (!mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text('تم حفظ التغييرات بنجاح'),
                               backgroundColor: Colors.green,
                             ),
                           );
+                          if (!mounted) return;
                           Navigator.pop(context);
                         }
                       });

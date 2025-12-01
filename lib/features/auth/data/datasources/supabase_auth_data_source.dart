@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/config/supabase_config.dart';
+import '../../../../core/utils/logger.dart';
 import '../models/user_model.dart';
 
 /// Supabase authentication data source
@@ -24,7 +25,12 @@ class SupabaseAuthDataSource {
       final authResponse = await _client.auth.signUp(
         email: email,
         password: password,
-        data: {'full_name': fullName, 'phone': phone},
+        data: {
+          'full_name': fullName,
+          'phone': phone,
+          'student_id': studentId,
+          'university_id': universityId,
+        },
       );
 
       if (authResponse.user == null) {
@@ -98,9 +104,43 @@ class SupabaseAuthDataSource {
           .maybeSingle(); // Use maybeSingle() to handle 0 or 1 results
 
       if (response == null) {
-        throw Exception(
-          'حساب المستخدم غير موجود في قاعدة البيانات. يرجى التواصل مع الدعم.',
+        // Attempt to recover user data from Auth metadata if missing in public table
+        AppLogger.warning(
+          'User $userId not found in public.users table. Attempting recovery...',
         );
+
+        final user = authResponse.user!;
+        final metadata = user.userMetadata;
+
+        if (metadata == null || !metadata.containsKey('full_name')) {
+          throw Exception(
+            'حساب المستخدم غير موجود في قاعدة البيانات، ولا توجد بيانات كافية لاستعادته. يرجى التواصل مع الدعم.',
+          );
+        }
+
+        // Reconstruct user data
+        final recoveredUserData = {
+          'id': userId,
+          'email': email,
+          'phone': metadata['phone'] ?? '',
+          'full_name': metadata['full_name'] ?? '',
+          'student_id': metadata['student_id'],
+          'university_id': metadata['university_id'],
+          'user_type': 'student',
+          'is_verified': true, // Since they just logged in successfully
+          'created_at': DateTime.now().toIso8601String(),
+        };
+
+        try {
+          await _client.from('users').insert(recoveredUserData);
+          AppLogger.info('User $userId recovered to public.users table');
+          return UserModel.fromJson(recoveredUserData);
+        } catch (recoveryError) {
+          AppLogger.error('Failed to recover user', recoveryError);
+          throw Exception(
+            'حساب المستخدم غير موجود في قاعدة البيانات. فشلت محاولة الاستعادة التلقائية. يرجى التواصل مع الدعم.',
+          );
+        }
       }
 
       return UserModel.fromJson(response);
@@ -112,12 +152,13 @@ class SupabaseAuthDataSource {
       }
       throw Exception('Authentication error: ${e.message}');
     } on PostgrestException catch (e) {
-      print('Database error in signIn: ${e.message}');
-      print('Error code: ${e.code}');
-      print('Error details: ${e.details}');
+      AppLogger.error(
+        'Database error in signIn: ${e.message}',
+        'Code: ${e.code}, Details: ${e.details}',
+      );
       throw Exception('Database error: ${e.message}');
     } catch (e) {
-      print('Unexpected error in signIn: $e');
+      AppLogger.error('Unexpected error in signIn', e);
       throw Exception('Unexpected error during sign in: $e');
     }
   }
@@ -152,18 +193,21 @@ class SupabaseAuthDataSource {
       if (response == null) {
         // User not found in database, but has auth session
         // This shouldn't happen, but we'll return null gracefully
-        print('WARNING: User $userId has auth session but no database record');
+        AppLogger.warning(
+          'User $userId has auth session but no database record',
+        );
         return null;
       }
 
       return UserModel.fromJson(response);
     } on PostgrestException catch (e) {
-      print('Database error in getCurrentUser: ${e.message}');
-      print('Error code: ${e.code}');
-      print('Error details: ${e.details}');
+      AppLogger.error(
+        'Database error in getCurrentUser: ${e.message}',
+        'Code: ${e.code}, Details: ${e.details}',
+      );
       throw Exception('Database error: ${e.message}');
     } catch (e) {
-      print('Unexpected error in getCurrentUser: $e');
+      AppLogger.error('Unexpected error in getCurrentUser', e);
       // No user authenticated
       return null;
     }
@@ -186,15 +230,15 @@ class SupabaseAuthDataSource {
             .maybeSingle(); // Use maybeSingle() to handle 0 or 1 results
 
         if (response == null) {
-          print(
-            'WARNING: User $userId has auth session but no database record',
+          AppLogger.warning(
+            'User $userId has auth session but no database record',
           );
           return null;
         }
 
         return UserModel.fromJson(response);
       } catch (e) {
-        print('Error in authStateChanges: $e');
+        AppLogger.error('Error in authStateChanges', e);
         return null;
       }
     });
@@ -239,10 +283,10 @@ class SupabaseAuthDataSource {
     } on AuthException catch (e) {
       throw Exception('OTP verification error: ${e.message}');
     } on PostgrestException catch (e) {
-      print('Database error in verifyOtp: ${e.message}');
+      AppLogger.error('Database error in verifyOtp: ${e.message}');
       throw Exception('Database error: ${e.message}');
     } catch (e) {
-      print('Unexpected error in verifyOtp: $e');
+      AppLogger.error('Unexpected error in verifyOtp', e);
       throw Exception('Unexpected error during OTP verification: $e');
     }
   }
@@ -289,14 +333,15 @@ class SupabaseAuthDataSource {
 
       return UserModel.fromJson(response);
     } on PostgrestException catch (e) {
-      print('Database error in updateProfile: ${e.message}');
-      print('Error code: ${e.code}');
-      print('Error details: ${e.details}');
+      AppLogger.error(
+        'Database error in updateProfile: ${e.message}',
+        'Code: ${e.code}, Details: ${e.details}',
+      );
       throw Exception('Database error: ${e.message}');
     } on AuthException catch (e) {
       throw Exception('Auth update error: ${e.message}');
     } catch (e) {
-      print('Unexpected error in updateProfile: $e');
+      AppLogger.error('Unexpected error in updateProfile', e);
       throw Exception('Unexpected error during profile update: $e');
     }
   }

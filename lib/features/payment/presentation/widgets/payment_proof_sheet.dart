@@ -7,7 +7,7 @@ import '../../../../core/widgets/ios_components.dart';
 import '../../../../core/widgets/top_notification.dart';
 
 class PaymentProofSheet extends StatefulWidget {
-  final VoidCallback onConfirm;
+  final Future<void> Function() onConfirm;
 
   const PaymentProofSheet({super.key, required this.onConfirm});
 
@@ -19,6 +19,7 @@ class _PaymentProofSheetState extends State<PaymentProofSheet> {
   final TextEditingController _accountController = TextEditingController();
   File? _imageFile;
   final ImagePicker _picker = ImagePicker();
+  bool _isLoading = false;
 
   Future<void> _pickImage() async {
     try {
@@ -93,7 +94,7 @@ class _PaymentProofSheetState extends State<PaymentProofSheet> {
 
           // Image Upload Area
           GestureDetector(
-            onTap: _pickImage,
+            onTap: _isLoading ? null : _pickImage,
             child: Container(
               height: 160,
               decoration: BoxDecoration(
@@ -156,6 +157,7 @@ class _PaymentProofSheetState extends State<PaymentProofSheet> {
                 child: TextField(
                   controller: _accountController,
                   keyboardType: TextInputType.number,
+                  enabled: !_isLoading,
                   decoration: const InputDecoration(
                     hintText: '010xxxxxxxx',
                     border: InputBorder.none,
@@ -172,21 +174,41 @@ class _PaymentProofSheetState extends State<PaymentProofSheet> {
 
           // Confirm Button
           IOSButton(
-            text: 'تأكيد الطلب',
-            onPressed: () {
-              if (_imageFile == null) {
-                showTopNotification(context, 'من فضلك ارفع صورة التحويل');
-                return;
-              }
+            text: _isLoading ? 'جاري الحفظ...' : 'تأكيد الطلب',
+            onPressed: _isLoading
+                ? null
+                : () async {
+                    if (_imageFile == null) {
+                      showTopNotification(context, 'من فضلك ارفع صورة التحويل');
+                      return;
+                    }
 
-              if (_accountController.text.isEmpty) {
-                showTopNotification(context, 'من فضلك اكتب رقم المحفظة');
-                return;
-              }
+                    if (_accountController.text.isEmpty) {
+                      showTopNotification(context, 'من فضلك اكتب رقم المحفظة');
+                      return;
+                    }
 
-              Navigator.pop(context); // Close sheet
-              widget.onConfirm();
-            },
+                    setState(() {
+                      _isLoading = true;
+                    });
+
+                    try {
+                      // Call the onConfirm callback which will save the booking
+                      await widget.onConfirm();
+
+                      // Close sheet only if still mounted
+                      if (mounted) {
+                        Navigator.pop(context, true);
+                      }
+                    } catch (e) {
+                      if (mounted) {
+                        setState(() {
+                          _isLoading = false;
+                        });
+                      }
+                    }
+                  },
+            color: _isLoading ? AppTheme.dividerColor : AppTheme.primaryColor,
           ),
         ],
       ),

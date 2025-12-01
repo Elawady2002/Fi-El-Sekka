@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/logger.dart';
 import '../../../../core/widgets/custom_button.dart';
 import 'login_page.dart';
 
@@ -20,7 +21,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
   @override
   Widget build(BuildContext context) {
-    print('DEBUG: OnboardingPage build called');
+    AppLogger.debug('OnboardingPage build called');
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(

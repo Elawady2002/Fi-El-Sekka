@@ -18,6 +18,8 @@ abstract class BookingRepository {
     required String tripType,
     String? pickupStationId,
     String? dropoffStationId,
+    String? departureTime,
+    String? returnTime,
     required double totalPrice,
   });
 
@@ -35,6 +37,9 @@ abstract class BookingRepository {
     required String bookingId,
     required PaymentStatus paymentStatus,
   });
+
+  /// Get upcoming booking for the current user
+  Future<Either<Failure, BookingEntity?>> getUpcomingBooking();
 
   /// Stream of user bookings (real-time updates)
   Stream<List<BookingEntity>> watchUserBookings();

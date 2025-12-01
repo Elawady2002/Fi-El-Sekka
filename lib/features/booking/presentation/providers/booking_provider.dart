@@ -3,8 +3,48 @@ import '../../domain/entities/trip_type.dart';
 import '../../domain/entities/city_entity.dart';
 import '../../domain/entities/university_entity.dart';
 import '../../domain/entities/station_entity.dart';
+import '../../domain/entities/booking_entity.dart';
+import '../../domain/repositories/booking_repository.dart';
+import '../../data/repositories/booking_repository_impl.dart';
+import '../../data/datasources/booking_data_source.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 
 part 'booking_provider.g.dart';
+
+// Booking Repository Provider
+@riverpod
+BookingRepository bookingRepository(BookingRepositoryRef ref) {
+  final dataSource = BookingDataSourceImpl();
+  // Watch auth provider to ensure repository is rebuilt when auth state changes
+  final user = ref.watch(authProvider);
+
+  return BookingRepositoryImpl(dataSource, () {
+    if (user == null) throw Exception('User not authenticated');
+    return user.id;
+  });
+}
+
+// User Bookings Provider
+@riverpod
+Future<List<BookingEntity>> userBookings(UserBookingsRef ref) async {
+  final repository = ref.watch(bookingRepositoryProvider);
+  final result = await repository.getUserBookings();
+  return result.fold(
+    (failure) => throw Exception(failure.message),
+    (bookings) => bookings,
+  );
+}
+
+// Upcoming Booking Provider
+@riverpod
+Future<BookingEntity?> upcomingBooking(UpcomingBookingRef ref) async {
+  final repository = ref.watch(bookingRepositoryProvider);
+  final result = await repository.getUpcomingBooking();
+  return result.fold(
+    (failure) => throw Exception(failure.message),
+    (booking) => booking,
+  );
+}
 
 @riverpod
 class BookingState extends _$BookingState {
@@ -77,6 +117,36 @@ class BookingState extends _$BookingState {
   }
 
   double get totalPrice => state.tripType.price;
+
+  Future<String?> createBooking(BookingRepository repository) async {
+    if (!isBookingComplete) {
+      return 'يرجى إكمال جميع بيانات الحجز';
+    }
+
+    try {
+      // Generate a temporary UUID for schedule_id
+      // In a real app, this should come from the selected schedule
+      const scheduleId = '00000000-0000-0000-0000-000000000000';
+
+      final result = await repository.createBooking(
+        scheduleId: scheduleId,
+        bookingDate: state.selectedDate,
+        tripType: state.tripType.toDbValue(),
+        pickupStationId: state.selectedStation?.id,
+        dropoffStationId: state.selectedStation?.id,
+        departureTime: state.selectedDepartureTime,
+        returnTime: state.selectedReturnTime,
+        totalPrice: totalPrice,
+      );
+
+      return result.fold(
+        (failure) => failure.message,
+        (_) => null, // Success
+      );
+    } catch (e) {
+      return 'حدث خطأ أثناء الحجز: $e';
+    }
+  }
 }
 
 class BookingStateModel {

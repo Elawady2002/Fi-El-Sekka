@@ -1,22 +1,24 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/ios_components.dart';
 import '../../../tracking/presentation/pages/confirmation_page.dart';
+import '../../../booking/presentation/providers/booking_provider.dart';
 import '../widgets/payment_proof_sheet.dart';
 
-class PaymentPage extends StatefulWidget {
+class PaymentPage extends ConsumerStatefulWidget {
   final String planName;
   final String amount;
 
   const PaymentPage({super.key, required this.planName, required this.amount});
 
   @override
-  State<PaymentPage> createState() => _PaymentPageState();
+  ConsumerState<PaymentPage> createState() => _PaymentPageState();
 }
 
-class _PaymentPageState extends State<PaymentPage>
+class _PaymentPageState extends ConsumerState<PaymentPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
@@ -134,7 +136,7 @@ class _PaymentPageState extends State<PaymentPage>
                   fontWeight: FontWeight.w500,
                   fontSize: 15,
                 ),
-                tabs: [
+                tabs: const [
                   SizedBox(width: 120, child: Tab(text: 'InstaPay')),
                   SizedBox(width: 150, child: Tab(text: 'Vodafone Cash')),
                 ],
@@ -184,24 +186,59 @@ class _PaymentPageState extends State<PaymentPage>
               ),
               child: IOSButton(
                 text: 'الدفع',
-                onPressed: () {
-                  showModalBottomSheet(
+                onPressed: () async {
+                  final result = await showModalBottomSheet<bool>(
                     context: context,
                     isScrollControlled: true,
                     backgroundColor: Colors.transparent,
-                    builder: (context) => PaymentProofSheet(
-                      onConfirm: () {
-                        // Navigate to ConfirmationPage (Invoice)
-                        Navigator.pushAndRemoveUntil(
-                          context,
-                          CupertinoPageRoute(
-                            builder: (_) => const ConfirmationPage(),
-                          ),
-                          (route) => false,
+                    isDismissible: false,
+                    enableDrag: false,
+                    builder: (sheetContext) => PaymentProofSheet(
+                      onConfirm: () async {
+                        final bookingRepository = ref.read(
+                          bookingRepositoryProvider,
                         );
+                        final bookingNotifier = ref.read(
+                          bookingStateProvider.notifier,
+                        );
+
+                        // Create booking in database
+                        final error = await bookingNotifier.createBooking(
+                          bookingRepository,
+                        );
+
+                        if (error != null) {
+                          // Show error
+                          if (!mounted) return;
+                          if (!context.mounted) return;
+
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(error),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                          throw Exception(error); // Throw to stop the flow
+                        }
+
+                        // Success! Do not navigate here.
+                        // PaymentProofSheet will pop with true.
                       },
                     ),
                   );
+
+                  // Navigate to ConfirmationPage if payment was confirmed
+                  if (result == true) {
+                    if (!mounted) return;
+                    if (!context.mounted) return;
+
+                    Navigator.push(
+                      context,
+                      CupertinoPageRoute(
+                        builder: (_) => const ConfirmationPage(),
+                      ),
+                    );
+                  }
                 },
               ),
             ),

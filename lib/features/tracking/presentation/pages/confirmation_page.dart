@@ -50,6 +50,7 @@ class _ConfirmationPageState extends ConsumerState<ConfirmationPage>
 
     _controller.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
+        if (!mounted) return;
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (_) => const HomePage()),

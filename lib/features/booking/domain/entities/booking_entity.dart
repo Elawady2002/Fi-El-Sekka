@@ -42,6 +42,8 @@ class BookingEntity extends Equatable {
   final String tripType; // 'departure_only', 'return_only', 'round_trip'
   final String? pickupStationId;
   final String? dropoffStationId;
+  final String? departureTime; // e.g., 'AM 7:00'
+  final String? returnTime; // e.g., 'PM 3:00'
   final BookingStatus status;
   final PaymentStatus paymentStatus;
   final double totalPrice;
@@ -56,6 +58,8 @@ class BookingEntity extends Equatable {
     required this.tripType,
     this.pickupStationId,
     this.dropoffStationId,
+    this.departureTime,
+    this.returnTime,
     required this.status,
     required this.paymentStatus,
     required this.totalPrice,
@@ -72,6 +76,8 @@ class BookingEntity extends Equatable {
     tripType,
     pickupStationId,
     dropoffStationId,
+    departureTime,
+    returnTime,
     status,
     paymentStatus,
     totalPrice,

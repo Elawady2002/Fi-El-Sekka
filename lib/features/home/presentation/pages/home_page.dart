@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/logger.dart';
 import '../../../booking/presentation/pages/booking_page.dart';
 import '../../../../core/widgets/ios_components.dart';
 import '../../../../core/widgets/animated_progress_slider.dart';
@@ -12,6 +13,7 @@ import '../../../booking/domain/entities/city_entity.dart';
 import '../../../booking/domain/entities/university_entity.dart';
 import '../../../booking/domain/entities/station_entity.dart';
 import '../../../booking/presentation/providers/booking_provider.dart';
+import '../../../booking/domain/entities/booking_entity.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 
 class HomePage extends ConsumerStatefulWidget {
@@ -24,7 +26,7 @@ class HomePage extends ConsumerStatefulWidget {
 class _HomePageState extends ConsumerState<HomePage> {
   @override
   Widget build(BuildContext context) {
-    print('DEBUG: HomePage build called');
+    AppLogger.debug('HomePage build called');
     // Get screen size for responsive layout
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
@@ -178,177 +180,245 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   Widget _buildUpcomingTripCard() {
-    // Mock data for now - in real app, check if booking exists
-    // Using DateTime.now() to prevent 'dead code' warning from static analysis
-    bool hasBooking = DateTime.now().year > 2000;
+    final upcomingBookingAsync = ref.watch(upcomingBookingProvider);
 
-    if (!hasBooking) {
-      return Container(
+    return upcomingBookingAsync.when(
+      data: (booking) {
+        if (booking == null) {
+          // Empty state - no bookings
+          return Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.backgroundColor,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    CupertinoIcons.ticket,
+                    color: AppTheme.textSecondary,
+                    size: 32,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'لا توجد رحلات محجوزة',
+                  style: AppTheme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'احجز رحلتك الجاية دلوقتي عشان تضمن مكانك',
+                  textAlign: TextAlign.center,
+                  style: AppTheme.textTheme.bodyMedium?.copyWith(
+                    color: AppTheme.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        // Has booking - display trip card
+        return Container(
+          decoration: BoxDecoration(
+            color: Colors.black,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.2),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Stack(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryColor,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            booking.status == BookingStatus.confirmed
+                                ? 'مؤكد'
+                                : 'قريباً',
+                            style: AppTheme.textTheme.labelMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
+                          ),
+                        ),
+                        Icon(
+                          CupertinoIcons.arrow_right_circle_fill,
+                          color: Colors.white.withValues(alpha: 0.5),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'التاريخ',
+                                style: AppTheme.textTheme.bodySmall?.copyWith(
+                                  color: Colors.white70,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '${booking.bookingDate.day} ${_getMonthName(booking.bookingDate.month)}',
+                                style: AppTheme.textTheme.titleLarge?.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'نوع الرحلة',
+                                style: AppTheme.textTheme.bodySmall?.copyWith(
+                                  color: Colors.white70,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                _getTripTypeLabel(booking.tripType),
+                                style: AppTheme.textTheme.titleLarge?.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    const Divider(color: Colors.white24),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        const Icon(
+                          CupertinoIcons.money_dollar_circle,
+                          color: AppTheme.primaryColor,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'السعر: ${booking.totalPrice.toStringAsFixed(0)} ج.م',
+                            style: AppTheme.textTheme.bodyMedium?.copyWith(
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+      loading: () => Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
-            ),
-          ],
+        ),
+        child: const Center(child: CircularProgressIndicator()),
+      ),
+      error: (error, stack) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
         ),
         child: Column(
           children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppTheme.backgroundColor,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                CupertinoIcons.calendar_badge_plus,
-                color: AppTheme.textSecondary,
-                size: 32,
-              ),
+            Icon(
+              CupertinoIcons.exclamationmark_triangle,
+              color: AppTheme.errorColor,
+              size: 32,
             ),
             const SizedBox(height: 16),
             Text(
-              'مفيش رحلات قادمة',
+              'حدث خطأ في تحميل الرحلات',
               style: AppTheme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              'احجز رحلتك الجاية دلوقتي عشان تضمن مكانك',
-              textAlign: TextAlign.center,
-              style: AppTheme.textTheme.bodyMedium?.copyWith(
-                color: AppTheme.textSecondary,
-              ),
-            ),
           ],
         ),
-      );
-    }
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.black,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppTheme.primaryColor,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        'قريباً',
-                        style: AppTheme.textTheme.labelMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                        ),
-                      ),
-                    ),
-                    Icon(
-                      CupertinoIcons.arrow_right_circle_fill,
-                      color: Colors.white.withValues(alpha: 0.5),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'التاريخ',
-                            style: AppTheme.textTheme.bodySmall?.copyWith(
-                              color: Colors.white70,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '27 نوفمبر',
-                            style: AppTheme.textTheme.titleLarge?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'الوقت',
-                            style: AppTheme.textTheme.bodySmall?.copyWith(
-                              color: Colors.white70,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '07:30 AM',
-                            style: AppTheme.textTheme.titleLarge?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                const Divider(color: Colors.white24),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    const Icon(
-                      CupertinoIcons.location_fill,
-                      color: AppTheme.primaryColor,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'محطة الركوب: بوابة 1 (B1)',
-                        style: AppTheme.textTheme.bodyMedium?.copyWith(
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
+  }
+
+  String _getMonthName(int month) {
+    const months = [
+      'يناير',
+      'فبراير',
+      'مارس',
+      'أبريل',
+      'مايو',
+      'يونيو',
+      'يوليو',
+      'أغسطس',
+      'سبتمبر',
+      'أكتوبر',
+      'نوفمبر',
+      'ديسمبر',
+    ];
+    return months[month - 1];
+  }
+
+  String _getTripTypeLabel(String tripType) {
+    switch (tripType) {
+      case 'departure_only':
+        return 'ذهاب فقط';
+      case 'return_only':
+        return 'عودة فقط';
+      case 'round_trip':
+        return 'ذهاب وعودة';
+      default:
+        return tripType;
+    }
   }
 
   Widget _buildRouteInfoCard() {

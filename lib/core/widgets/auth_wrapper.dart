@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/utils/logger.dart';
 import '../../features/auth/presentation/providers/auth_provider.dart';
 import '../../features/auth/presentation/pages/onboarding_page.dart';
 import '../../features/home/presentation/pages/home_page.dart';
@@ -30,10 +31,12 @@ class _AuthWrapperState extends ConsumerState<AuthWrapper> {
 
   @override
   Widget build(BuildContext context) {
-    print('DEBUG: OnboardingPage build called'); // Added print statement
-    print('DEBUG: AuthWrapper build called. _isInitialized: $_isInitialized');
+    AppLogger.debug('OnboardingPage build called');
+    AppLogger.debug(
+      'AuthWrapper build called. _isInitialized: $_isInitialized',
+    );
     final authState = ref.watch(authProvider);
-    print('DEBUG: AuthWrapper authState: $authState');
+    AppLogger.debug('AuthWrapper authState: $authState');
 
     // Show loading screen while initializing
     if (!_isInitialized) {
