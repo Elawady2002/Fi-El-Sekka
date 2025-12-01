@@ -1,9 +1,12 @@
+import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/ios_components.dart';
+import '../../../../core/providers/storage_provider.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../tracking/presentation/pages/confirmation_page.dart';
 import '../../../booking/presentation/providers/booking_provider.dart';
 import '../widgets/payment_proof_sheet.dart';
@@ -201,15 +204,40 @@ class _PaymentPageState extends ConsumerState<PaymentPage>
                         final bookingNotifier = ref.read(
                           bookingStateProvider.notifier,
                         );
+                        final storageService = ref.read(storageServiceProvider);
+                        final user = ref.read(authProvider);
+
+                        if (user == null) {
+                          throw Exception('المستخدم غير مسجل الدخول');
+                        }
+
+                        String? imageUrl;
+
+                        // Upload image to Supabase Storage if provided
+                        if (imagePath != null && imagePath.isNotEmpty) {
+                          print(
+                            '📤 Uploading payment proof to Supabase Storage...',
+                          );
+                          try {
+                            imageUrl = await storageService.uploadPaymentProof(
+                              File(imagePath),
+                              user.id,
+                            );
+                            print('✅ Image uploaded successfully: $imageUrl');
+                          } catch (e) {
+                            print('❌ Failed to upload image: $e');
+                            throw Exception('فشل رفع صورة الإثبات: $e');
+                          }
+                        }
 
                         // Create booking in database
                         print('📝 Creating booking with payment details...');
-                        print('   Image path: $imagePath');
+                        print('   Image URL: $imageUrl');
                         print('   Transfer number: $accountNumber');
 
                         final error = await bookingNotifier.createBooking(
                           bookingRepository,
-                          paymentProofImage: imagePath,
+                          paymentProofImage: imageUrl,
                           transferNumber: accountNumber,
                         );
 

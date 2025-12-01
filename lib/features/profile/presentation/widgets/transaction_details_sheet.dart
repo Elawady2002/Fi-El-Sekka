@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -184,53 +183,28 @@ class TransactionDetailsSheet extends StatelessWidget {
     );
   }
 
-  Widget _buildImage(String path) {
-    print('🖼️ Loading payment proof image from: $path');
+  Widget _buildImage(String imageUrl) {
+    print('🖼️ Loading payment proof image from: $imageUrl');
 
-    if (path.startsWith('http')) {
-      return Image.network(
-        path,
-        fit: BoxFit.cover,
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return const Center(child: CircularProgressIndicator());
-        },
-        errorBuilder: (_, error, __) {
-          print('❌ Error loading network image: $error');
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.broken_image, color: Colors.grey, size: 48),
-                const SizedBox(height: 8),
-                Text(
-                  'فشل تحميل الصورة',
-                  style: AppTheme.textTheme.bodySmall?.copyWith(
-                    color: Colors.grey,
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      );
-    } else {
-      final file = File(path);
-      print('📁 File exists: ${file.existsSync()}');
-
-      if (!file.existsSync()) {
+    return Image.network(
+      imageUrl,
+      fit: BoxFit.cover,
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) return child;
+        return const Center(
+          child: CircularProgressIndicator(color: AppTheme.primaryColor),
+        );
+      },
+      errorBuilder: (_, error, __) {
+        print('❌ Error loading image: $error');
         return Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
-                Icons.image_not_supported,
-                color: Colors.grey,
-                size: 48,
-              ),
+              const Icon(Icons.broken_image, color: Colors.grey, size: 48),
               const SizedBox(height: 8),
               Text(
-                'الصورة غير موجودة',
+                'فشل تحميل الصورة',
                 style: AppTheme.textTheme.bodySmall?.copyWith(
                   color: Colors.grey,
                 ),
@@ -238,31 +212,8 @@ class TransactionDetailsSheet extends StatelessWidget {
             ],
           ),
         );
-      }
-
-      return Image.file(
-        file,
-        fit: BoxFit.cover,
-        errorBuilder: (_, error, __) {
-          print('❌ Error loading file image: $error');
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.broken_image, color: Colors.grey, size: 48),
-                const SizedBox(height: 8),
-                Text(
-                  'فشل تحميل الصورة',
-                  style: AppTheme.textTheme.bodySmall?.copyWith(
-                    color: Colors.grey,
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      );
-    }
+      },
+    );
   }
 
   String _formatDate(DateTime date) {
