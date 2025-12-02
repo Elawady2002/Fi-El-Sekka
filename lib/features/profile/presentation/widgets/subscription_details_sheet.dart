@@ -1,13 +1,12 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../../core/utils/logger.dart';
-import '../../../booking/domain/entities/booking_entity.dart';
+import '../../../subscription/domain/entities/subscription_entity.dart';
 
-class TransactionDetailsSheet extends StatelessWidget {
-  final BookingEntity booking;
+class SubscriptionDetailsSheet extends StatelessWidget {
+  final SubscriptionEntity subscription;
 
-  const TransactionDetailsSheet({super.key, required this.booking});
+  const SubscriptionDetailsSheet({super.key, required this.subscription});
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +35,7 @@ class TransactionDetailsSheet extends StatelessWidget {
 
           // Header
           Text(
-            'تفاصيل المعاملة',
+            'تفاصيل الاشتراك',
             textAlign: TextAlign.center,
             style: AppTheme.textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.bold,
@@ -45,23 +44,28 @@ class TransactionDetailsSheet extends StatelessWidget {
           const SizedBox(height: 32),
 
           // Status Badge
-          Center(child: _buildStatusBadge(booking.status)),
+          Center(child: _buildStatusBadge(subscription.status)),
           const SizedBox(height: 24),
 
           // Details
-          _buildDetailRow('التاريخ', _formatDate(booking.bookingDate)),
-          _buildDetailRow('نوع الرحلة', _getTripTypeLabel(booking.tripType)),
-          _buildDetailRow('المبلغ', '${booking.totalPrice} ج.م'),
+          _buildDetailRow('التاريخ', _formatDate(subscription.createdAt)),
+          _buildDetailRow('نوع الباقة', subscription.planType.displayName),
+          _buildDetailRow(
+            'المبلغ',
+            '${subscription.amount.toStringAsFixed(0)} ج.م',
+          ),
+          _buildDetailRow('تاريخ البداية', _formatDate(subscription.startDate)),
+          _buildDetailRow('تاريخ النهاية', _formatDate(subscription.endDate)),
 
-          if (booking.transferNumber != null &&
-              booking.transferNumber!.isNotEmpty)
-            _buildDetailRow('رقم التحويل', booking.transferNumber!),
+          if (subscription.transferNumber != null &&
+              subscription.transferNumber!.isNotEmpty)
+            _buildDetailRow('رقم التحويل', subscription.transferNumber!),
 
           const SizedBox(height: 24),
 
           // Payment Proof Image
-          if (booking.paymentProofImage != null &&
-              booking.paymentProofImage!.isNotEmpty) ...[
+          if (subscription.paymentProofUrl != null &&
+              subscription.paymentProofUrl!.isNotEmpty) ...[
             Text(
               'صورة الإثبات',
               style: AppTheme.textTheme.titleMedium?.copyWith(
@@ -77,7 +81,7 @@ class TransactionDetailsSheet extends StatelessWidget {
                 border: Border.all(color: AppTheme.dividerColor),
               ),
               clipBehavior: Clip.antiAlias,
-              child: _buildImage(booking.paymentProofImage!),
+              child: _buildImage(subscription.paymentProofUrl!),
             ),
             const SizedBox(height: 24),
           ],
@@ -131,31 +135,26 @@ class TransactionDetailsSheet extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusBadge(BookingStatus status) {
+  Widget _buildStatusBadge(SubscriptionStatus status) {
     Color color;
     String label;
     IconData icon;
 
     switch (status) {
-      case BookingStatus.confirmed:
+      case SubscriptionStatus.active:
         color = AppTheme.successColor;
-        label = 'تمت الموافقة';
+        label = 'نشط';
         icon = CupertinoIcons.checkmark_circle_fill;
         break;
-      case BookingStatus.pending:
+      case SubscriptionStatus.pending:
         color = Colors.orange;
         label = 'قيد المراجعة';
         icon = CupertinoIcons.time_solid;
         break;
-      case BookingStatus.cancelled:
-        color = AppTheme.errorColor;
-        label = 'مرفوضة / ملغية';
-        icon = CupertinoIcons.xmark_circle_fill;
-        break;
-      case BookingStatus.completed:
+      case SubscriptionStatus.expired:
         color = Colors.grey;
-        label = 'مكتملة';
-        icon = CupertinoIcons.check_mark_circled_solid;
+        label = 'منتهي';
+        icon = CupertinoIcons.xmark_circle_fill;
         break;
     }
 
@@ -185,8 +184,6 @@ class TransactionDetailsSheet extends StatelessWidget {
   }
 
   Widget _buildImage(String imageUrl) {
-    AppLogger.info('🖼️ Loading payment proof image from: $imageUrl');
-
     return Image.network(
       imageUrl,
       fit: BoxFit.cover,
@@ -197,7 +194,6 @@ class TransactionDetailsSheet extends StatelessWidget {
         );
       },
       errorBuilder: (_, error, __) {
-        AppLogger.error('❌ Error loading image: $error');
         return Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -219,18 +215,5 @@ class TransactionDetailsSheet extends StatelessWidget {
 
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year}';
-  }
-
-  String _getTripTypeLabel(String tripType) {
-    switch (tripType) {
-      case 'departure_only':
-        return 'ذهاب فقط';
-      case 'return_only':
-        return 'عودة فقط';
-      case 'round_trip':
-        return 'ذهاب وعودة';
-      default:
-        return tripType;
-    }
   }
 }

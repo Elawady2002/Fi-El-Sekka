@@ -4,18 +4,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/logger.dart';
 import '../../../../core/widgets/ios_components.dart';
 import '../../../../core/providers/storage_provider.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../tracking/presentation/pages/confirmation_page.dart';
 import '../../../booking/presentation/providers/booking_provider.dart';
+import '../../../subscription/presentation/providers/subscription_provider.dart';
+import '../../../subscription/domain/entities/subscription_entity.dart';
 import '../widgets/payment_proof_sheet.dart';
 
 class PaymentPage extends ConsumerStatefulWidget {
   final String planName;
   final String amount;
+  final bool isSubscription;
 
-  const PaymentPage({super.key, required this.planName, required this.amount});
+  const PaymentPage({
+    super.key,
+    required this.planName,
+    required this.amount,
+    this.isSubscription = false,
+  });
 
   @override
   ConsumerState<PaymentPage> createState() => _PaymentPageState();
@@ -87,7 +96,9 @@ class _PaymentPageState extends ConsumerState<PaymentPage>
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'اشتراك باقات الطلاب',
+                        widget.isSubscription
+                            ? 'اشتراك باقات الطلاب'
+                            : 'حجز رحلة',
                         style: AppTheme.textTheme.bodySmall?.copyWith(
                           color: AppTheme.textSecondary,
                         ),
@@ -198,12 +209,6 @@ class _PaymentPageState extends ConsumerState<PaymentPage>
                     enableDrag: false,
                     builder: (sheetContext) => PaymentProofSheet(
                       onConfirm: (imagePath, accountNumber) async {
-                        final bookingRepository = ref.read(
-                          bookingRepositoryProvider,
-                        );
-                        final bookingNotifier = ref.read(
-                          bookingStateProvider.notifier,
-                        );
                         final storageService = ref.read(storageServiceProvider);
                         final user = ref.read(authProvider);
 
@@ -215,7 +220,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage>
 
                         // Upload image to Supabase Storage if provided
                         if (imagePath != null && imagePath.isNotEmpty) {
-                          print(
+                          AppLogger.info(
                             '📤 Uploading payment proof to Supabase Storage...',
                           );
                           try {
@@ -223,41 +228,104 @@ class _PaymentPageState extends ConsumerState<PaymentPage>
                               File(imagePath),
                               user.id,
                             );
-                            print('✅ Image uploaded successfully: $imageUrl');
+                            AppLogger.info(
+                              '✅ Image uploaded successfully: $imageUrl',
+                            );
                           } catch (e) {
-                            print('❌ Failed to upload image: $e');
+                            AppLogger.error('❌ Failed to upload image: $e');
                             throw Exception('فشل رفع صورة الإثبات: $e');
                           }
                         }
 
-                        // Create booking in database
-                        print('📝 Creating booking with payment details...');
-                        print('   Image URL: $imageUrl');
-                        print('   Transfer number: $accountNumber');
-
-                        final error = await bookingNotifier.createBooking(
-                          bookingRepository,
-                          paymentProofImage: imageUrl,
-                          transferNumber: accountNumber,
-                        );
-
-                        if (error != null) {
-                          // Show error
-                          print('❌ Booking creation failed: $error');
-                          if (!mounted) return;
-                          if (!context.mounted) return;
-
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(error),
-                              backgroundColor: Colors.red,
-                              duration: const Duration(seconds: 5),
-                            ),
+                        // Handle subscription or booking based on type
+                        if (widget.isSubscription) {
+                          // Create subscription
+                          AppLogger.info('📝 Creating subscription...');
+                          final subscriptionRepository = ref.read(
+                            subscriptionRepositoryProvider,
                           );
-                          throw Exception(error); // Throw to stop the flow
+
+                          // Parse plan type from plan name
+                          SubscriptionPlanType planType;
+                          if (widget.planName.contains('شهر')) {
+                            planType = SubscriptionPlanType.monthly;
+                          } else {
+                            planType = SubscriptionPlanType.semester;
+                          }
+
+                          final result = await subscriptionRepository
+                              .createSubscription(
+                                userId: user.id,
+                                planType: planType,
+                                paymentProofUrl: imageUrl,
+                                transferNumber: accountNumber,
+                              );
+
+                          result.fold(
+                            (failure) {
+                              AppLogger.error(
+                                '❌ Subscription creation failed: ${failure.message}',
+                              );
+                              if (!mounted) return;
+                              if (!context.mounted) return;
+
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(failure.message),
+                                  backgroundColor: Colors.red,
+                                  duration: const Duration(seconds: 5),
+                                ),
+                              );
+                              throw Exception(failure.message);
+                            },
+                            (_) {
+                              AppLogger.info(
+                                '✅ Subscription created successfully!',
+                              );
+                            },
+                          );
+                        } else {
+                          // Create booking in database
+                          AppLogger.info(
+                            '📝 Creating booking with payment details...',
+                          );
+                          AppLogger.info('   Image URL: $imageUrl');
+                          AppLogger.info('   Transfer number: $accountNumber');
+
+                          final bookingRepository = ref.read(
+                            bookingRepositoryProvider,
+                          );
+                          final bookingNotifier = ref.read(
+                            bookingStateProvider.notifier,
+                          );
+
+                          final error = await bookingNotifier.createBooking(
+                            bookingRepository,
+                            paymentProofImage: imageUrl,
+                            transferNumber: accountNumber,
+                          );
+
+                          if (error != null) {
+                            // Show error
+                            AppLogger.error(
+                              '❌ Booking creation failed: $error',
+                            );
+                            if (!mounted) return;
+                            if (!context.mounted) return;
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(error),
+                                backgroundColor: Colors.red,
+                                duration: const Duration(seconds: 5),
+                              ),
+                            );
+                            throw Exception(error); // Throw to stop the flow
+                          }
+
+                          AppLogger.info('✅ Booking created successfully!');
                         }
 
-                        print('✅ Booking created successfully!');
                         // Success! Do not navigate here.
                         // PaymentProofSheet will pop with true.
                       },
@@ -265,9 +333,9 @@ class _PaymentPageState extends ConsumerState<PaymentPage>
                   );
 
                   // Navigate to ConfirmationPage if payment was confirmed
-                  print('📱 Payment sheet result: $result');
+                  AppLogger.info('📱 Payment sheet result: $result');
                   if (result == true) {
-                    print('✅ Navigating to confirmation page...');
+                    AppLogger.info('✅ Navigating to confirmation page...');
                     if (!mounted) return;
                     if (!context.mounted) return;
 
@@ -278,7 +346,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage>
                       ),
                     );
                   } else {
-                    print('❌ Payment was not confirmed');
+                    AppLogger.warning('❌ Payment was not confirmed');
                   }
                 },
               ),

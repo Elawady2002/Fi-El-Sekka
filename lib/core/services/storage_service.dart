@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:path/path.dart' as path;
+import '../utils/logger.dart';
 
 /// Service for handling file uploads to Supabase Storage
 class StorageService {
@@ -23,28 +24,28 @@ class StorageService {
       final extension = path.extension(imageFile.path);
       final fileName = '$userId/$timestamp$extension';
 
-      print('📤 Uploading payment proof: $fileName');
+      AppLogger.info('📤 Uploading payment proof: $fileName');
 
       // Upload file to Supabase Storage
       final uploadPath = await _client.storage
           .from(_bucketName)
           .upload(fileName, imageFile);
 
-      print('✅ Upload successful: $uploadPath');
+      AppLogger.info('✅ Upload successful: $uploadPath');
 
       // Get public URL
       final publicUrl = _client.storage
           .from(_bucketName)
           .getPublicUrl(fileName);
 
-      print('🔗 Public URL: $publicUrl');
+      AppLogger.info('🔗 Public URL: $publicUrl');
 
       return publicUrl;
     } on StorageException catch (e) {
-      print('❌ Storage error: ${e.message}');
+      AppLogger.error('❌ Storage error: ${e.message}');
       throw Exception('فشل رفع الصورة: ${e.message}');
     } catch (e) {
-      print('❌ Unexpected error uploading image: $e');
+      AppLogger.error('❌ Unexpected error uploading image: $e');
       throw Exception('حدث خطأ أثناء رفع الصورة');
     }
   }
@@ -66,16 +67,16 @@ class StorageService {
 
       final filePath = pathSegments.sublist(bucketIndex + 1).join('/');
 
-      print('🗑️ Deleting payment proof: $filePath');
+      AppLogger.info('🗑️ Deleting payment proof: $filePath');
 
       await _client.storage.from(_bucketName).remove([filePath]);
 
-      print('✅ Image deleted successfully');
+      AppLogger.info('✅ Image deleted successfully');
     } on StorageException catch (e) {
-      print('❌ Storage error: ${e.message}');
+      AppLogger.error('❌ Storage error: ${e.message}');
       throw Exception('فشل حذف الصورة: ${e.message}');
     } catch (e) {
-      print('❌ Unexpected error deleting image: $e');
+      AppLogger.error('❌ Unexpected error deleting image: $e');
       throw Exception('حدث خطأ أثناء حذف الصورة');
     }
   }

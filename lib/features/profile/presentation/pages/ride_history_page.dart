@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../booking/presentation/providers/booking_provider.dart';
 import '../../../booking/domain/entities/booking_entity.dart';
+import '../../../subscription/presentation/providers/subscription_provider.dart';
+import '../../../subscription/domain/entities/subscription_entity.dart';
 
 class RideHistoryPage extends ConsumerStatefulWidget {
   const RideHistoryPage({super.key});
@@ -19,7 +21,7 @@ class _RideHistoryPageState extends ConsumerState<RideHistoryPage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -57,12 +59,17 @@ class _RideHistoryPageState extends ConsumerState<RideHistoryPage>
           tabs: const [
             Tab(text: 'القادمة'),
             Tab(text: 'السابقة'),
+            Tab(text: 'الاشتراكات'),
           ],
         ),
       ),
       body: TabBarView(
         controller: _tabController,
-        children: [_buildUpcomingRides(), _buildPastRides()],
+        children: [
+          _buildUpcomingRides(),
+          _buildPastRides(),
+          _buildSubscriptions(),
+        ],
       ),
     );
   }
@@ -130,6 +137,106 @@ class _RideHistoryPageState extends ConsumerState<RideHistoryPage>
       },
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, stack) => _buildErrorState(),
+    );
+  }
+
+  Widget _buildSubscriptions() {
+    final subscriptionsAsync = ref.watch(userSubscriptionsProvider);
+
+    return subscriptionsAsync.when(
+      data: (subscriptions) {
+        if (subscriptions.isEmpty) {
+          return _buildEmptyState('لا توجد اشتراكات');
+        }
+
+        return ListView.separated(
+          padding: const EdgeInsets.all(20),
+          itemCount: subscriptions.length,
+          separatorBuilder: (_, _) => const SizedBox(height: 16),
+          itemBuilder: (context, index) {
+            final subscription = subscriptions[index];
+            return _buildSubscriptionCard(subscription);
+          },
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stack) => _buildErrorState(),
+    );
+  }
+
+  Widget _buildSubscriptionCard(SubscriptionEntity subscription) {
+    final statusInfo = _getSubscriptionStatusInfo(subscription.status);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      subscription.planType.displayName,
+                      style: AppTheme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'تاريخ البدء: ${subscription.startDate.day}/${subscription.startDate.month}/${subscription.startDate.year}',
+                      style: AppTheme.textTheme.bodySmall?.copyWith(
+                        color: AppTheme.textSecondary,
+                      ),
+                    ),
+                    Text(
+                      'تاريخ الانتهاء: ${subscription.endDate.day}/${subscription.endDate.month}/${subscription.endDate.year}',
+                      style: AppTheme.textTheme.bodySmall?.copyWith(
+                        color: AppTheme.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '${subscription.amount.toStringAsFixed(0)} ج.م',
+                    style: AppTheme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.primaryDark,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: statusInfo['color'].withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      statusInfo['label'],
+                      style: AppTheme.textTheme.bodySmall?.copyWith(
+                        color: statusInfo['color'],
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -266,6 +373,17 @@ class _RideHistoryPageState extends ConsumerState<RideHistoryPage>
         return 'ذهاب وعودة';
       default:
         return tripType;
+    }
+  }
+
+  Map<String, dynamic> _getSubscriptionStatusInfo(SubscriptionStatus status) {
+    switch (status) {
+      case SubscriptionStatus.active:
+        return {'label': 'نشط', 'color': AppTheme.successColor};
+      case SubscriptionStatus.pending:
+        return {'label': 'قيد المراجعة', 'color': Colors.orange};
+      case SubscriptionStatus.expired:
+        return {'label': 'منتهي', 'color': Colors.grey};
     }
   }
 }

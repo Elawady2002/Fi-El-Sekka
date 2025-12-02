@@ -28,6 +28,10 @@ class UserEntity extends Equatable {
   final String? avatarUrl;
   final bool isVerified;
   final DateTime createdAt;
+  final String? subscriptionType;
+  final DateTime? subscriptionStartDate;
+  final DateTime? subscriptionEndDate;
+  final String? subscriptionStatus;
 
   const UserEntity({
     required this.id,
@@ -40,6 +44,10 @@ class UserEntity extends Equatable {
     this.avatarUrl,
     required this.isVerified,
     required this.createdAt,
+    this.subscriptionType,
+    this.subscriptionStartDate,
+    this.subscriptionEndDate,
+    this.subscriptionStatus,
   });
 
   @override
@@ -54,6 +62,10 @@ class UserEntity extends Equatable {
     avatarUrl,
     isVerified,
     createdAt,
+    subscriptionType,
+    subscriptionStartDate,
+    subscriptionEndDate,
+    subscriptionStatus,
   ];
 
   /// Check if user is a student
@@ -64,6 +76,19 @@ class UserEntity extends Equatable {
 
   /// Check if user is an admin
   bool get isAdmin => userType == UserType.admin;
+
+  /// Check if user has an active subscription
+  bool get hasActiveSubscription {
+    if (subscriptionStatus != 'active') return false;
+    if (subscriptionEndDate == null) return false;
+    return subscriptionEndDate!.isAfter(DateTime.now());
+  }
+
+  /// Check if subscription is expired
+  bool get isSubscriptionExpired {
+    if (subscriptionEndDate == null) return false;
+    return subscriptionEndDate!.isBefore(DateTime.now());
+  }
 
   /// Copy with method for immutability
   UserEntity copyWith({
@@ -77,6 +102,10 @@ class UserEntity extends Equatable {
     String? avatarUrl,
     bool? isVerified,
     DateTime? createdAt,
+    String? subscriptionType,
+    DateTime? subscriptionStartDate,
+    DateTime? subscriptionEndDate,
+    String? subscriptionStatus,
   }) {
     return UserEntity(
       id: id ?? this.id,
@@ -89,6 +118,11 @@ class UserEntity extends Equatable {
       avatarUrl: avatarUrl ?? this.avatarUrl,
       isVerified: isVerified ?? this.isVerified,
       createdAt: createdAt ?? this.createdAt,
+      subscriptionType: subscriptionType ?? this.subscriptionType,
+      subscriptionStartDate:
+          subscriptionStartDate ?? this.subscriptionStartDate,
+      subscriptionEndDate: subscriptionEndDate ?? this.subscriptionEndDate,
+      subscriptionStatus: subscriptionStatus ?? this.subscriptionStatus,
     );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/config/supabase_config.dart';
+import '../../../../core/utils/logger.dart';
 import '../models/booking_model.dart';
 
 abstract class BookingDataSource {
@@ -66,13 +67,13 @@ class BookingDataSourceImpl implements BookingDataSource {
       return BookingModel.fromJson(response);
     } on PostgrestException catch (e) {
       // Log detailed error for debugging
-      print('❌ Database error creating booking:');
-      print('   Code: ${e.code}');
-      print('   Message: ${e.message}');
-      print('   Details: ${e.details}');
+      AppLogger.error('❌ Database error creating booking:');
+      AppLogger.error('   Code: ${e.code}');
+      AppLogger.error('   Message: ${e.message}');
+      AppLogger.error('   Details: ${e.details}');
       throw Exception('Database error: ${e.message}');
     } catch (e) {
-      print('❌ Unexpected error creating booking: $e');
+      AppLogger.error('❌ Unexpected error creating booking: $e');
       throw Exception('Unexpected error during booking creation: $e');
     }
   }
@@ -118,7 +119,7 @@ class BookingDataSourceImpl implements BookingDataSource {
           .map((e) => BookingModel.fromJson(e))
           .toList();
 
-      print('📋 Found ${bookings.length} upcoming bookings');
+      AppLogger.info('📋 Found ${bookings.length} upcoming bookings');
 
       // Filter and sort by date + time
       final upcomingBookings = bookings.where((booking) {
@@ -128,11 +129,11 @@ class BookingDataSourceImpl implements BookingDataSource {
           booking.departureTime,
         );
 
-        print('🔍 Checking booking:');
-        print('   Date: ${booking.bookingDate}');
-        print('   Time: ${booking.departureTime}');
-        print('   Parsed DateTime: $bookingDateTime');
-        print('   Is after now? ${bookingDateTime?.isAfter(now)}');
+        AppLogger.info('🔍 Checking booking:');
+        AppLogger.info('   Date: ${booking.bookingDate}');
+        AppLogger.info('   Time: ${booking.departureTime}');
+        AppLogger.info('   Parsed DateTime: $bookingDateTime');
+        AppLogger.info('   Is after now? ${bookingDateTime?.isAfter(now)}');
 
         // If we can't parse the time, include it (fallback)
         if (bookingDateTime == null) {
@@ -146,7 +147,7 @@ class BookingDataSourceImpl implements BookingDataSource {
         return bookingDateTime.isAfter(now);
       }).toList();
 
-      print('✅ ${upcomingBookings.length} bookings are upcoming');
+      AppLogger.info('✅ ${upcomingBookings.length} bookings are upcoming');
 
       if (upcomingBookings.isEmpty) {
         return null;
@@ -157,9 +158,9 @@ class BookingDataSourceImpl implements BookingDataSource {
         final aDateTime = _parseBookingDateTime(a.bookingDate, a.departureTime);
         final bDateTime = _parseBookingDateTime(b.bookingDate, b.departureTime);
 
-        print('🔀 Comparing:');
-        print('   A: ${a.departureTime} -> $aDateTime');
-        print('   B: ${b.departureTime} -> $bDateTime');
+        AppLogger.info('🔀 Comparing:');
+        AppLogger.info('   A: ${a.departureTime} -> $aDateTime');
+        AppLogger.info('   B: ${b.departureTime} -> $bDateTime');
 
         // If we can't parse times, fallback to date comparison
         if (aDateTime == null || bDateTime == null) {
@@ -167,11 +168,11 @@ class BookingDataSourceImpl implements BookingDataSource {
         }
 
         final comparison = aDateTime.compareTo(bDateTime);
-        print('   Result: $comparison');
+        AppLogger.info('   Result: $comparison');
         return comparison;
       });
 
-      print(
+      AppLogger.info(
         '🎯 Selected booking: ${upcomingBookings.first.departureTime} on ${upcomingBookings.first.bookingDate}',
       );
       return upcomingBookings.first;
@@ -200,7 +201,7 @@ class BookingDataSourceImpl implements BookingDataSource {
 
       return DateTime(date.year, date.month, date.day, hour, minute, second);
     } catch (e) {
-      print('⚠️ Could not parse time: $timeString - Error: $e');
+      AppLogger.warning('⚠️ Could not parse time: $timeString - Error: $e');
       return date;
     }
   }

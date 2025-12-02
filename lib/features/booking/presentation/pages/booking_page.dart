@@ -74,6 +74,10 @@ class _BookingPageState extends ConsumerState<BookingPage> {
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 children: [
+                  // Student Packages Button
+                  _buildStudentPackagesButton(),
+                  const SizedBox(height: 24),
+
                   // Same-day booking warning - AT THE TOP
                   if (!bookingNotifier.isSameDayBookingAllowed) ...[
                     Container(
@@ -163,9 +167,6 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                     ),
                     const SizedBox(height: 32),
                   ],
-
-                  // Student Packages Button
-                  _buildStudentPackagesButton(),
 
                   const SizedBox(height: 100),
                 ],

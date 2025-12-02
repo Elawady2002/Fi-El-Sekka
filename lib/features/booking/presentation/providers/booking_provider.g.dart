@@ -53,7 +53,7 @@ final upcomingBookingProvider =
 );
 
 typedef UpcomingBookingRef = AutoDisposeFutureProviderRef<BookingEntity?>;
-String _$bookingStateHash() => r'8c20c0eced82b7291ec835f6cb04225c7a3a532a';
+String _$bookingStateHash() => r'83d2ec50fa269400f4b66be8421fd27a0b03d1c0';
 
 /// See also [BookingState].
 @ProviderFor(BookingState)

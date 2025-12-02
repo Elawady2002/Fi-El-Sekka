@@ -13,6 +13,10 @@ class UserModel extends UserEntity {
     super.avatarUrl,
     required super.isVerified,
     required super.createdAt,
+    super.subscriptionType,
+    super.subscriptionStartDate,
+    super.subscriptionEndDate,
+    super.subscriptionStatus,
   });
 
   /// Create UserModel from Supabase JSON
@@ -28,6 +32,14 @@ class UserModel extends UserEntity {
       avatarUrl: json['avatar_url'] as String?,
       isVerified: json['is_verified'] as bool? ?? false,
       createdAt: DateTime.parse(json['created_at'] as String),
+      subscriptionType: json['subscription_type'] as String?,
+      subscriptionStartDate: json['subscription_start_date'] != null
+          ? DateTime.parse(json['subscription_start_date'] as String)
+          : null,
+      subscriptionEndDate: json['subscription_end_date'] != null
+          ? DateTime.parse(json['subscription_end_date'] as String)
+          : null,
+      subscriptionStatus: json['subscription_status'] as String?,
     );
   }
 
@@ -44,6 +56,10 @@ class UserModel extends UserEntity {
       'avatar_url': avatarUrl,
       'is_verified': isVerified,
       'created_at': createdAt.toIso8601String(),
+      'subscription_type': subscriptionType,
+      'subscription_start_date': subscriptionStartDate?.toIso8601String(),
+      'subscription_end_date': subscriptionEndDate?.toIso8601String(),
+      'subscription_status': subscriptionStatus,
     };
   }
 
@@ -60,6 +76,10 @@ class UserModel extends UserEntity {
       avatarUrl: entity.avatarUrl,
       isVerified: entity.isVerified,
       createdAt: entity.createdAt,
+      subscriptionType: entity.subscriptionType,
+      subscriptionStartDate: entity.subscriptionStartDate,
+      subscriptionEndDate: entity.subscriptionEndDate,
+      subscriptionStatus: entity.subscriptionStatus,
     );
   }
 
@@ -76,6 +96,10 @@ class UserModel extends UserEntity {
       avatarUrl: avatarUrl,
       isVerified: isVerified,
       createdAt: createdAt,
+      subscriptionType: subscriptionType,
+      subscriptionStartDate: subscriptionStartDate,
+      subscriptionEndDate: subscriptionEndDate,
+      subscriptionStatus: subscriptionStatus,
     );
   }
 }

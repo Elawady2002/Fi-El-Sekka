@@ -15,6 +15,7 @@ import '../../../booking/domain/entities/station_entity.dart';
 import '../../../booking/presentation/providers/booking_provider.dart';
 import '../../../booking/domain/entities/booking_entity.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../widgets/trip_map_sheet.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -454,30 +455,38 @@ class _HomePageState extends ConsumerState<HomePage> {
       to = 'مدينتي';
     }
 
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppTheme.dividerColor),
-      ),
-      child: Column(
-        children: [
-          _buildLocationRow(
-            icon: CupertinoIcons.circle_fill,
-            iconColor: AppTheme.primaryColor,
-            label: 'من',
-            value: from,
-            isLast: false,
-          ),
-          _buildLocationRow(
-            icon: CupertinoIcons.location_solid,
-            iconColor: Colors.black,
-            label: 'إلى',
-            value: to,
-            isLast: true,
-          ),
-        ],
+    return GestureDetector(
+      onTap: () {
+        showCupertinoModalPopup(
+          context: context,
+          builder: (context) => TripMapSheet(booking: booking),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: AppTheme.dividerColor),
+        ),
+        child: Column(
+          children: [
+            _buildLocationRow(
+              icon: CupertinoIcons.circle_fill,
+              iconColor: AppTheme.primaryColor,
+              label: 'من',
+              value: from,
+              isLast: false,
+            ),
+            _buildLocationRow(
+              icon: CupertinoIcons.location_solid,
+              iconColor: Colors.black,
+              label: 'إلى',
+              value: to,
+              isLast: true,
+            ),
+          ],
+        ),
       ),
     );
   }

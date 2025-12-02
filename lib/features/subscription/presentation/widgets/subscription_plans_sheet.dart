@@ -144,7 +144,11 @@ class _SubscriptionPlansSheetState extends State<SubscriptionPlansSheet> {
         Navigator.push(
           context,
           CupertinoPageRoute(
-            builder: (_) => PaymentPage(planName: title, amount: price),
+            builder: (_) => PaymentPage(
+              planName: title,
+              amount: price,
+              isSubscription: true,
+            ),
           ),
         );
       },
@@ -282,8 +286,11 @@ class _SubscriptionPlansSheetState extends State<SubscriptionPlansSheet> {
                     Navigator.push(
                       context,
                       CupertinoPageRoute(
-                        builder: (_) =>
-                            PaymentPage(planName: title, amount: price),
+                        builder: (_) => PaymentPage(
+                          planName: title,
+                          amount: price,
+                          isSubscription: true,
+                        ),
                       ),
                     );
                   },
