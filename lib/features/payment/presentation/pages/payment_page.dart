@@ -13,6 +13,7 @@ import '../../../booking/presentation/providers/booking_provider.dart';
 import '../../../subscription/presentation/providers/subscription_provider.dart';
 import '../../../subscription/domain/entities/subscription_entity.dart';
 import '../widgets/payment_proof_sheet.dart';
+import '../../../subscription/presentation/pages/subscription_confirmation_page.dart';
 
 class PaymentPage extends ConsumerStatefulWidget {
   final String planName;
@@ -266,16 +267,6 @@ class _PaymentPageState extends ConsumerState<PaymentPage>
                               AppLogger.error(
                                 '❌ Subscription creation failed: ${failure.message}',
                               );
-                              if (!mounted) return;
-                              if (!context.mounted) return;
-
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(failure.message),
-                                  backgroundColor: Colors.red,
-                                  duration: const Duration(seconds: 5),
-                                ),
-                              );
                               throw Exception(failure.message);
                             },
                             (_) {
@@ -332,19 +323,43 @@ class _PaymentPageState extends ConsumerState<PaymentPage>
                     ),
                   );
 
-                  // Navigate to ConfirmationPage if payment was confirmed
+                  // Navigate to appropriate confirmation page based on payment type
                   AppLogger.info('📱 Payment sheet result: $result');
                   if (result == true) {
                     AppLogger.info('✅ Navigating to confirmation page...');
                     if (!mounted) return;
                     if (!context.mounted) return;
 
-                    Navigator.push(
-                      context,
-                      CupertinoPageRoute(
-                        builder: (_) => const ConfirmationPage(),
-                      ),
-                    );
+                    if (widget.isSubscription) {
+                      // Navigate to subscription confirmation page
+                      final now = DateTime.now();
+                      final planType = widget.planName.contains('شهر')
+                          ? SubscriptionPlanType.monthly
+                          : SubscriptionPlanType.semester;
+                      final endDate = now.add(
+                        Duration(days: planType.durationDays),
+                      );
+
+                      Navigator.push(
+                        context,
+                        CupertinoPageRoute(
+                          builder: (_) => SubscriptionConfirmationPage(
+                            planName: widget.planName,
+                            price: widget.amount,
+                            startDate: now,
+                            endDate: endDate,
+                          ),
+                        ),
+                      );
+                    } else {
+                      // Navigate to booking confirmation page
+                      Navigator.push(
+                        context,
+                        CupertinoPageRoute(
+                          builder: (_) => const ConfirmationPage(),
+                        ),
+                      );
+                    }
                   } else {
                     AppLogger.warning('❌ Payment was not confirmed');
                   }

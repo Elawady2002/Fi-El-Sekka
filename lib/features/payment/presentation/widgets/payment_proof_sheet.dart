@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:path/path.dart' as path;
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/ios_components.dart';
 import '../../../../core/widgets/top_notification.dart';
@@ -26,16 +28,51 @@ class _PaymentProofSheetState extends State<PaymentProofSheet> {
     try {
       final XFile? pickedFile = await _picker.pickImage(
         source: ImageSource.gallery,
-        imageQuality: 80,
       );
+
       if (pickedFile != null) {
+        // Compress the image before using it
+        final compressedFile = await _compressImage(File(pickedFile.path));
+
         setState(() {
-          _imageFile = File(pickedFile.path);
+          _imageFile = compressedFile;
         });
       }
     } catch (e) {
       // Handle permission or other errors
       debugPrint('Error picking image: $e');
+    }
+  }
+
+  /// Compress image to JPEG format with 85% quality
+  Future<File> _compressImage(File file) async {
+    try {
+      final String targetPath = path.join(
+        path.dirname(file.path),
+        '${path.basenameWithoutExtension(file.path)}_compressed.jpg',
+      );
+
+      final XFile? compressedFile =
+          await FlutterImageCompress.compressAndGetFile(
+            file.absolute.path,
+            targetPath,
+            quality: 85,
+            format: CompressFormat.jpeg,
+          );
+
+      if (compressedFile != null) {
+        debugPrint(
+          '✅ Image compressed: ${file.lengthSync()} → ${File(compressedFile.path).lengthSync()} bytes',
+        );
+        return File(compressedFile.path);
+      }
+
+      // If compression fails, return original file
+      debugPrint('⚠️ Compression failed, using original image');
+      return file;
+    } catch (e) {
+      debugPrint('⚠️ Error compressing image: $e, using original');
+      return file;
     }
   }
 
@@ -194,21 +231,41 @@ class _PaymentProofSheetState extends State<PaymentProofSheet> {
                     });
 
                     try {
+                      debugPrint(
+                        '🔄 PaymentProofSheet: Calling onConfirm callback...',
+                      );
+
                       // Call the onConfirm callback which will save the booking
                       await widget.onConfirm(
                         _imageFile?.path,
                         _accountController.text,
                       );
 
+                      debugPrint(
+                        '✅ PaymentProofSheet: onConfirm completed successfully!',
+                      );
+                      debugPrint(
+                        '✅ PaymentProofSheet: Closing sheet with result=true',
+                      );
+
                       // Close sheet only if still mounted
                       if (mounted) {
                         Navigator.pop(context, true);
                       }
-                    } catch (e) {
+                    } catch (e, stackTrace) {
+                      debugPrint('❌ PaymentProofSheet: Error in onConfirm: $e');
+                      debugPrint('❌ Stack trace: $stackTrace');
+
                       if (mounted) {
                         setState(() {
                           _isLoading = false;
                         });
+
+                        // Show error to user
+                        showTopNotification(
+                          context,
+                          'حدث خطأ: ${e.toString()}',
+                        );
                       }
                     }
                   },

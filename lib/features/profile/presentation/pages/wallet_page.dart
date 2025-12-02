@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../booking/presentation/providers/booking_provider.dart';
 import '../../../booking/domain/entities/booking_entity.dart';
+import '../../../subscription/presentation/providers/subscription_provider.dart';
+
 import '../widgets/transaction_details_sheet.dart';
 
 class WalletPage extends ConsumerWidget {
@@ -12,6 +14,7 @@ class WalletPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final bookingsAsync = ref.watch(userBookingsProvider);
+    final subscriptionsAsync = ref.watch(userSubscriptionsProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F7),
@@ -120,33 +123,71 @@ class WalletPage extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
 
-            // Bookings List
+            // Transactions List
             bookingsAsync.when(
               data: (bookings) {
-                if (bookings.isEmpty) {
-                  return const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(20.0),
-                      child: Text('لا توجد عمليات سابقة'),
-                    ),
-                  );
-                }
-                return ListView.separated(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: bookings.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    final booking = bookings[index];
-                    return _buildTransactionItem(
-                      context,
-                      'دفع رحلة',
-                      _formatDate(booking.createdAt),
-                      '- ${booking.totalPrice} ج.م',
-                      false,
-                      booking,
+                return subscriptionsAsync.when(
+                  data: (subscriptions) {
+                    // Combine and sort transactions
+                    final transactions = <_TransactionItem>[];
+
+                    for (final booking in bookings) {
+                      transactions.add(
+                        _TransactionItem(
+                          title: 'دفع رحلة',
+                          date: booking.createdAt,
+                          amount: booking.totalPrice,
+                          originalObject: booking,
+                          type: _TransactionType.booking,
+                        ),
+                      );
+                    }
+
+                    for (final subscription in subscriptions) {
+                      transactions.add(
+                        _TransactionItem(
+                          title: 'اشتراك ${subscription.planType.displayName}',
+                          date: subscription.createdAt,
+                          amount: subscription.amount,
+                          originalObject: subscription,
+                          type: _TransactionType.subscription,
+                        ),
+                      );
+                    }
+
+                    // Sort by date (newest first)
+                    transactions.sort((a, b) => b.date.compareTo(a.date));
+
+                    if (transactions.isEmpty) {
+                      return const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(20.0),
+                          child: Text('لا توجد عمليات سابقة'),
+                        ),
+                      );
+                    }
+
+                    return ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: transactions.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 12),
+                      itemBuilder: (context, index) {
+                        final transaction = transactions[index];
+                        return _buildTransactionItem(
+                          context,
+                          transaction.title,
+                          _formatDate(transaction.date),
+                          '- ${transaction.amount} ج.م',
+                          false,
+                          transaction.originalObject,
+                        );
+                      },
                     );
                   },
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                  error: (error, stack) => Center(child: Text('Error: $error')),
                 );
               },
               loading: () => const Center(child: CircularProgressIndicator()),
@@ -164,16 +205,20 @@ class WalletPage extends ConsumerWidget {
     String date,
     String amount,
     bool isCredit,
-    BookingEntity booking,
+    dynamic originalObject,
   ) {
     return GestureDetector(
       onTap: () {
-        showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          backgroundColor: Colors.transparent,
-          builder: (context) => TransactionDetailsSheet(booking: booking),
-        );
+        if (originalObject is BookingEntity) {
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            builder: (context) =>
+                TransactionDetailsSheet(booking: originalObject),
+          );
+        }
+        // TODO: Add subscription details sheet if needed
       },
       child: Container(
         padding: const EdgeInsets.all(16),
@@ -235,6 +280,24 @@ class WalletPage extends ConsumerWidget {
 
   String _formatDate(DateTime date) {
     // Simple date formatting, you might want to use intl package
-    return '${date.day}/${date.month} ${date.hour}:${date.minute}';
+    return '${date.day}/${date.month} ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
   }
+}
+
+enum _TransactionType { booking, subscription }
+
+class _TransactionItem {
+  final String title;
+  final DateTime date;
+  final double amount;
+  final dynamic originalObject;
+  final _TransactionType type;
+
+  _TransactionItem({
+    required this.title,
+    required this.date,
+    required this.amount,
+    required this.originalObject,
+    required this.type,
+  });
 }
