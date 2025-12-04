@@ -34,6 +34,7 @@ class _ActiveSubscriptionCardState
   String _universityName = 'الجامعة';
   Map<String, SubscriptionScheduleEntity> _schedules = {};
   bool _isLoadingSchedules = true;
+  late DateTime _currentMonth;
 
   final List<String> _departureTimes = [
     'AM 6:00',
@@ -54,6 +55,7 @@ class _ActiveSubscriptionCardState
   @override
   void initState() {
     super.initState();
+    _currentMonth = widget.subscription.startDate;
     _fetchUniversityName();
     _fetchSchedules();
   }
@@ -470,130 +472,193 @@ class _ActiveSubscriptionCardState
   }
 
   Widget _buildCalendarGrid() {
-    final startDate = widget.subscription.startDate;
-    final endDate = widget.subscription.endDate;
-    final daysInRange = endDate.difference(startDate).inDays + 1;
-    final weeks = (daysInRange / 7).ceil();
+    final daysInMonth = DateUtils.getDaysInMonth(
+      _currentMonth.year,
+      _currentMonth.month,
+    );
+    final firstDayOfMonth = DateTime(
+      _currentMonth.year,
+      _currentMonth.month,
+      1,
+    );
+    // Adjust for week starting on Sunday (Sunday=7 in DateTime)
+    // We want Sunday to be index 0
+    final offset = firstDayOfMonth.weekday % 7;
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        children: [
-          // Weekday headers
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: ['ح', 'ن', 'ث', 'ر', 'خ', 'ج', 'س']
-                .map(
-                  (day) => Expanded(
-                    child: Center(
+    return Column(
+      children: [
+        // Month Navigation
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              IconButton(
+                icon: const Icon(
+                  CupertinoIcons.chevron_right,
+                  color: Colors.white,
+                ),
+                onPressed: () {
+                  setState(() {
+                    _currentMonth = DateTime(
+                      _currentMonth.year,
+                      _currentMonth.month - 1,
+                    );
+                  });
+                },
+              ),
+              Text(
+                DateFormat('MMMM yyyy', 'ar').format(_currentMonth),
+                style: AppTheme.textTheme.titleMedium?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              IconButton(
+                icon: const Icon(
+                  CupertinoIcons.chevron_left,
+                  color: Colors.white,
+                ),
+                onPressed: () {
+                  setState(() {
+                    _currentMonth = DateTime(
+                      _currentMonth.year,
+                      _currentMonth.month + 1,
+                    );
+                  });
+                },
+              ),
+            ],
+          ),
+        ),
+
+        // Weekday Headers
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: ['ح', 'ن', 'ث', 'ر', 'خ', 'ج', 'س']
+              .map(
+                (day) => Expanded(
+                  child: Center(
+                    child: Text(
+                      day,
+                      style: AppTheme.textTheme.bodySmall?.copyWith(
+                        color: Colors.white60,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              )
+              .toList(),
+        ).animate().fadeIn(),
+        const SizedBox(height: 16),
+
+        // Calendar Grid
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 7,
+            mainAxisSpacing: 8,
+            crossAxisSpacing: 8,
+            childAspectRatio: 0.75, // Taller to accommodate the dot below
+          ),
+          itemCount: offset + daysInMonth,
+          itemBuilder: (context, index) {
+            if (index < offset) return const SizedBox();
+
+            final day = index - offset + 1;
+            final date = DateTime(_currentMonth.year, _currentMonth.month, day);
+            final dateKey = date.toIso8601String().split('T')[0];
+
+            final isToday = _isSameDay(date, DateTime.now());
+            // Only disable Fridays (weekend in Egypt)
+            final isWeekend = date.weekday == DateTime.friday;
+
+            // Check if date is within subscription range
+            final isWithinSubscription =
+                !date.isBefore(widget.subscription.startDate) &&
+                !date.isAfter(widget.subscription.endDate);
+
+            final isAvailable =
+                date.isAfter(
+                  DateTime.now().subtract(const Duration(days: 1)),
+                ) &&
+                !isWeekend &&
+                isWithinSubscription;
+
+            final hasSchedule = _schedules.containsKey(dateKey);
+            final isSelected =
+                _selectedDate != null && _isSameDay(date, _selectedDate!);
+
+            final isStartDate = _isSameDay(date, widget.subscription.startDate);
+            final isEndDate = _isSameDay(date, widget.subscription.endDate);
+
+            // Determine styles based on state
+            // Priority: Selected > Schedule > Start/End > Default
+
+            Color? backgroundColor;
+            BoxBorder? border;
+            Color textColor = Colors.white;
+            FontWeight fontWeight = FontWeight.normal;
+
+            if (isSelected) {
+              backgroundColor = AppTheme.primaryColor;
+              textColor = Colors.black;
+              fontWeight = FontWeight.bold;
+            } else if (hasSchedule) {
+              backgroundColor = AppTheme.primaryColor;
+              textColor = Colors.black;
+              fontWeight = FontWeight.bold;
+            } else if (isStartDate || isEndDate) {
+              backgroundColor = Colors.transparent;
+              border = Border.all(color: AppTheme.primaryColor, width: 2);
+              textColor = AppTheme.primaryColor;
+              fontWeight = FontWeight.bold;
+            } else {
+              backgroundColor = Colors.transparent;
+              textColor = isAvailable ? Colors.white : Colors.white24;
+            }
+
+            return GestureDetector(
+              onTap: isAvailable ? () => _onDateSelected(date) : null,
+              child: Column(
+                children: [
+                  Expanded(
+                    child: Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: backgroundColor,
+                        borderRadius: BorderRadius.circular(12),
+                        border: border,
+                      ),
+                      alignment: Alignment.center,
                       child: Text(
-                        day,
-                        style: AppTheme.textTheme.bodySmall?.copyWith(
-                          color: Colors.white60,
-                          fontWeight: FontWeight.bold,
+                        '$day',
+                        style: AppTheme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: fontWeight,
+                          color: textColor,
                         ),
                       ),
                     ),
                   ),
-                )
-                .toList(),
-          ).animate().fadeIn(),
-          const SizedBox(height: 16),
-          // Calendar days
-          ...List.generate(weeks, (weekIndex) {
-            return Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: List.generate(7, (dayIndex) {
-                      final dayOffset = weekIndex * 7 + dayIndex;
-                      if (dayOffset >= daysInRange) {
-                        return const Expanded(child: SizedBox());
-                      }
-
-                      final date = startDate.add(Duration(days: dayOffset));
-                      final dateKey = date.toIso8601String().split('T')[0];
-                      final isToday = _isSameDay(date, DateTime.now());
-                      final isWeekend =
-                          date.weekday == DateTime.friday ||
-                          date.weekday == DateTime.saturday;
-                      final isAvailable =
-                          date.isAfter(
-                            DateTime.now().subtract(const Duration(days: 1)),
-                          ) &&
-                          !isWeekend;
-                      final hasSchedule = _schedules.containsKey(dateKey);
-
-                      return Expanded(
-                        child: GestureDetector(
-                          onTap: isAvailable
-                              ? () => _onDateSelected(date)
-                              : null,
-                          child: Container(
-                            margin: const EdgeInsets.all(4),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            decoration: BoxDecoration(
-                              color: isToday
-                                  ? AppTheme.primaryColor.withValues(alpha: 0.2)
-                                  : (hasSchedule
-                                        ? Colors.white10
-                                        : Colors.transparent),
-                              borderRadius: BorderRadius.circular(12),
-                              border: isToday
-                                  ? Border.all(
-                                      color: AppTheme.primaryColor,
-                                      width: 2,
-                                    )
-                                  : (hasSchedule
-                                        ? Border.all(
-                                            color: AppTheme.primaryColor
-                                                .withOpacity(0.5),
-                                          )
-                                        : null),
-                            ),
-                            child: Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                Text(
-                                  '${date.day}',
-                                  style: AppTheme.textTheme.bodyMedium
-                                      ?.copyWith(
-                                        fontWeight: isToday || hasSchedule
-                                            ? FontWeight.bold
-                                            : FontWeight.normal,
-                                        color: isAvailable
-                                            ? (isToday
-                                                  ? AppTheme.primaryColor
-                                                  : Colors.white)
-                                            : Colors.white24,
-                                      ),
-                                ),
-                                if (hasSchedule)
-                                  Positioned(
-                                    bottom: 4,
-                                    child: Container(
-                                      width: 4,
-                                      height: 4,
-                                      decoration: const BoxDecoration(
-                                        color: AppTheme.primaryColor,
-                                        shape: BoxShape.circle,
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    }),
+                  const SizedBox(height: 4),
+                  // Today Indicator (Red Dot) - Outside the container
+                  Container(
+                    width: 4,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: isToday ? Colors.red : Colors.transparent,
+                      shape: BoxShape.circle,
+                    ),
                   ),
-                )
-                .animate()
-                .fadeIn(delay: (50 * weekIndex).ms)
-                .slideY(begin: 0.1, end: 0);
-          }),
-        ],
-      ),
+                ],
+              ),
+            );
+          },
+        ),
+      ],
     );
   }
 
