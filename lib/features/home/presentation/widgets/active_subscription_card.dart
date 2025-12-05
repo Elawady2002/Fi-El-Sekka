@@ -179,7 +179,7 @@ class _ActiveSubscriptionCardState
     setState(() {
       _selectedDate = date;
       _previousView = _currentView;
-      _currentView = SubscriptionCardView.timeSelection;
+      _currentView = SubscriptionCardView.bookingList; // Changed to bookingList
 
       // Load existing schedule if available
       if (existingSchedule != null) {
@@ -721,6 +721,211 @@ class _ActiveSubscriptionCardState
           },
         ),
       ],
+    );
+  }
+
+  Widget _buildBookingListContent() {
+    if (_selectedDate == null) {
+      return const Center(child: Text('لا يوجد تاريخ محدد'));
+    }
+
+    final dateKey = _selectedDate!.toIso8601String().split('T')[0];
+    final bookingsOnDate = _schedules[dateKey];
+
+    return Padding(
+      key: const ValueKey('bookingList'),
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header with back button
+          Row(
+            children: [
+              GestureDetector(
+                onTap: () {
+                  _playSound();
+                  setState(() {
+                    _previousView = _currentView;
+                    _currentView = SubscriptionCardView.calendar;
+                  });
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    CupertinoIcons.chevron_back,
+                    size: 20,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'اختار المواعيد',
+                      style: AppTheme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    Text(
+                      DateFormat('EEEE d MMMM', 'ar').format(_selectedDate!),
+                      style: AppTheme.textTheme.bodySmall?.copyWith(
+                        color: Colors.white70,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          const Divider(height: 1, color: Colors.white10),
+          const SizedBox(height: 24),
+
+          // Booking or empty message
+          if (bookingsOnDate == null)
+            Expanded(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      CupertinoIcons.calendar_badge_minus,
+                      size: 64,
+                      color: Colors.white.withValues(alpha: 0.3),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'لا يوجد حجز في هذا اليوم',
+                      style: AppTheme.textTheme.titleMedium?.copyWith(
+                        color: Colors.white70,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else
+            Expanded(
+              child: GestureDetector(
+                onTap: () {
+                  _playSound();
+                  setState(() {
+                    _selectedTripType = bookingsOnDate.tripType;
+                    _selectedDepartureTime = bookingsOnDate.departureTime;
+                    _selectedReturnTime = bookingsOnDate.returnTime;
+                    _previousView = _currentView;
+                    _currentView = SubscriptionCardView.timeSelection;
+                  });
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            bookingsOnDate.tripType == 'round_trip'
+                                ? CupertinoIcons.arrow_right_arrow_left
+                                : bookingsOnDate.tripType == 'departure_only'
+                                ? CupertinoIcons.arrow_right
+                                : CupertinoIcons.arrow_left,
+                            color: AppTheme.primaryColor,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            bookingsOnDate.tripType == 'round_trip'
+                                ? 'ذهاب وعودة'
+                                : bookingsOnDate.tripType == 'departure_only'
+                                ? 'ذهاب فقط'
+                                : 'عودة فقط',
+                            style: AppTheme.textTheme.titleMedium?.copyWith(
+                              color: AppTheme.primaryColor,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      if (bookingsOnDate.departureTime != null) ...[
+                        Row(
+                          children: [
+                            const Icon(
+                              CupertinoIcons.time,
+                              size: 16,
+                              color: Colors.white70,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'ميعاد الذهاب: ${bookingsOnDate.departureTime}',
+                              style: AppTheme.textTheme.bodyMedium?.copyWith(
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                      ],
+                      if (bookingsOnDate.returnTime != null) ...[
+                        Row(
+                          children: [
+                            const Icon(
+                              CupertinoIcons.time,
+                              size: 16,
+                              color: Colors.white70,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'ميعاد العودة: ${bookingsOnDate.returnTime}',
+                              style: AppTheme.textTheme.bodyMedium?.copyWith(
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Text(
+                            'اضغط لتعديل المواعيد',
+                            style: AppTheme.textTheme.bodySmall?.copyWith(
+                              color: AppTheme.primaryColor,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Icon(
+                            CupertinoIcons.arrow_right,
+                            size: 16,
+                            color: AppTheme.primaryColor,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 
