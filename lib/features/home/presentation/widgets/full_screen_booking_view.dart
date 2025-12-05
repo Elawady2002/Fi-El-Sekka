@@ -5,6 +5,8 @@ import 'package:intl/intl.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../subscription/domain/entities/subscription_schedule_entity.dart';
 
+enum FullScreenView { bookingList, timeEditor }
+
 class FullScreenBookingView extends StatefulWidget {
   final DateTime initialDate;
   final Map<String, SubscriptionScheduleEntity> schedules;
@@ -25,6 +27,8 @@ class FullScreenBookingView extends StatefulWidget {
 
 class _FullScreenBookingViewState extends State<FullScreenBookingView>
     with SingleTickerProviderStateMixin {
+  FullScreenView _currentView = FullScreenView.bookingList;
+  SubscriptionScheduleEntity? _selectedBooking;
   late DateTime _selectedDate;
   late DateTime _currentMonth;
   late ScrollController _dateScrollController;
@@ -296,11 +300,16 @@ class _FullScreenBookingViewState extends State<FullScreenBookingView>
 
   @override
   Widget build(BuildContext context) {
-    final dates = _getDateRange();
-    final bookings = _getBookingsForDate(_selectedDate);
-
     return WillPopScope(
       onWillPop: () async {
+        if (_currentView == FullScreenView.timeEditor) {
+          // If in time editor, go back to booking list
+          setState(() {
+            _currentView = FullScreenView.bookingList;
+          });
+          return false;
+        }
+        // Otherwise, close the full-screen view
         await _close();
         return false;
       },
@@ -311,7 +320,20 @@ class _FullScreenBookingViewState extends State<FullScreenBookingView>
           child: ScaleTransition(
             scale: _scaleAnimation,
             child: SafeArea(
-              child: Column(
+              child: _currentView == FullScreenView.bookingList
+                  ? _buildBookingListView()
+                  : _buildTimeEditorView(),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBookingListView() {
+    final bookings = _getBookingsForDate(_selectedDate);
+
+    return Column(
                 children: [
                   // Header with close button
                   Padding(
@@ -377,10 +399,14 @@ class _FullScreenBookingViewState extends State<FullScreenBookingView>
                             itemBuilder: (context, index) {
                               return _BookingCardItem(
                                 booking: bookings[index],
-                                index:
-                                    index, // Pass index for stagger animation
-                                onTap: () =>
-                                    widget.onBookingTap(bookings[index]),
+                                index: index,
+                                onTap: () {
+                                  // Show time editor inside full-screen
+                                  setState(() {
+                                    _selectedBooking = bookings[index];
+                                    _currentView = FullScreenView.timeEditor;
+                                  });
+                                },
                               );
                             },
                           ),
