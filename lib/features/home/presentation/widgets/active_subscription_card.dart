@@ -947,27 +947,6 @@ class _ActiveSubscriptionCardState
     );
   }
 
-  String _getNearestBookingDate() {
-    if (_schedules.isEmpty) {
-      return 'لا يوجد حجوزات';
-    }
-
-    // Get all booking dates and sort them
-    final bookingDates =
-        _schedules.keys
-            .map((key) => DateTime.parse(key))
-            .where((date) => !date.isBefore(DateTime.now()))
-            .toList()
-          ..sort();
-
-    if (bookingDates.isEmpty) {
-      return 'لا يوجد حجوزات قادمة';
-    }
-
-    final nearestDate = bookingDates.first;
-    return DateFormat('EEEE d MMMM', 'ar').format(nearestDate);
-  }
-
   String _getTripTypeLabel(String tripType) {
     switch (tripType) {
       case 'departure_only':
