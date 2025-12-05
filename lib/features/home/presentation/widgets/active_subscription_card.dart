@@ -405,58 +405,163 @@ class _ActiveSubscriptionCardState
               ],
             ).animate().fadeIn().slideX(begin: -0.2, end: 0),
             const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'تاريخ البداية',
-                        style: AppTheme.textTheme.bodySmall?.copyWith(
-                          color: Colors.white70,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        DateFormat(
-                          'd MMMM',
-                          'ar',
-                        ).format(widget.subscription.startDate),
-                        style: AppTheme.textTheme.titleLarge?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
+            // Show selected booking data or subscription info
+            if (_selectedDate != null) ...[
+              // Selected date info
+              Row(
+                children: [
+                  Icon(
+                    CupertinoIcons.calendar,
+                    color: AppTheme.primaryColor,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    DateFormat('EEEE d MMMM', 'ar').format(_selectedDate!),
+                    style: AppTheme.textTheme.titleLarge?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // Trip type
+              Row(
+                children: [
+                  Icon(
+                    _selectedTripType == 'round_trip'
+                        ? CupertinoIcons.arrow_right_arrow_left
+                        : _selectedTripType == 'departure_only'
+                        ? CupertinoIcons.arrow_right
+                        : CupertinoIcons.arrow_left,
+                    color: AppTheme.primaryColor,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    _selectedTripType == 'round_trip'
+                        ? 'ذهاب وعودة'
+                        : _selectedTripType == 'departure_only'
+                        ? 'ذهاب فقط'
+                        : 'عودة فقط',
+                    style: AppTheme.textTheme.titleMedium?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // Times
+              if (_selectedDepartureTime != null ||
+                  _selectedReturnTime != null) ...[
+                Row(
+                  children: [
+                    if (_selectedDepartureTime != null) ...[
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'ميعاد الذهاب',
+                              style: AppTheme.textTheme.bodySmall?.copyWith(
+                                color: Colors.white70,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _selectedDepartureTime!,
+                              style: AppTheme.textTheme.titleLarge?.copyWith(
+                                color: AppTheme.primaryColor,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
-                  ),
-                ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'تاريخ الانتهاء',
-                        style: AppTheme.textTheme.bodySmall?.copyWith(
-                          color: Colors.white70,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        DateFormat(
-                          'd MMMM',
-                          'ar',
-                        ).format(widget.subscription.endDate),
-                        style: AppTheme.textTheme.titleLarge?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
+                    if (_selectedReturnTime != null) ...[
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'ميعاد العودة',
+                              style: AppTheme.textTheme.bodySmall?.copyWith(
+                                color: Colors.white70,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _selectedReturnTime!,
+                              style: AppTheme.textTheme.titleLarge?.copyWith(
+                                color: AppTheme.primaryColor,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
-                  ),
+                  ],
                 ),
               ],
-            ).animate().fadeIn(delay: 100.ms).slideX(begin: -0.2, end: 0),
+            ] else ...[
+              // Default: show subscription dates
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'تاريخ البداية',
+                          style: AppTheme.textTheme.bodySmall?.copyWith(
+                            color: Colors.white70,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          DateFormat(
+                            'd MMMM',
+                            'ar',
+                          ).format(widget.subscription.startDate),
+                          style: AppTheme.textTheme.titleLarge?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'تاريخ الانتهاء',
+                          style: AppTheme.textTheme.bodySmall?.copyWith(
+                            color: Colors.white70,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          DateFormat(
+                            'd MMMM',
+                            'ar',
+                          ).format(widget.subscription.endDate),
+                          style: AppTheme.textTheme.titleLarge?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
             const SizedBox(height: 24),
             const Divider(color: Colors.white24),
             const SizedBox(height: 16),
