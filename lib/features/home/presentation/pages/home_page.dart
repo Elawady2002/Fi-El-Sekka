@@ -16,7 +16,7 @@ import '../../../booking/presentation/providers/booking_provider.dart';
 import '../../../booking/domain/entities/booking_entity.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../widgets/trip_map_sheet.dart';
-import '../widgets/active_subscription_card.dart';
+import '../widgets/unified_booking_card.dart';
 import '../../../subscription/presentation/providers/subscription_provider.dart';
 import '../../../subscription/presentation/widgets/subscription_plans_sheet.dart';
 
@@ -140,33 +140,55 @@ class _HomePageState extends ConsumerState<HomePage> {
                   padding: const EdgeInsets.symmetric(horizontal: 24),
                   physics: const AlwaysScrollableScrollPhysics(),
                   children: [
-                    // Check for active subscription first
+                    // Check for active subscription OR multiple bookings
                     Consumer(
                       builder: (context, ref, child) {
                         final activeSubAsync = ref.watch(
                           activeSubscriptionProvider,
                         );
+                        final userBookingsAsync = ref.watch(
+                          userBookingsProvider,
+                        );
+
                         return activeSubAsync.when(
                           data: (subscription) {
-                            if (subscription != null) {
-                              // User has active subscription
+                            // Get upcoming regular bookings (future dates, not from subscription)
+                            final upcomingBookings =
+                                userBookingsAsync.value
+                                    ?.where(
+                                      (b) =>
+                                          b.bookingDate.isAfter(
+                                            DateTime.now(),
+                                          ) &&
+                                          b.subscriptionId == null,
+                                    )
+                                    .toList() ??
+                                [];
+
+                            // Show unified card if:
+                            // 1. Has active subscription, OR
+                            // 2. Has 2+ upcoming regular bookings
+                            if (subscription != null ||
+                                upcomingBookings.length >= 2) {
                               return Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  _buildSectionTitle('اشتراكك النشط'),
-                                  const SizedBox(height: 16),
-                                  ActiveSubscriptionCard(
-                                    subscription: subscription,
+                                  _buildSectionTitle(
+                                    subscription != null
+                                        ? 'اشتراكك النشط'
+                                        : 'حجوزاتك القادمة',
                                   ),
-                                  const SizedBox(height: 32),
-                                  _buildSectionTitle('مسار الرحلة'),
                                   const SizedBox(height: 16),
-                                  _buildSubscriptionRouteInfoCard(),
+                                  UnifiedBookingCard(
+                                    subscription: subscription,
+                                    regularBookings: upcomingBookings,
+                                  ),
                                   const SizedBox(height: 32),
                                 ],
                               );
                             }
-                            // No active subscription, show upcoming trip
+
+                            // Single booking or no bookings - show simple card
                             return Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -545,35 +567,6 @@ class _HomePageState extends ConsumerState<HomePage> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildSubscriptionRouteInfoCard() {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppTheme.dividerColor),
-      ),
-      child: Column(
-        children: [
-          _buildLocationRow(
-            icon: CupertinoIcons.circle_fill,
-            iconColor: AppTheme.primaryColor,
-            label: 'من',
-            value: 'منطقتك',
-            isLast: false,
-          ),
-          _buildLocationRow(
-            icon: CupertinoIcons.location_solid,
-            iconColor: Colors.black,
-            label: 'إلى',
-            value: 'الجامعة',
-            isLast: true,
-          ),
-        ],
       ),
     );
   }
