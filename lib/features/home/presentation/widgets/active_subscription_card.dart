@@ -11,6 +11,7 @@ import '../../../booking/domain/entities/booking_entity.dart';
 import '../../../subscription/domain/entities/subscription_entity.dart';
 import '../../../subscription/domain/entities/subscription_schedule_entity.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import 'full_screen_booking_view.dart';
 
 enum SubscriptionCardView { details, calendar, bookingList, timeSelection }
 
@@ -41,6 +42,7 @@ class _ActiveSubscriptionCardState
   Map<String, SubscriptionScheduleEntity> _schedules = {};
   bool _isLoadingSchedules = true;
   late DateTime _currentMonth;
+  double _dragDistance = 0;
 
   final List<String> _departureTimes = [
     'AM 6:00',
@@ -196,6 +198,52 @@ class _ActiveSubscriptionCardState
     });
   }
 
+  void _openFullScreenView() {
+    _playSound();
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) {
+          return FullScreenBookingView(
+            initialDate: _selectedDate ?? DateTime.now(),
+            schedules: _schedules,
+            onDateSelected: (date) {
+              setState(() {
+                _selectedDate = date;
+                final dateKey = date.toIso8601String().split('T')[0];
+                final schedule = _schedules[dateKey];
+                if (schedule != null) {
+                  _selectedTripType = schedule.tripType;
+                  _selectedDepartureTime = schedule.departureTime;
+                  _selectedReturnTime = schedule.returnTime;
+                }
+              });
+            },
+            onBookingTap: (booking) {
+              Navigator.of(context).pop();
+              setState(() {
+                _selectedTripType = booking.tripType;
+                _selectedDepartureTime = booking.departureTime;
+                _selectedReturnTime = booking.returnTime;
+                _previousView = _currentView;
+                _currentView = SubscriptionCardView.timeSelection;
+              });
+            },
+          );
+        },
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return ScaleTransition(
+            scale: Tween<double>(begin: 0.9, end: 1.0).animate(
+              CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+            ),
+            child: FadeTransition(opacity: animation, child: child),
+          );
+        },
+        opaque: false,
+        barrierColor: Colors.black87,
+      ),
+    );
+  }
+
   void _onBackToCalendar() {
     _playSound();
     setState(() {
@@ -285,52 +333,77 @@ class _ActiveSubscriptionCardState
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.black,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: AnimatedSize(
-          duration: const Duration(milliseconds: 400),
-          curve: Curves.easeInOutCubic,
-          alignment: Alignment.topCenter,
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 400),
-            switchInCurve: Curves.easeOutCubic,
-            switchOutCurve: Curves.easeInCubic,
-            layoutBuilder: (currentChild, previousChildren) {
-              return Stack(
-                alignment: Alignment.topCenter,
-                children: <Widget>[
-                  ...previousChildren,
-                  if (currentChild != null) currentChild,
-                ],
-              );
-            },
-            transitionBuilder: (child, animation) {
-              final isForward = _currentView.index > _previousView.index;
-              final offset = isForward
-                  ? const Offset(1.0, 0.0)
-                  : const Offset(-1.0, 0.0);
+    return GestureDetector(
+      onVerticalDragUpdate: (details) {
+        // Only allow downward drag
+        if (details.delta.dy > 0 &&
+            _currentView == SubscriptionCardView.details) {
+          setState(() {
+            _dragDistance += details.delta.dy;
+          });
 
-              return SlideTransition(
-                position: Tween<Offset>(
-                  begin: offset,
-                  end: Offset.zero,
-                ).animate(animation),
-                child: FadeTransition(opacity: animation, child: child),
-              );
-            },
-            child: _buildCurrentViewContent(),
+          // Play friction sound when dragging (simplified - would need audio player)
+          if (_dragDistance > 50 && _dragDistance < 52) {
+            _playSound();
+          }
+        }
+      },
+      onVerticalDragEnd: (details) {
+        if (_dragDistance > 100) {
+          // Trigger full-screen view
+          _openFullScreenView();
+        }
+        setState(() {
+          _dragDistance = 0;
+        });
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.black,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.2),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: AnimatedSize(
+            duration: const Duration(milliseconds: 400),
+            curve: Curves.easeInOutCubic,
+            alignment: Alignment.topCenter,
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 400),
+              switchInCurve: Curves.easeOutCubic,
+              switchOutCurve: Curves.easeInCubic,
+              layoutBuilder: (currentChild, previousChildren) {
+                return Stack(
+                  alignment: Alignment.topCenter,
+                  children: <Widget>[
+                    ...previousChildren,
+                    if (currentChild != null) currentChild,
+                  ],
+                );
+              },
+              transitionBuilder: (child, animation) {
+                final isForward = _currentView.index > _previousView.index;
+                final offset = isForward
+                    ? const Offset(1.0, 0.0)
+                    : const Offset(-1.0, 0.0);
+
+                return SlideTransition(
+                  position: Tween<Offset>(
+                    begin: offset,
+                    end: Offset.zero,
+                  ).animate(animation),
+                  child: FadeTransition(opacity: animation, child: child),
+                );
+              },
+              child: _buildCurrentViewContent(),
+            ),
           ),
         ),
       ),
