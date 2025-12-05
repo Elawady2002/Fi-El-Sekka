@@ -598,33 +598,14 @@ class _ActiveSubscriptionCardState
                 ),
               ],
             ] else ...[
-              // Default: show subscription dates
+               Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              // Start and End dates side by side
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'تاريخ البداية',
-                          style: AppTheme.textTheme.bodySmall?.copyWith(
-                            color: Colors.white70,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          DateFormat(
-                            'd MMMM',
-                            'ar',
-                          ).format(widget.subscription.startDate),
-                          style: AppTheme.textTheme.titleLarge?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  // End date section - NOW SHOWS TRIP TYPE
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -636,62 +617,65 @@ class _ActiveSubscriptionCardState
                           ),
                         ),
                         const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            Icon(
-                              _selectedTripType == 'round_trip'
-                                  ? CupertinoIcons.arrow_right_arrow_left
-                                  : _selectedTripType == 'departure_only'
-                                  ? CupertinoIcons.arrow_right
-                                  : CupertinoIcons.arrow_left,
-                              color: AppTheme.primaryColor,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                _selectedTripType == 'round_trip'
-                                    ? 'ذهاب وعودة'
-                                    : _selectedTripType == 'departure_only'
-                                    ? 'ذهاب فقط'
-                                    : 'عودة فقط',
-                                style: AppTheme.textTheme.titleMedium?.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ],
+                        Text(
+                          _getTripTypeLabel(_selectedTripType),
+                          style: AppTheme.textTheme.titleLarge?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Start date section
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          'تاريخ البداية',
+                          style: AppTheme.textTheme.bodySmall?.copyWith(
+                            color: Colors.white70,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          DateFormat('d MMMM', 'ar')
+                              .format(widget.subscription.startDate),
+                          style: AppTheme.textTheme.titleLarge?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ],
                     ),
                   ),
                 ],
               ),
-            ],
-            const SizedBox(height: 24),
-            const Divider(color: Colors.white24),
-            const SizedBox(height: 16),
-            // Route Info at the bottom
-            Row(
-              children: [
-                const Icon(
-                  CupertinoIcons.location_fill,
-                  color: AppTheme.primaryColor,
-                  size: 20,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'من منطقتك إلى ${_universityName ?? "..."}',
-                    style: AppTheme.textTheme.bodyLarge?.copyWith(
-                      color: Colors.white,
+              const SizedBox(height: 24),
+              const Divider(color: Colors.white24),
+              const SizedBox(height: 16),
+              // Route Info with green arrow icon
+              Row(
+                children: [
+                  const Icon(
+                    CupertinoIcons.arrow_right,
+                    color: AppTheme.primaryColor,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'من منطقتك إلى ${_universityName ?? "الجامعة"}',
+                      style: AppTheme.textTheme.bodyLarge?.copyWith(
+                        color: Colors.white,
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.2, end: 0),
-          ],
+                ],
+              ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.2, end: 0),
+            ],
+          ),
         ),
       ),
     );
