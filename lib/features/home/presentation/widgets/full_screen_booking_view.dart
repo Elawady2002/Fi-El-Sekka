@@ -4,12 +4,14 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../subscription/domain/entities/subscription_schedule_entity.dart';
+import '../../../subscription/domain/entities/subscription_entity.dart';
 
 enum FullScreenView { bookingList, timeEditor }
 
 class FullScreenBookingView extends StatefulWidget {
   final DateTime initialDate;
   final Map<String, SubscriptionScheduleEntity> schedules;
+  final SubscriptionEntity subscription;
   final Function(DateTime) onDateSelected;
   final Function(SubscriptionScheduleEntity) onBookingTap;
 
@@ -17,6 +19,7 @@ class FullScreenBookingView extends StatefulWidget {
     super.key,
     required this.initialDate,
     required this.schedules,
+    required this.subscription,
     required this.onDateSelected,
     required this.onBookingTap,
   });
@@ -176,18 +179,29 @@ class _FullScreenBookingViewState extends State<FullScreenBookingView>
               final isToday = _isSameDay(date, DateTime.now());
               final isWeekend = date.weekday == DateTime.friday;
 
-              // Check if date is within subscription range (need subscription data)
-              // For now, allow all dates - will be enhanced when subscription is passed
+              // Check if date is within subscription range
+              final isWithinSubscription =
+                  !date.isBefore(widget.subscription.startDate) &&
+                  !date.isAfter(widget.subscription.endDate);
+
               final isAvailable =
                   date.isAfter(
                     DateTime.now().subtract(const Duration(days: 1)),
                   ) &&
-                  !isWeekend;
+                  !isWeekend &&
+                  isWithinSubscription;
 
-              final hasBooking = widget.schedules.containsKey(dateKey);
+              final hasSchedule = widget.schedules.containsKey(dateKey);
               final isSelected = _isSameDay(date, _selectedDate);
 
+              final isStartDate = _isSameDay(
+                date,
+                widget.subscription.startDate,
+              );
+              final isEndDate = _isSameDay(date, widget.subscription.endDate);
+
               // Determine styles based on state
+              // Priority: Selected > Schedule > Start/End > Default
               Color? backgroundColor;
               BoxBorder? border;
               Color textColor = Colors.white;
@@ -197,10 +211,15 @@ class _FullScreenBookingViewState extends State<FullScreenBookingView>
                 backgroundColor = AppTheme.primaryColor;
                 textColor = Colors.black;
                 fontWeight = FontWeight.bold;
-              } else if (hasBooking) {
+              } else if (hasSchedule) {
                 // All bookings are yellow
                 backgroundColor = AppTheme.primaryColor;
                 textColor = Colors.black;
+                fontWeight = FontWeight.bold;
+              } else if (isStartDate || isEndDate) {
+                backgroundColor = Colors.transparent;
+                border = Border.all(color: AppTheme.primaryColor, width: 2);
+                textColor = AppTheme.primaryColor;
                 fontWeight = FontWeight.bold;
               } else {
                 backgroundColor = Colors.transparent;
@@ -258,37 +277,10 @@ class _FullScreenBookingViewState extends State<FullScreenBookingView>
     );
   }
 
-  List<DateTime> _getDateRange() {
-    final dates = <DateTime>[];
-
-    // Get all dates with bookings
-    final bookingDates =
-        widget.schedules.keys.map((key) => DateTime.parse(key)).toList()
-          ..sort();
-
-    if (bookingDates.isEmpty) return dates;
-
-    final start = bookingDates.first;
-    final end = bookingDates.last;
-
-    for (var i = 0; i <= end.difference(start).inDays; i++) {
-      dates.add(start.add(Duration(days: i)));
-    }
-
-    return dates;
-  }
-
   List<SubscriptionScheduleEntity> _getBookingsForDate(DateTime date) {
     final dateKey = date.toIso8601String().split('T')[0];
     final schedule = widget.schedules[dateKey];
     return schedule != null ? [schedule] : [];
-  }
-
-  void _onDateTap(DateTime date) {
-    setState(() {
-      _selectedDate = date;
-    });
-    widget.onDateSelected(date);
   }
 
   Future<void> _close() async {
@@ -300,18 +292,18 @@ class _FullScreenBookingViewState extends State<FullScreenBookingView>
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        
         if (_currentView == FullScreenView.timeEditor) {
-          // If in time editor, go back to booking list
           setState(() {
             _currentView = FullScreenView.bookingList;
           });
-          return false;
+        } else {
+          await _close();
         }
-        // Otherwise, close the full-screen view
-        await _close();
-        return false;
       },
       child: Scaffold(
         backgroundColor: Colors.black,
@@ -334,186 +326,194 @@ class _FullScreenBookingViewState extends State<FullScreenBookingView>
     final bookings = _getBookingsForDate(_selectedDate);
 
     return Column(
-                children: [
-                  // Header with close button
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
-                      children: [
-                        GestureDetector(
-                          onTap: _close,
-                          child: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Icon(
-                              CupertinoIcons.chevron_down,
-                              color: Colors.white,
-                              size: 24,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Text(
-                          'الحجوزات',
-                          style: AppTheme.textTheme.headlineSmall?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
+      children: [
+        // Header with close button
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              GestureDetector(
+                onTap: _close,
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-
-                  // Full month calendar
-                  SizedBox(height: 380, child: _buildCalendarGrid()),
-
-                  const SizedBox(height: 16),
-
-                  // Booking list or empty state
-                  Expanded(
-                    child: bookings.isEmpty
-                        ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  CupertinoIcons.calendar_badge_minus,
-                                  size: 64,
-                                  color: Colors.white.withValues(alpha: 0.3),
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  'لا يوجد حجز في هذا اليوم',
-                                  style: AppTheme.textTheme.titleMedium
-                                      ?.copyWith(color: Colors.white70),
-                                ),
-                              ],
-                            ),
-                          )
-                        : ListView.builder(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            itemCount: bookings.length,
-                            itemBuilder: (context, index) {
-                              return _BookingCardItem(
-                                booking: bookings[index],
-                                index: index,
-                                onTap: () {
-                                  // Show time editor inside full-screen
-                                  setState(() {
-                                    _selectedBooking = bookings[index];
-                                    _currentView = FullScreenView.timeEditor;
-                                  });
-                                },
-                              );
-                            },
-                          ),
+                  child: const Icon(
+                    CupertinoIcons.chevron_down,
+                    color: Colors.white,
+                    size: 24,
                   ),
-                ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              Text(
+                'الحجوزات',
+                style: AppTheme.textTheme.headlineSmall?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Full month calendar
+        SizedBox(height: 380, child: _buildCalendarGrid()),
+
+        const SizedBox(height: 16),
+
+        // Booking list or empty state
+        Expanded(
+          child: bookings.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        CupertinoIcons.calendar_badge_minus,
+                        size: 64,
+                        color: Colors.white.withValues(alpha: 0.3),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'لا يوجد حجز في هذا اليوم',
+                        style: AppTheme.textTheme.titleMedium?.copyWith(
+                          color: Colors.white70,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: bookings.length,
+                  itemBuilder: (context, index) {
+                    return _BookingCardItem(
+                      booking: bookings[index],
+                      index: index,
+                      onTap: () {
+                        // Show time editor inside full-screen
+                        setState(() {
+                          _selectedBooking = bookings[index];
+                          _currentView = FullScreenView.timeEditor;
+                        });
+                      },
+                    );
+                  },
+                ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTimeEditorView() {
+    if (_selectedBooking == null) {
+      return const Center(
+        child: Text(
+          'No booking selected',
+          style: TextStyle(color: Colors.white),
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        // Header
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _currentView = FullScreenView.bookingList;
+                  });
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    CupertinoIcons.chevron_back,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Text(
+                'اختار المواعيد',
+                style: AppTheme.textTheme.headlineSmall?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Date display
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          child: Text(
+            DateFormat('EEEE d MMMM', 'ar').format(_selectedDate),
+            style: AppTheme.textTheme.titleLarge?.copyWith(
+              color: AppTheme.primaryColor,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+
+        // Placeholder for time selection
+        Expanded(
+          child: Center(
+            child: Text(
+              'Time selection UI',
+              style: AppTheme.textTheme.bodyLarge?.copyWith(
+                color: Colors.white70,
               ),
             ),
           ),
         ),
-      ),
+
+        // Confirm button
+        Padding(
+          padding: const EdgeInsets.all(24),
+          child: SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  _currentView = FullScreenView.bookingList;
+                });
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                foregroundColor: Colors.black,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Text(
+                'تأكيد الجدول',
+                style: AppTheme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
 
-class _DateChip extends StatelessWidget {
-  final DateTime date;
-  final bool isSelected;
-  final bool hasBooking;
-  final VoidCallback onTap;
-
-  const _DateChip({
-    required this.date,
-    required this.isSelected,
-    required this.hasBooking,
-    required this.onTap,
-  });
-
-  bool get isToday {
-    final now = DateTime.now();
-    return date.year == now.year &&
-        date.month == now.month &&
-        date.day == now.day;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-          onTap: onTap,
-          child: Container(
-            width: 70,
-            margin: const EdgeInsets.only(right: 12),
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? AppTheme.primaryColor
-                  : hasBooking
-                  ? AppTheme.primaryColor.withValues(alpha: 0.2)
-                  : Colors.white.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(16),
-              border: hasBooking && !isSelected
-                  ? Border.all(
-                      color: AppTheme.primaryColor.withValues(alpha: 0.5),
-                      width: 1,
-                    )
-                  : null,
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  DateFormat('EEE', 'ar').format(date),
-                  style: AppTheme.textTheme.bodySmall?.copyWith(
-                    color: isSelected ? Colors.black : Colors.white70,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  date.day.toString(),
-                  style: AppTheme.textTheme.titleLarge?.copyWith(
-                    color: isSelected ? Colors.black : Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                // Today indicator (red dot) or booking indicator (yellow dot)
-                if (isToday)
-                  Container(
-                        width: 8,
-                        height: 8,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFFFF3B30), // Red for today
-                          shape: BoxShape.circle,
-                        ),
-                      )
-                      .animate(onPlay: (controller) => controller.repeat())
-                      .scale(
-                        begin: const Offset(1.0, 1.0),
-                        end: const Offset(1.2, 1.2),
-                        duration: 1000.ms,
-                        curve: Curves.easeInOut,
-                      )
-                      .then()
-                      .scale(
-                        begin: const Offset(1.2, 1.2),
-                        end: const Offset(1.0, 1.0),
-                        duration: 1000.ms,
-                        curve: Curves.easeInOut,
-                      )
-                else if (hasBooking)
-                  Container(
-                    width: 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: isSelected ? Colors.black : AppTheme.primaryColor,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
               ],
             ),
           ),

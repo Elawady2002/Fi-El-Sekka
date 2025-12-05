@@ -199,6 +199,7 @@ class _ActiveSubscriptionCardState
           return FullScreenBookingView(
             initialDate: _selectedDate ?? DateTime.now(),
             schedules: _schedules,
+            subscription: widget.subscription,
             onDateSelected: (date) {
               setState(() {
                 _selectedDate = date;
