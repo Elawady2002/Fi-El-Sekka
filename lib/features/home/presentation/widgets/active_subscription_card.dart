@@ -626,21 +626,38 @@ class _ActiveSubscriptionCardState
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'تاريخ الانتهاء',
+                          'نوع الرحلة',
                           style: AppTheme.textTheme.bodySmall?.copyWith(
                             color: Colors.white70,
                           ),
                         ),
                         const SizedBox(height: 4),
-                        Text(
-                          DateFormat(
-                            'd MMMM',
-                            'ar',
-                          ).format(widget.subscription.endDate),
-                          style: AppTheme.textTheme.titleLarge?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        Row(
+                          children: [
+                            Icon(
+                              _selectedTripType == 'round_trip'
+                                  ? CupertinoIcons.arrow_right_arrow_left
+                                  : _selectedTripType == 'departure_only'
+                                  ? CupertinoIcons.arrow_right
+                                  : CupertinoIcons.arrow_left,
+                              color: AppTheme.primaryColor,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                _selectedTripType == 'round_trip'
+                                    ? 'ذهاب وعودة'
+                                    : _selectedTripType == 'departure_only'
+                                    ? 'ذهاب فقط'
+                                    : 'عودة فقط',
+                                style: AppTheme.textTheme.titleMedium?.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -655,14 +672,14 @@ class _ActiveSubscriptionCardState
             Row(
               children: [
                 const Icon(
-                  CupertinoIcons.location_solid,
+                  CupertinoIcons.location_fill,
                   color: AppTheme.primaryColor,
                   size: 20,
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'من منطقتك إلى $_universityName',
+                    'من $_userArea إلى $_universityName',
                     style: AppTheme.textTheme.bodyMedium?.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
