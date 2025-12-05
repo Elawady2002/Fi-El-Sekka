@@ -495,21 +495,7 @@ class _ActiveSubscriptionCardState
                     ),
                   ),
                 ),
-                GestureDetector(
-                  onTap: _onCalendarIconTap,
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      CupertinoIcons.calendar,
-                      color: Colors.white,
-                      size: 24,
-                    ),
-                  ),
-                ),
+                // Removed calendar icon - will be inside full-screen view
               ],
             ).animate().fadeIn().slideX(begin: -0.2, end: 0),
             const SizedBox(height: 24),
