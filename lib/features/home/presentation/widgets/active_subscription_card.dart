@@ -348,13 +348,10 @@ class _ActiveSubscriptionCardState
   }
 
   Widget _buildDetailsContent() {
-    return GestureDetector(
+    return Padding(
       key: const ValueKey('details'),
-      onTap: _onCalendarIconTap,
-      behavior: HitTestBehavior.opaque,
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
+      padding: const EdgeInsets.all(24),
+      child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
@@ -377,10 +374,20 @@ class _ActiveSubscriptionCardState
                     ),
                   ),
                 ),
-                Icon(
-                  CupertinoIcons.arrow_right_circle_fill,
-                  color: Colors.white.withValues(alpha: 0.5),
-                  size: 24,
+                GestureDetector(
+                  onTap: _onCalendarIconTap,
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      CupertinoIcons.calendar,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                  ),
                 ),
               ],
             ).animate().fadeIn().slideX(begin: -0.2, end: 0),
