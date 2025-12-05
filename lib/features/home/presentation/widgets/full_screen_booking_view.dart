@@ -170,10 +170,22 @@ class _FullScreenBookingViewState extends State<FullScreenBookingView>
               final dateKey = date.toIso8601String().split('T')[0];
 
               final isToday = _isSameDay(date, DateTime.now());
+              final isWeekend = date.weekday == DateTime.friday;
+
+              // Check if date is within subscription range (need subscription data)
+              // For now, allow all dates - will be enhanced when subscription is passed
+              final isAvailable =
+                  date.isAfter(
+                    DateTime.now().subtract(const Duration(days: 1)),
+                  ) &&
+                  !isWeekend;
+
               final hasBooking = widget.schedules.containsKey(dateKey);
               final isSelected = _isSameDay(date, _selectedDate);
 
+              // Determine styles based on state
               Color? backgroundColor;
+              BoxBorder? border;
               Color textColor = Colors.white;
               FontWeight fontWeight = FontWeight.normal;
 
@@ -182,21 +194,24 @@ class _FullScreenBookingViewState extends State<FullScreenBookingView>
                 textColor = Colors.black;
                 fontWeight = FontWeight.bold;
               } else if (hasBooking) {
-                backgroundColor = AppTheme.primaryColor.withValues(alpha: 0.3);
-                textColor = AppTheme.primaryColor;
+                // All bookings are yellow
+                backgroundColor = AppTheme.primaryColor;
+                textColor = Colors.black;
                 fontWeight = FontWeight.bold;
               } else {
                 backgroundColor = Colors.transparent;
-                textColor = Colors.white;
+                textColor = isAvailable ? Colors.white : Colors.white24;
               }
 
               return GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _selectedDate = date;
-                  });
-                  widget.onDateSelected(date);
-                },
+                onTap: isAvailable
+                    ? () {
+                        setState(() {
+                          _selectedDate = date;
+                        });
+                        widget.onDateSelected(date);
+                      }
+                    : null,
                 child: Column(
                   children: [
                     Expanded(
@@ -205,6 +220,7 @@ class _FullScreenBookingViewState extends State<FullScreenBookingView>
                         decoration: BoxDecoration(
                           color: backgroundColor,
                           borderRadius: BorderRadius.circular(12),
+                          border: border,
                         ),
                         alignment: Alignment.center,
                         child: Text(
