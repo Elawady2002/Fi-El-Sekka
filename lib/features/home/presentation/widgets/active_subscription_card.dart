@@ -968,6 +968,19 @@ class _ActiveSubscriptionCardState
     return DateFormat('EEEE d MMMM', 'ar').format(nearestDate);
   }
 
+  String _getTripTypeLabel(String tripType) {
+    switch (tripType) {
+      case 'departure_only':
+        return 'ذهاب فقط';
+      case 'return_only':
+        return 'عودة فقط';
+      case 'round_trip':
+        return 'ذهاب وعودة';
+      default:
+        return 'ذهاب وعودة';
+    }
+  }
+
   Widget _buildBookingListContent() {
     if (_selectedDate == null) {
       return const Center(child: Text('لا يوجد تاريخ محدد'));
