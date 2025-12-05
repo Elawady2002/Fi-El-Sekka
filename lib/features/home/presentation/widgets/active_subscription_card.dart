@@ -592,15 +592,7 @@ class _ActiveSubscriptionCardState
                             ),
                           ],
                         ),
-                      ),
-                    ],
-                  ],
-                ),
-              ],
             ] else ...[
-               Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
               // Start and End dates side by side
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
