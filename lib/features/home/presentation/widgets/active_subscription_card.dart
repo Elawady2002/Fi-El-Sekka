@@ -342,67 +342,81 @@ class _ActiveSubscriptionCardState
             _dragDistance += details.delta.dy;
           });
 
-          // Play friction sound when dragging (simplified - would need audio player)
-          if (_dragDistance > 50 && _dragDistance < 52) {
+          // Haptic feedback at intervals
+          if (_dragDistance > 30 && _dragDistance.toInt() % 30 == 0) {
+            HapticFeedback.selectionClick();
+          }
+
+          // Strong haptic when reaching threshold
+          if (_dragDistance > 150 && _dragDistance < 152) {
+            HapticFeedback.mediumImpact();
             _playSound();
           }
         }
       },
       onVerticalDragEnd: (details) {
-        if (_dragDistance > 100) {
-          // Trigger full-screen view
+        if (_dragDistance > 150) {
+          // Strong pull - trigger full-screen view
+          HapticFeedback.heavyImpact();
           _openFullScreenView();
+        } else if (_dragDistance > 50) {
+          // Weak pull - play rejection sound
+          HapticFeedback.lightImpact();
+          _playSound();
         }
         setState(() {
           _dragDistance = 0;
         });
       },
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.black,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.2),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: AnimatedSize(
-            duration: const Duration(milliseconds: 400),
-            curve: Curves.easeInOutCubic,
-            alignment: Alignment.topCenter,
-            child: AnimatedSwitcher(
+      child: Transform.translate(
+        offset: Offset(0, _dragDistance > 0 ? _dragDistance * 0.4 : 0),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.black,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.2),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: AnimatedSize(
               duration: const Duration(milliseconds: 400),
-              switchInCurve: Curves.easeOutCubic,
-              switchOutCurve: Curves.easeInCubic,
-              layoutBuilder: (currentChild, previousChildren) {
-                return Stack(
-                  alignment: Alignment.topCenter,
-                  children: <Widget>[
-                    ...previousChildren,
-                    if (currentChild != null) currentChild,
-                  ],
-                );
-              },
-              transitionBuilder: (child, animation) {
-                final isForward = _currentView.index > _previousView.index;
-                final offset = isForward
-                    ? const Offset(1.0, 0.0)
-                    : const Offset(-1.0, 0.0);
+              curve: Curves.easeInOutCubic,
+              alignment: Alignment.topCenter,
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 400),
+                switchInCurve: Curves.easeOutCubic,
+                switchOutCurve: Curves.easeInCubic,
+                layoutBuilder: (currentChild, previousChildren) {
+                  return Stack(
+                    alignment: Alignment.topCenter,
+                    children: <Widget>[
+                      ...previousChildren,
+                      if (currentChild != null) currentChild,
+                    ],
+                  );
+                },
+                transitionBuilder: (child, animation) {
+                  final isForward = _currentView.index > _previousView.index;
+                  final offset = isForward
+                      ? const Offset(1.0, 0.0)
+                      : const Offset(-1.0, 0.0);
 
-                return SlideTransition(
-                  position: Tween<Offset>(
-                    begin: offset,
-                    end: Offset.zero,
-                  ).animate(animation),
-                  child: FadeTransition(opacity: animation, child: child),
-                );
-              },
-              child: _buildCurrentViewContent(),
+                  return SlideTransition(
+                    position: Tween<Offset>(
+                      begin: offset,
+                      end: Offset.zero,
+                    ).animate(animation),
+                    child: FadeTransition(opacity: animation, child: child),
+                  );
+                },
+                child: _buildCurrentViewContent(),
+              ),
             ),
           ),
         ),
