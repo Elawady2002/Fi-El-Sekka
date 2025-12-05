@@ -12,7 +12,7 @@ import '../../../subscription/domain/entities/subscription_entity.dart';
 import '../../../subscription/domain/entities/subscription_schedule_entity.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 
-enum SubscriptionCardView { details, calendar, timeSelection }
+enum SubscriptionCardView { details, calendar, bookingList, timeSelection }
 
 class ActiveSubscriptionCard extends ConsumerStatefulWidget {
   final SubscriptionEntity subscription;
@@ -342,6 +342,8 @@ class _ActiveSubscriptionCardState
         return _buildDetailsContent();
       case SubscriptionCardView.calendar:
         return _buildCalendarContent();
+      case SubscriptionCardView.bookingList:
+        return _buildBookingListContent();
       case SubscriptionCardView.timeSelection:
         return _buildTimeSelectionContent();
     }
@@ -648,9 +650,6 @@ class _ActiveSubscriptionCardState
                 isWithinSubscription;
 
             final hasSchedule = _schedules.containsKey(dateKey);
-            final schedule = _schedules[dateKey];
-            final isFromSubscription =
-                schedule?.subscriptionId.isNotEmpty ?? false;
             final isSelected =
                 _selectedDate != null && _isSameDay(date, _selectedDate!);
 
@@ -670,11 +669,8 @@ class _ActiveSubscriptionCardState
               textColor = Colors.black;
               fontWeight = FontWeight.bold;
             } else if (hasSchedule) {
-              // Different colors for subscription vs regular bookings
-              backgroundColor = isFromSubscription
-                  ? AppTheme
-                        .primaryColor // Yellow for subscription
-                  : Colors.blue.shade400; // Blue for regular bookings
+              // All bookings are yellow
+              backgroundColor = AppTheme.primaryColor;
               textColor = Colors.black;
               fontWeight = FontWeight.bold;
             } else if (isStartDate || isEndDate) {
