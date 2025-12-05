@@ -66,6 +66,15 @@ class _ActiveSubscriptionCardState
     _fetchSchedules();
   }
 
+  @override
+  void didUpdateWidget(ActiveSubscriptionCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Refresh calendar when regularBookings list changes
+    if (oldWidget.regularBookings.length != widget.regularBookings.length) {
+      _fetchSchedules();
+    }
+  }
+
   Future<void> _fetchUniversityName() async {
     final user = ref.read(authProvider);
     if (user?.universityId != null) {
