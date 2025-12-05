@@ -592,6 +592,11 @@ class _ActiveSubscriptionCardState
                             ),
                           ],
                         ),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
             ] else ...[
               // Start and End dates side by side
               Row(
