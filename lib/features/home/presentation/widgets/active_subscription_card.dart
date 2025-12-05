@@ -39,7 +39,8 @@ class _ActiveSubscriptionCardState
   String? _selectedReturnTime;
   String _selectedTripType = 'round_trip';
   String? _universityName;
-  String _userArea = 'منطقتك'; // Default value, will be updated from route
+  final String _userArea =
+      'منطقتك'; // Default value, will be updated from route
   Map<String, SubscriptionScheduleEntity> _schedules = {};
   bool _isLoadingSchedules = false;
   late DateTime _currentMonth;
