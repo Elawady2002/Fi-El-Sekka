@@ -20,7 +20,7 @@ class _SubscriptionPlansSheetState
     extends ConsumerState<SubscriptionPlansSheet> {
   final PageController _pageController = PageController(viewportFraction: 0.9);
   // _currentPage removed as it was unused
-  bool _isInstallmentEnabled = false; // Moved by instruction
+  final bool _isInstallmentEnabled = false; // Moved by instruction
   bool _isProcessing = false; // Added by instruction
 
   final List<Map<String, dynamic>> _plans = [
@@ -204,7 +204,7 @@ class _SubscriptionPlansSheetState
                           }
                         });
                       } catch (e) {
-                        print('Error checking subscription: $e');
+                        debugPrint('Error checking subscription: $e');
                         setState(() {
                           _isProcessing = false;
                         });

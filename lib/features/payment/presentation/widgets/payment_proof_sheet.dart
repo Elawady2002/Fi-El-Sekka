@@ -83,13 +83,13 @@ class _PaymentProofSheetState extends State<PaymentProofSheet> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext viewContext) {
     return Container(
       padding: EdgeInsets.only(
         top: 24,
         left: 24,
         right: 24,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+        bottom: MediaQuery.of(viewContext).viewInsets.bottom + 24,
       ),
       decoration: const BoxDecoration(
         color: Colors.white,

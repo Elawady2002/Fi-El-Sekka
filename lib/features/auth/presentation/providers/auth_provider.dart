@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../../core/domain/entities/user_entity.dart';
 import '../../domain/repositories/auth_repository.dart';
@@ -9,7 +10,7 @@ part 'auth_provider.g.dart';
 
 /// Provider for AuthRepository
 @riverpod
-AuthRepository authRepository(AuthRepositoryRef ref) {
+AuthRepository authRepository(Ref ref) {
   return AuthRepositoryImpl();
 }
 

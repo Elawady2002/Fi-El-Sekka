@@ -34,7 +34,7 @@ class _PersonalDataPageState extends ConsumerState<PersonalDataPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext viewContext) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F7),
       appBar: AppBar(

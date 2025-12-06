@@ -198,7 +198,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                               _buildUpcomingTripCard(),
                             ],
                           ),
-                          error: (_, __) => Column(
+                          error: (e, s) => Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               _buildSectionTitle('رحلتك الجاية'),
@@ -230,7 +230,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                             );
                           },
                           loading: () => const SizedBox.shrink(),
-                          error: (_, __) => const SizedBox.shrink(),
+                          error: (e, s) => const SizedBox.shrink(),
                         );
                       },
                     ),

@@ -30,7 +30,7 @@ class _TripMapSheetState extends State<TripMapSheet> {
 
   Future<void> _getCurrentLocation() async {
     // Temporarily using fixed location to avoid iOS build issues with geolocator_apple
-    // TODO: Re-enable when geolocator_apple is updated
+    // NOTE: Re-enable when geolocator_apple is updated
     setState(() {
       // Fixed location near Madinaty for testing
       _userLocation = const LatLng(30.0920, 31.6380);

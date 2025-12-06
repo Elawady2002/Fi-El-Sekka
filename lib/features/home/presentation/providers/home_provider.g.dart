@@ -7,23 +7,25 @@ part of 'home_provider.dart';
 // **************************************************************************
 
 String _$homeRemoteDataSourceHash() =>
-    r'4d4ac4aea8f82ee2ad7122ac92e951c98ff1fbd1';
+    r'00ffca707b01b1aa52fe70cd6c68cca3b876b2e1';
 
 /// See also [homeRemoteDataSource].
 @ProviderFor(homeRemoteDataSource)
 final homeRemoteDataSourceProvider =
     AutoDisposeProvider<HomeRemoteDataSource>.internal(
-  homeRemoteDataSource,
-  name: r'homeRemoteDataSourceProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$homeRemoteDataSourceHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
+      homeRemoteDataSource,
+      name: r'homeRemoteDataSourceProvider',
+      debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+          ? null
+          : _$homeRemoteDataSourceHash,
+      dependencies: null,
+      allTransitiveDependencies: null,
+    );
 
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
 typedef HomeRemoteDataSourceRef = AutoDisposeProviderRef<HomeRemoteDataSource>;
-String _$homeRepositoryHash() => r'f47cef90fd675013f0c26b20f02a5f6f568c02fd';
+String _$homeRepositoryHash() => r'6fc01a1657a74331472ffd92897fc9c841e2bfff';
 
 /// See also [homeRepository].
 @ProviderFor(homeRepository)
@@ -37,22 +39,27 @@ final homeRepositoryProvider = AutoDisposeProvider<HomeRepository>.internal(
   allTransitiveDependencies: null,
 );
 
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
 typedef HomeRepositoryRef = AutoDisposeProviderRef<HomeRepository>;
-String _$citiesHash() => r'1e64fc3bebc98600364ef94612ecf01aed7c6a9d';
+String _$citiesHash() => r'2bc1b4071b8391788f88bdfc7084868dfd19cbf6';
 
 /// See also [cities].
 @ProviderFor(cities)
 final citiesProvider = AutoDisposeFutureProvider<List<CityEntity>>.internal(
   cities,
   name: r'citiesProvider',
-  debugGetCreateSourceHash:
-      const bool.fromEnvironment('dart.vm.product') ? null : _$citiesHash,
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$citiesHash,
   dependencies: null,
   allTransitiveDependencies: null,
 );
 
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
 typedef CitiesRef = AutoDisposeFutureProviderRef<List<CityEntity>>;
-String _$universitiesHash() => r'e810ad1686692bceff3db9908a42d2b1fb106e5d';
+String _$universitiesHash() => r'2e3ecad12a513c9645fc8cd7af6a96bc16c1ffa9';
 
 /// Copied from Dart SDK
 class _SystemHash {
@@ -85,21 +92,15 @@ class UniversitiesFamily extends Family<AsyncValue<List<UniversityEntity>>> {
   const UniversitiesFamily();
 
   /// See also [universities].
-  UniversitiesProvider call(
-    String cityId,
-  ) {
-    return UniversitiesProvider(
-      cityId,
-    );
+  UniversitiesProvider call(String cityId) {
+    return UniversitiesProvider(cityId);
   }
 
   @override
   UniversitiesProvider getProviderOverride(
     covariant UniversitiesProvider provider,
   ) {
-    return call(
-      provider.cityId,
-    );
+    return call(provider.cityId);
   }
 
   static const Iterable<ProviderOrFamily>? _dependencies = null;
@@ -121,24 +122,19 @@ class UniversitiesFamily extends Family<AsyncValue<List<UniversityEntity>>> {
 class UniversitiesProvider
     extends AutoDisposeFutureProvider<List<UniversityEntity>> {
   /// See also [universities].
-  UniversitiesProvider(
-    String cityId,
-  ) : this._internal(
-          (ref) => universities(
-            ref as UniversitiesRef,
-            cityId,
-          ),
-          from: universitiesProvider,
-          name: r'universitiesProvider',
-          debugGetCreateSourceHash:
-              const bool.fromEnvironment('dart.vm.product')
-                  ? null
-                  : _$universitiesHash,
-          dependencies: UniversitiesFamily._dependencies,
-          allTransitiveDependencies:
-              UniversitiesFamily._allTransitiveDependencies,
-          cityId: cityId,
-        );
+  UniversitiesProvider(String cityId)
+    : this._internal(
+        (ref) => universities(ref as UniversitiesRef, cityId),
+        from: universitiesProvider,
+        name: r'universitiesProvider',
+        debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+            ? null
+            : _$universitiesHash,
+        dependencies: UniversitiesFamily._dependencies,
+        allTransitiveDependencies:
+            UniversitiesFamily._allTransitiveDependencies,
+        cityId: cityId,
+      );
 
   UniversitiesProvider._internal(
     super._createNotifier, {
@@ -189,6 +185,8 @@ class UniversitiesProvider
   }
 }
 
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
 mixin UniversitiesRef on AutoDisposeFutureProviderRef<List<UniversityEntity>> {
   /// The parameter `cityId` of this provider.
   String get cityId;
@@ -203,7 +201,7 @@ class _UniversitiesProviderElement
   String get cityId => (origin as UniversitiesProvider).cityId;
 }
 
-String _$stationsHash() => r'6adb20c10dddabafc452a6507e2436cb288fcdfb';
+String _$stationsHash() => r'd6d4901cd4fd1dfbbdacff297a041dc1aed39afc';
 
 /// See also [stations].
 @ProviderFor(stations)
@@ -215,21 +213,13 @@ class StationsFamily extends Family<AsyncValue<List<StationEntity>>> {
   const StationsFamily();
 
   /// See also [stations].
-  StationsProvider call(
-    String cityId,
-  ) {
-    return StationsProvider(
-      cityId,
-    );
+  StationsProvider call(String cityId) {
+    return StationsProvider(cityId);
   }
 
   @override
-  StationsProvider getProviderOverride(
-    covariant StationsProvider provider,
-  ) {
-    return call(
-      provider.cityId,
-    );
+  StationsProvider getProviderOverride(covariant StationsProvider provider) {
+    return call(provider.cityId);
   }
 
   static const Iterable<ProviderOrFamily>? _dependencies = null;
@@ -250,23 +240,18 @@ class StationsFamily extends Family<AsyncValue<List<StationEntity>>> {
 /// See also [stations].
 class StationsProvider extends AutoDisposeFutureProvider<List<StationEntity>> {
   /// See also [stations].
-  StationsProvider(
-    String cityId,
-  ) : this._internal(
-          (ref) => stations(
-            ref as StationsRef,
-            cityId,
-          ),
-          from: stationsProvider,
-          name: r'stationsProvider',
-          debugGetCreateSourceHash:
-              const bool.fromEnvironment('dart.vm.product')
-                  ? null
-                  : _$stationsHash,
-          dependencies: StationsFamily._dependencies,
-          allTransitiveDependencies: StationsFamily._allTransitiveDependencies,
-          cityId: cityId,
-        );
+  StationsProvider(String cityId)
+    : this._internal(
+        (ref) => stations(ref as StationsRef, cityId),
+        from: stationsProvider,
+        name: r'stationsProvider',
+        debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+            ? null
+            : _$stationsHash,
+        dependencies: StationsFamily._dependencies,
+        allTransitiveDependencies: StationsFamily._allTransitiveDependencies,
+        cityId: cityId,
+      );
 
   StationsProvider._internal(
     super._createNotifier, {
@@ -317,6 +302,8 @@ class StationsProvider extends AutoDisposeFutureProvider<List<StationEntity>> {
   }
 }
 
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
 mixin StationsRef on AutoDisposeFutureProviderRef<List<StationEntity>> {
   /// The parameter `cityId` of this provider.
   String get cityId;
@@ -331,7 +318,7 @@ class _StationsProviderElement
   String get cityId => (origin as StationsProvider).cityId;
 }
 
-String _$routesHash() => r'1884592ec15ad5f8f82e9820bc5991ab6e7410f7';
+String _$routesHash() => r'aa9b6dc4f47a6d33f0598946c045b050ccc9aa59';
 
 /// See also [routes].
 @ProviderFor(routes)
@@ -343,21 +330,13 @@ class RoutesFamily extends Family<AsyncValue<List<RouteEntity>>> {
   const RoutesFamily();
 
   /// See also [routes].
-  RoutesProvider call(
-    String universityId,
-  ) {
-    return RoutesProvider(
-      universityId,
-    );
+  RoutesProvider call(String universityId) {
+    return RoutesProvider(universityId);
   }
 
   @override
-  RoutesProvider getProviderOverride(
-    covariant RoutesProvider provider,
-  ) {
-    return call(
-      provider.universityId,
-    );
+  RoutesProvider getProviderOverride(covariant RoutesProvider provider) {
+    return call(provider.universityId);
   }
 
   static const Iterable<ProviderOrFamily>? _dependencies = null;
@@ -378,23 +357,18 @@ class RoutesFamily extends Family<AsyncValue<List<RouteEntity>>> {
 /// See also [routes].
 class RoutesProvider extends AutoDisposeFutureProvider<List<RouteEntity>> {
   /// See also [routes].
-  RoutesProvider(
-    String universityId,
-  ) : this._internal(
-          (ref) => routes(
-            ref as RoutesRef,
-            universityId,
-          ),
-          from: routesProvider,
-          name: r'routesProvider',
-          debugGetCreateSourceHash:
-              const bool.fromEnvironment('dart.vm.product')
-                  ? null
-                  : _$routesHash,
-          dependencies: RoutesFamily._dependencies,
-          allTransitiveDependencies: RoutesFamily._allTransitiveDependencies,
-          universityId: universityId,
-        );
+  RoutesProvider(String universityId)
+    : this._internal(
+        (ref) => routes(ref as RoutesRef, universityId),
+        from: routesProvider,
+        name: r'routesProvider',
+        debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+            ? null
+            : _$routesHash,
+        dependencies: RoutesFamily._dependencies,
+        allTransitiveDependencies: RoutesFamily._allTransitiveDependencies,
+        universityId: universityId,
+      );
 
   RoutesProvider._internal(
     super._createNotifier, {
@@ -445,20 +419,23 @@ class RoutesProvider extends AutoDisposeFutureProvider<List<RouteEntity>> {
   }
 }
 
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
 mixin RoutesRef on AutoDisposeFutureProviderRef<List<RouteEntity>> {
   /// The parameter `universityId` of this provider.
   String get universityId;
 }
 
 class _RoutesProviderElement
-    extends AutoDisposeFutureProviderElement<List<RouteEntity>> with RoutesRef {
+    extends AutoDisposeFutureProviderElement<List<RouteEntity>>
+    with RoutesRef {
   _RoutesProviderElement(super.provider);
 
   @override
   String get universityId => (origin as RoutesProvider).universityId;
 }
 
-String _$schedulesHash() => r'1c0779ca49d69d1d6bbd6c3cfdfd1ac0071305c6';
+String _$schedulesHash() => r'abfa14e5b56a7278b69c50265f0ec5224373bd73';
 
 /// See also [schedules].
 @ProviderFor(schedules)
@@ -470,21 +447,13 @@ class SchedulesFamily extends Family<AsyncValue<List<ScheduleEntity>>> {
   const SchedulesFamily();
 
   /// See also [schedules].
-  SchedulesProvider call(
-    String routeId,
-  ) {
-    return SchedulesProvider(
-      routeId,
-    );
+  SchedulesProvider call(String routeId) {
+    return SchedulesProvider(routeId);
   }
 
   @override
-  SchedulesProvider getProviderOverride(
-    covariant SchedulesProvider provider,
-  ) {
-    return call(
-      provider.routeId,
-    );
+  SchedulesProvider getProviderOverride(covariant SchedulesProvider provider) {
+    return call(provider.routeId);
   }
 
   static const Iterable<ProviderOrFamily>? _dependencies = null;
@@ -506,23 +475,18 @@ class SchedulesFamily extends Family<AsyncValue<List<ScheduleEntity>>> {
 class SchedulesProvider
     extends AutoDisposeFutureProvider<List<ScheduleEntity>> {
   /// See also [schedules].
-  SchedulesProvider(
-    String routeId,
-  ) : this._internal(
-          (ref) => schedules(
-            ref as SchedulesRef,
-            routeId,
-          ),
-          from: schedulesProvider,
-          name: r'schedulesProvider',
-          debugGetCreateSourceHash:
-              const bool.fromEnvironment('dart.vm.product')
-                  ? null
-                  : _$schedulesHash,
-          dependencies: SchedulesFamily._dependencies,
-          allTransitiveDependencies: SchedulesFamily._allTransitiveDependencies,
-          routeId: routeId,
-        );
+  SchedulesProvider(String routeId)
+    : this._internal(
+        (ref) => schedules(ref as SchedulesRef, routeId),
+        from: schedulesProvider,
+        name: r'schedulesProvider',
+        debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+            ? null
+            : _$schedulesHash,
+        dependencies: SchedulesFamily._dependencies,
+        allTransitiveDependencies: SchedulesFamily._allTransitiveDependencies,
+        routeId: routeId,
+      );
 
   SchedulesProvider._internal(
     super._createNotifier, {
@@ -573,6 +537,8 @@ class SchedulesProvider
   }
 }
 
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
 mixin SchedulesRef on AutoDisposeFutureProviderRef<List<ScheduleEntity>> {
   /// The parameter `routeId` of this provider.
   String get routeId;
@@ -586,5 +552,6 @@ class _SchedulesProviderElement
   @override
   String get routeId => (origin as SchedulesProvider).routeId;
 }
+
 // ignore_for_file: type=lint
-// ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member
+// ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

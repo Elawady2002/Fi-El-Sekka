@@ -1,4 +1,5 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../data/datasources/home_remote_data_source.dart';
 import '../../data/repositories/home_repository_impl.dart';
@@ -12,18 +13,18 @@ import '../../../booking/domain/entities/schedule_entity.dart';
 part 'home_provider.g.dart';
 
 @riverpod
-HomeRemoteDataSource homeRemoteDataSource(HomeRemoteDataSourceRef ref) {
+HomeRemoteDataSource homeRemoteDataSource(Ref ref) {
   return HomeRemoteDataSourceImpl(Supabase.instance.client);
 }
 
 @riverpod
-HomeRepository homeRepository(HomeRepositoryRef ref) {
+HomeRepository homeRepository(Ref ref) {
   final remoteDataSource = ref.watch(homeRemoteDataSourceProvider);
   return HomeRepositoryImpl(remoteDataSource: remoteDataSource);
 }
 
 @riverpod
-Future<List<CityEntity>> cities(CitiesRef ref) async {
+Future<List<CityEntity>> cities(Ref ref) async {
   final repository = ref.watch(homeRepositoryProvider);
   final result = await repository.getCities();
   return result.fold(
@@ -33,10 +34,7 @@ Future<List<CityEntity>> cities(CitiesRef ref) async {
 }
 
 @riverpod
-Future<List<UniversityEntity>> universities(
-  UniversitiesRef ref,
-  String cityId,
-) async {
+Future<List<UniversityEntity>> universities(Ref ref, String cityId) async {
   final repository = ref.watch(homeRepositoryProvider);
   final result = await repository.getUniversities(cityId);
   return result.fold(
@@ -47,7 +45,7 @@ Future<List<UniversityEntity>> universities(
 
 @riverpod
 Future<List<StationEntity>> stations(
-  StationsRef ref,
+  Ref ref,
   String cityId, // Changed from universityId to cityId
 ) async {
   final repository = ref.watch(homeRepositoryProvider);
@@ -61,7 +59,7 @@ Future<List<StationEntity>> stations(
 }
 
 @riverpod
-Future<List<RouteEntity>> routes(RoutesRef ref, String universityId) async {
+Future<List<RouteEntity>> routes(Ref ref, String universityId) async {
   final repository = ref.watch(homeRepositoryProvider);
   final result = await repository.getRoutes(universityId);
   return result.fold(
@@ -71,7 +69,7 @@ Future<List<RouteEntity>> routes(RoutesRef ref, String universityId) async {
 }
 
 @riverpod
-Future<List<ScheduleEntity>> schedules(SchedulesRef ref, String routeId) async {
+Future<List<ScheduleEntity>> schedules(Ref ref, String routeId) async {
   final repository = ref.watch(homeRepositoryProvider);
   final result = await repository.getSchedules(routeId);
   return result.fold(

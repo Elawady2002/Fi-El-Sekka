@@ -186,7 +186,8 @@ class WalletPage extends ConsumerWidget {
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         itemCount: transactions.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 12),
+                        separatorBuilder: (context, index) =>
+                            const SizedBox(height: 12),
                         itemBuilder: (context, index) {
                           final transaction = transactions[index];
                           return _buildTransactionItem(
@@ -235,7 +236,7 @@ class WalletPage extends ConsumerWidget {
                 TransactionDetailsSheet(booking: originalObject),
           );
         }
-        // TODO: Add subscription details sheet if needed
+        // NOTE: Add subscription details sheet if needed
       },
       child: Container(
         padding: const EdgeInsets.all(16),

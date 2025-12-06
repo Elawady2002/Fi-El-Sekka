@@ -140,9 +140,11 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
   ) async {
     try {
       final dataList = await _dataSource.getUserSubscriptions(userId);
-      print('DEBUG: Fetched ${dataList.length} subscriptions for user $userId');
+      AppLogger.info(
+        'DEBUG: Fetched ${dataList.length} subscriptions for user $userId',
+      );
       for (var d in dataList) {
-        print(
+        AppLogger.info(
           'DEBUG: Sub: ${d['id']}, Status: ${d['status']}, End: ${d['end_date']}',
         );
       }

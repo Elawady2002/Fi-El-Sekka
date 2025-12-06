@@ -193,7 +193,7 @@ class SubscriptionDetailsSheet extends StatelessWidget {
           child: CircularProgressIndicator(color: AppTheme.primaryColor),
         );
       },
-      errorBuilder: (_, error, __) {
+      errorBuilder: (context, error, stackTrace) {
         return Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,

@@ -1,21 +1,23 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../booking/data/datasources/booking_data_source.dart';
 import '../../domain/repositories/subscription_repository.dart';
 import '../../data/datasources/subscription_data_source.dart';
 import '../../domain/entities/subscription_entity.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../../core/utils/logger.dart';
 import '../../data/repositories/subscription_repository_impl.dart';
 
 part 'subscription_provider.g.dart';
 
 @riverpod
-SubscriptionDataSource subscriptionDataSource(SubscriptionDataSourceRef ref) {
+SubscriptionDataSource subscriptionDataSource(Ref ref) {
   return SubscriptionDataSourceImpl(Supabase.instance.client);
 }
 
 @riverpod
-SubscriptionRepository subscriptionRepository(SubscriptionRepositoryRef ref) {
+SubscriptionRepository subscriptionRepository(Ref ref) {
   final dataSource = ref.watch(subscriptionDataSourceProvider);
   // Create BookingDataSource directly instead of using a provider
   final bookingDataSource = BookingDataSourceImpl();
@@ -24,9 +26,7 @@ SubscriptionRepository subscriptionRepository(SubscriptionRepositoryRef ref) {
 
 // User Subscriptions Provider (all subscriptions)
 @riverpod
-Future<List<SubscriptionEntity>> userSubscriptions(
-  UserSubscriptionsRef ref,
-) async {
+Future<List<SubscriptionEntity>> userSubscriptions(Ref ref) async {
   final user = ref.watch(authProvider);
   if (user == null) return [];
 
@@ -41,14 +41,12 @@ Future<List<SubscriptionEntity>> userSubscriptions(
 
 // Active Subscription Provider (current active subscription)
 @riverpod
-Future<SubscriptionEntity?> activeSubscription(
-  ActiveSubscriptionRef ref,
-) async {
+Future<SubscriptionEntity?> activeSubscription(Ref ref) async {
   final subscriptions = await ref.watch(userSubscriptionsProvider.future);
 
   // Find the first active or pending subscription
   try {
-    print(
+    AppLogger.info(
       'DEBUG: Filtering ${subscriptions.length} subscriptions for active/pending',
     );
     final activeSub = subscriptions.firstWhere((sub) {
@@ -56,15 +54,15 @@ Future<SubscriptionEntity?> activeSubscription(
           sub.status == SubscriptionStatus.active ||
           sub.status == SubscriptionStatus.pending;
       final isNotExpired = sub.endDate.isAfter(DateTime.now());
-      print(
+      AppLogger.info(
         'DEBUG: Sub ${sub.id}: Status=${sub.status}, End=${sub.endDate}, Active/Pending=$isActiveOrPending, NotExpired=$isNotExpired',
       );
       return isActiveOrPending && isNotExpired;
     });
-    print('DEBUG: Found active subscription: ${activeSub.id}');
+    AppLogger.info('DEBUG: Found active subscription: ${activeSub.id}');
     return activeSub;
   } catch (e) {
-    print('DEBUG: No active subscription found: $e');
+    AppLogger.info('DEBUG: No active subscription found: $e');
     return null;
   }
 }

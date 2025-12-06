@@ -6,14 +6,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../booking/data/datasources/booking_data_source.dart';
+
 import '../../../booking/domain/entities/booking_entity.dart';
 import '../../../subscription/domain/entities/subscription_entity.dart';
 import '../../../subscription/domain/entities/subscription_schedule_entity.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import 'full_screen_booking_view.dart';
-
-enum SubscriptionCardView { details, calendar, bookingList, timeSelection }
 
 class ActiveSubscriptionCard extends ConsumerStatefulWidget {
   final SubscriptionEntity subscription;
@@ -30,45 +28,29 @@ class ActiveSubscriptionCard extends ConsumerStatefulWidget {
       _ActiveSubscriptionCardState();
 }
 
-class _ActiveSubscriptionCardState
-    extends ConsumerState<ActiveSubscriptionCard> {
-  SubscriptionCardView _currentView = SubscriptionCardView.details;
-  SubscriptionCardView _previousView = SubscriptionCardView.details;
+class _ActiveSubscriptionCardState extends ConsumerState<ActiveSubscriptionCard>
+    with SingleTickerProviderStateMixin {
   DateTime? _selectedDate;
   String? _selectedDepartureTime;
   String? _selectedReturnTime;
-  String _selectedTripType = 'round_trip';
+  // String _selectedTripType = 'round_trip'; // Removed unused field
   String? _universityName;
   Map<String, SubscriptionScheduleEntity> _schedules = {};
-  bool _isLoadingSchedules = false;
-  late DateTime _currentMonth;
-  double _dragDistance = 0;
-
-  final List<String> _departureTimes = [
-    'AM 6:00',
-    'AM 6:30',
-    'AM 7:00',
-    'AM 7:30',
-    'AM 8:00',
-  ];
-
-  final List<String> _returnTimes = [
-    'PM 2:00',
-    'PM 2:30',
-    'PM 3:00',
-    'PM 3:30',
-    'PM 4:00',
-  ];
+  double _dragOffsetY = 0.0;
+  late AnimationController _springController;
+  late Animation<double> _springAnimation;
 
   @override
   void initState() {
     super.initState();
+    // Default to today, but will be updated by _fetchSchedules
     _selectedDate = DateTime.now();
-    _currentMonth = DateTime(DateTime.now().year, DateTime.now().month);
-    // Assuming AudioPlayer is declared and imported elsewhere if needed
-    // _player = AudioPlayer();
-    _fetchSchedules(); // Renamed from _loadSchedules to match existing method
+    _fetchSchedules();
     _fetchUniversityName();
+    _springController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
   }
 
   @override
@@ -78,6 +60,12 @@ class _ActiveSubscriptionCardState
     if (oldWidget.regularBookings.length != widget.regularBookings.length) {
       _fetchSchedules();
     }
+  }
+
+  @override
+  void dispose() {
+    _springController.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchUniversityName() async {
@@ -95,15 +83,13 @@ class _ActiveSubscriptionCardState
           });
         }
       } catch (e) {
-        // Fallback or log error
+        debugPrint('Error fetching university name: $e');
       }
     }
   }
 
   Future<void> _fetchSchedules() async {
     if (widget.subscription.id == null) return;
-
-    setState(() => _isLoadingSchedules = true);
 
     try {
       final Map<String, SubscriptionScheduleEntity> schedulesMap = {};
@@ -153,44 +139,49 @@ class _ActiveSubscriptionCardState
       if (mounted) {
         setState(() {
           _schedules = schedulesMap;
-          _isLoadingSchedules = false;
         });
+        _selectNearestTrip();
       }
     } catch (e) {
-      if (mounted) {
-        setState(() => _isLoadingSchedules = false);
+      debugPrint('Error fetching schedules: $e');
+    }
+  }
+
+  void _selectNearestTrip() {
+    final now = DateTime.now();
+    // Sort dates
+    final sortedDates = _schedules.keys.toList()
+      ..sort((a, b) => DateTime.parse(a).compareTo(DateTime.parse(b)));
+
+    // Find first date after now (or today if not passed yet)
+    String? nearestDateKey;
+    for (var dateKey in sortedDates) {
+      final date = DateTime.parse(dateKey);
+      // If date is today or future
+      if (date.isAfter(now.subtract(const Duration(days: 1)))) {
+        nearestDateKey = dateKey;
+        break;
       }
+    }
+
+    // If found, select it
+    if (nearestDateKey != null) {
+      final date = DateTime.parse(nearestDateKey);
+      final schedule = _schedules[nearestDateKey];
+      setState(() {
+        _selectedDate = date;
+        if (schedule != null) {
+          // _selectedTripType = schedule.tripType;
+          _selectedDepartureTime = schedule.departureTime;
+          _selectedReturnTime = schedule.returnTime;
+        }
+      });
     }
   }
 
   void _playSound() {
     HapticFeedback.selectionClick();
     SystemSound.play(SystemSoundType.click);
-  }
-
-  void _onDateSelected(DateTime date) {
-    _playSound();
-    final dateKey = date.toIso8601String().split('T')[0];
-    final existingSchedule = _schedules[dateKey];
-
-    setState(() {
-      _selectedDate = date;
-      _previousView = _currentView;
-      _currentView =
-          SubscriptionCardView.details; // Back to details to show updated data
-
-      // Load existing schedule if available
-      if (existingSchedule != null) {
-        _selectedTripType = existingSchedule.tripType;
-        _selectedDepartureTime = existingSchedule.departureTime;
-        _selectedReturnTime = existingSchedule.returnTime;
-      } else {
-        // Reset to defaults
-        _selectedTripType = 'round_trip';
-        _selectedDepartureTime = null;
-        _selectedReturnTime = null;
-      }
-    });
   }
 
   void _openFullScreenView() {
@@ -208,7 +199,7 @@ class _ActiveSubscriptionCardState
                 final dateKey = date.toIso8601String().split('T')[0];
                 final schedule = _schedules[dateKey];
                 if (schedule != null) {
-                  _selectedTripType = schedule.tripType;
+                  // _selectedTripType = schedule.tripType;
                   _selectedDepartureTime = schedule.departureTime;
                   _selectedReturnTime = schedule.returnTime;
                 }
@@ -216,12 +207,12 @@ class _ActiveSubscriptionCardState
             },
             onBookingTap: (booking) {
               Navigator.of(context).pop();
+              // Just update the displayed details on the card
               setState(() {
-                _selectedTripType = booking.tripType;
+                _selectedDate = booking.tripDate;
+                // _selectedTripType = booking.tripType;
                 _selectedDepartureTime = booking.departureTime;
                 _selectedReturnTime = booking.returnTime;
-                _previousView = _currentView;
-                _currentView = SubscriptionCardView.timeSelection;
               });
             },
           );
@@ -261,1193 +252,206 @@ class _ActiveSubscriptionCardState
     );
   }
 
-  void _onBackToCalendar() {
-    _playSound();
-    setState(() {
-      _previousView = _currentView;
-      _currentView = SubscriptionCardView.calendar;
-      _selectedDate = null;
-      _selectedDepartureTime = null;
-      _selectedReturnTime = null;
-    });
-  }
-
-  void _onBackToDetails() {
-    _playSound();
-    setState(() {
-      _previousView = _currentView;
-      _currentView = SubscriptionCardView.details;
-      _selectedDate = null;
-      _selectedDepartureTime = null;
-      _selectedReturnTime = null;
-    });
-  }
-
-  Future<void> _onConfirmSchedule() async {
-    _playSound();
-    if (_selectedDate == null) return;
-
-    try {
-      final user = ref.read(authProvider);
-      if (user == null) throw Exception('User not authenticated');
-
-      // Create booking directly in bookings table
-      final bookingDataSource = BookingDataSourceImpl();
-
-      await bookingDataSource.createSubscriptionBooking(
-        userId: user.id,
-        subscriptionId: widget.subscription.id!,
-        scheduleId: user.universityId ?? '00000000-0000-0000-0000-000000000000',
-        bookingDate: _selectedDate!,
-        tripType: _selectedTripType,
-        pickupStationId: null, // TODO: Get from user profile
-        dropoffStationId: null, // TODO: Get from user profile
-        departureTime: _selectedDepartureTime,
-        returnTime: _selectedReturnTime,
-        totalPrice: 0.0, // Already paid via subscription
-      );
-
-      if (mounted) {
-        HapticFeedback.heavyImpact();
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('تم حفظ الحجز بنجاح')));
-
-        // Refresh schedules to show the new booking
-        await _fetchSchedules();
-        _onBackToCalendar();
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('خطأ: $e')));
-      }
-    }
-  }
-
-  bool _isSameDay(DateTime date1, DateTime date2) {
-    return date1.year == date2.year &&
-        date1.month == date2.month &&
-        date1.day == date2.day;
-  }
-
-  bool _canConfirm() {
-    if (_selectedDate == null) return false;
-    if (_selectedTripType == 'departure_only' &&
-        _selectedDepartureTime == null) {
-      return false;
-    }
-    if (_selectedTripType == 'return_only' && _selectedReturnTime == null) {
-      return false;
-    }
-    if (_selectedTripType == 'round_trip' &&
-        (_selectedDepartureTime == null || _selectedReturnTime == null)) {
-      return false;
-    }
-    return true;
-  }
-
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onVerticalDragUpdate: (details) {
-        // Only allow downward drag
-        if (details.delta.dy > 0 &&
-            _currentView == SubscriptionCardView.details) {
-          setState(() {
-            _dragDistance += details.delta.dy;
-          });
-
-          // Haptic feedback at intervals
-          if (_dragDistance > 30 && _dragDistance.toInt() % 30 == 0) {
-            HapticFeedback.selectionClick();
-          }
-
-          // Strong haptic when reaching threshold
-          if (_dragDistance > 150 && _dragDistance < 152) {
-            HapticFeedback.mediumImpact();
-            _playSound();
-          }
-        }
-      },
-      onVerticalDragEnd: (details) {
-        if (_dragDistance > 150) {
-          // Strong pull - trigger full-screen view
-          HapticFeedback.heavyImpact();
-          _openFullScreenView();
-        } else if (_dragDistance > 50) {
-          // Weak pull - play rejection sound
-          HapticFeedback.lightImpact();
-          _playSound();
-        }
-        setState(() {
-          _dragDistance = 0;
-        });
-      },
-      child: Transform.translate(
-        offset: Offset(0, _dragDistance > 0 ? _dragDistance * 0.4 : 0),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.black,
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.2),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(24),
-            child: AnimatedSize(
-              duration: const Duration(milliseconds: 400),
-              curve: Curves.easeInOutCubic,
-              alignment: Alignment.topCenter,
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 400),
-                switchInCurve: Curves.easeOutCubic,
-                switchOutCurve: Curves.easeInCubic,
-                layoutBuilder: (currentChild, previousChildren) {
-                  return Stack(
-                    alignment: Alignment.topCenter,
-                    children: <Widget>[
-                      ...previousChildren,
-                      if (currentChild != null) currentChild,
-                    ],
-                  );
-                },
-                transitionBuilder: (child, animation) {
-                  final isForward = _currentView.index > _previousView.index;
-                  final offset = isForward
-                      ? const Offset(1.0, 0.0)
-                      : const Offset(-1.0, 0.0);
-
-                  return SlideTransition(
-                    position: Tween<Offset>(
-                      begin: offset,
-                      end: Offset.zero,
-                    ).animate(animation),
-                    child: FadeTransition(opacity: animation, child: child),
-                  );
-                },
-                child: _buildCurrentViewContent(),
-              ),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.black,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.2),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
             ),
-          ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: _buildDetailsContent(),
         ),
       ),
     );
-  }
-
-  Widget _buildCurrentViewContent() {
-    switch (_currentView) {
-      case SubscriptionCardView.details:
-        return _buildDetailsContent();
-      case SubscriptionCardView.calendar:
-        return _buildCalendarContent();
-      case SubscriptionCardView.bookingList:
-        return _buildBookingListContent();
-      case SubscriptionCardView.timeSelection:
-        return _buildTimeSelectionContent();
-    }
   }
 
   Widget _buildDetailsContent() {
     return GestureDetector(
-      onTap: () {
-        if (_selectedDate != null) {
-          _playSound();
-          setState(() {
-            _previousView = _currentView;
-            _currentView = SubscriptionCardView.bookingList;
-          });
+      onTap: _openFullScreenView,
+      onVerticalDragStart: (_) => _playSound(),
+      onVerticalDragUpdate: (details) {
+        setState(() {
+          // Add resistance
+          _dragOffsetY += details.primaryDelta! * 0.5;
+        });
+      },
+      onVerticalDragEnd: (details) {
+        // If dragged up significantly or flicked up
+        if (_dragOffsetY < -80 || details.primaryVelocity! < -300) {
+          _openFullScreenView();
+          _runSpringBack();
+        } else {
+          _runSpringBack();
         }
       },
-      child: Padding(
-        key: const ValueKey('details'),
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryColor,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    'قريباً',
-                    style: AppTheme.textTheme.labelMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
-                  ),
-                ),
-                // Removed calendar icon - will be inside full-screen view
-              ],
-            ).animate().fadeIn().slideX(begin: -0.2, end: 0),
-            const SizedBox(height: 24),
-            // Show selected booking data or subscription info
-            if (_selectedDate != null) ...[
-              // Selected date info
-              Row(
-                children: [
-                  Icon(
-                    CupertinoIcons.calendar,
-                    color: AppTheme.primaryColor,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    DateFormat('EEEE d MMMM', 'ar').format(_selectedDate!),
-                    style: AppTheme.textTheme.titleLarge?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              // Trip type
-              Row(
-                children: [
-                  Icon(
-                    _selectedTripType == 'round_trip'
-                        ? CupertinoIcons.arrow_right_arrow_left
-                        : _selectedTripType == 'departure_only'
-                        ? CupertinoIcons.arrow_right
-                        : CupertinoIcons.arrow_left,
-                    color: AppTheme.primaryColor,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    _selectedTripType == 'round_trip'
-                        ? 'ذهاب وعودة'
-                        : _selectedTripType == 'departure_only'
-                        ? 'ذهاب فقط'
-                        : 'عودة فقط',
-                    style: AppTheme.textTheme.titleMedium?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              // Times
-              if (_selectedDepartureTime != null ||
-                  _selectedReturnTime != null) ...[
-                Row(
-                  children: [
-                    if (_selectedDepartureTime != null) ...[
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'ميعاد الذهاب',
-                              style: AppTheme.textTheme.bodySmall?.copyWith(
-                                color: Colors.white70,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              _selectedDepartureTime!,
-                              style: AppTheme.textTheme.titleLarge?.copyWith(
-                                color: AppTheme.primaryColor,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                    if (_selectedReturnTime != null) ...[
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'ميعاد العودة',
-                              style: AppTheme.textTheme.bodySmall?.copyWith(
-                                color: Colors.white70,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              _selectedReturnTime!,
-                              style: AppTheme.textTheme.titleLarge?.copyWith(
-                                color: AppTheme.primaryColor,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ],
-            ],
-            const SizedBox(height: 24),
-            // Start and End dates side by side
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // End date section - NOW SHOWS TRIP TYPE
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'نوع الرحلة',
-                        style: AppTheme.textTheme.bodySmall?.copyWith(
-                          color: Colors.white70,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        _getTripTypeLabel(_selectedTripType),
-                        style: AppTheme.textTheme.titleLarge?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                // Start date section
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        'تاريخ الرحلة',
-                        style: AppTheme.textTheme.bodySmall?.copyWith(
-                          color: Colors.white70,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        DateFormat(
-                          'd MMMM',
-                          'ar',
-                        ).format(widget.subscription.startDate),
-                        style: AppTheme.textTheme.titleLarge?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            const Divider(color: Colors.white24),
-            const SizedBox(height: 16),
-            // Route Info with green arrow icon
-            Row(
-              children: [
-                const Icon(
-                  CupertinoIcons.arrow_right,
-                  color: AppTheme.primaryColor,
-                  size: 20,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'من منطقتك إلى ${_universityName ?? "الجامعة"}',
-                    style: AppTheme.textTheme.bodyLarge?.copyWith(
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ],
-            ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.2, end: 0),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCalendarContent() {
-    return Container(
-      key: const ValueKey('calendar'),
-      // Fixed height for calendar view to ensure consistency or let it size itself?
-      // Letting it size itself might be better for AnimatedSize.
-      // But we need a constraint for the grid.
-      height: 450,
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(24),
-            child: Row(
-              children: [
-                GestureDetector(
-                  onTap: _onBackToDetails,
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white10,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(
-                      CupertinoIcons.chevron_back,
-                      size: 20,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Text(
-                    'اختار يوم الرحلة',
-                    style: AppTheme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const Divider(height: 1, color: Colors.white10),
-          Expanded(
-            child: _isLoadingSchedules
-                ? const Center(
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        AppTheme.primaryColor,
-                      ),
-                    ),
-                  )
-                : _buildCalendarGrid(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCalendarGrid() {
-    final daysInMonth = DateUtils.getDaysInMonth(
-      _currentMonth.year,
-      _currentMonth.month,
-    );
-    final firstDayOfMonth = DateTime(
-      _currentMonth.year,
-      _currentMonth.month,
-      1,
-    );
-    // Adjust for week starting on Sunday (Sunday=7 in DateTime)
-    // We want Sunday to be index 0
-    final offset = firstDayOfMonth.weekday % 7;
-
-    return Column(
-      children: [
-        // Month Navigation
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Transform.translate(
+        offset: Offset(0, _dragOffsetY),
+        child: Padding(
+          key: const ValueKey('details'),
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              IconButton(
-                icon: const Icon(
-                  CupertinoIcons.chevron_right,
-                  color: Colors.white,
-                ),
-                onPressed: () {
-                  setState(() {
-                    _currentMonth = DateTime(
-                      _currentMonth.year,
-                      _currentMonth.month - 1,
-                    );
-                  });
-                },
-              ),
-              Text(
-                DateFormat('MMMM yyyy', 'ar').format(_currentMonth),
-                style: AppTheme.textTheme.titleMedium?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              IconButton(
-                icon: const Icon(
-                  CupertinoIcons.chevron_left,
-                  color: Colors.white,
-                ),
-                onPressed: () {
-                  setState(() {
-                    _currentMonth = DateTime(
-                      _currentMonth.year,
-                      _currentMonth.month + 1,
-                    );
-                  });
-                },
-              ),
-            ],
-          ),
-        ),
-
-        // Weekday Headers
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: ['ح', 'ن', 'ث', 'ر', 'خ', 'ج', 'س']
-              .map(
-                (day) => Expanded(
-                  child: Center(
-                    child: Text(
-                      day,
-                      style: AppTheme.textTheme.bodySmall?.copyWith(
-                        color: Colors.white60,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-              )
-              .toList(),
-        ).animate().fadeIn(),
-        const SizedBox(height: 16),
-
-        // Calendar Grid
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 7,
-            mainAxisSpacing: 8,
-            crossAxisSpacing: 8,
-            childAspectRatio: 0.75, // Taller to accommodate the dot below
-          ),
-          itemCount: offset + daysInMonth,
-          itemBuilder: (context, index) {
-            if (index < offset) return const SizedBox();
-
-            final day = index - offset + 1;
-            final date = DateTime(_currentMonth.year, _currentMonth.month, day);
-            final dateKey = date.toIso8601String().split('T')[0];
-
-            final isToday = _isSameDay(date, DateTime.now());
-            // Only disable Fridays (weekend in Egypt)
-            final isWeekend = date.weekday == DateTime.friday;
-
-            // Check if date is within subscription range
-            final isWithinSubscription =
-                !date.isBefore(widget.subscription.startDate) &&
-                !date.isAfter(widget.subscription.endDate);
-
-            final isAvailable =
-                date.isAfter(
-                  DateTime.now().subtract(const Duration(days: 1)),
-                ) &&
-                !isWeekend &&
-                isWithinSubscription;
-
-            final hasSchedule = _schedules.containsKey(dateKey);
-            final isSelected =
-                _selectedDate != null && _isSameDay(date, _selectedDate!);
-
-            final isStartDate = _isSameDay(date, widget.subscription.startDate);
-            final isEndDate = _isSameDay(date, widget.subscription.endDate);
-
-            // Determine styles based on state
-            // Priority: Selected > Schedule > Start/End > Default
-
-            Color? backgroundColor;
-            BoxBorder? border;
-            Color textColor = Colors.white;
-            FontWeight fontWeight = FontWeight.normal;
-
-            if (isSelected) {
-              backgroundColor = AppTheme.primaryColor;
-              textColor = Colors.black;
-              fontWeight = FontWeight.bold;
-            } else if (hasSchedule) {
-              // All bookings are yellow
-              backgroundColor = AppTheme.primaryColor;
-              textColor = Colors.black;
-              fontWeight = FontWeight.bold;
-            } else if (isStartDate || isEndDate) {
-              backgroundColor = Colors.transparent;
-              border = Border.all(color: AppTheme.primaryColor, width: 2);
-              textColor = AppTheme.primaryColor;
-              fontWeight = FontWeight.bold;
-            } else {
-              backgroundColor = Colors.transparent;
-              textColor = isAvailable ? Colors.white : Colors.white24;
-            }
-
-            return GestureDetector(
-              onTap: isAvailable ? () => _onDateSelected(date) : null,
-              child: Column(
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Expanded(
-                    child: Container(
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: backgroundColor,
-                        borderRadius: BorderRadius.circular(12),
-                        border: border,
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        '$day',
-                        style: AppTheme.textTheme.bodyMedium?.copyWith(
-                          fontWeight: fontWeight,
-                          color: textColor,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  // Today Indicator (Red Dot) - Outside the container
                   Container(
-                    width: 4,
-                    height: 4,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
-                      color: isToday ? Colors.red : Colors.transparent,
-                      shape: BoxShape.circle,
+                      color: AppTheme.primaryColor,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      'قريباً',
+                      style: AppTheme.textTheme.labelMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
                     ),
                   ),
                 ],
-              ),
-            );
-          },
-        ),
-      ],
-    );
-  }
-
-  String _getTripTypeLabel(String tripType) {
-    switch (tripType) {
-      case 'departure_only':
-        return 'ذهاب فقط';
-      case 'return_only':
-        return 'عودة فقط';
-      case 'round_trip':
-        return 'ذهاب وعودة';
-      default:
-        return 'ذهاب وعودة';
-    }
-  }
-
-  Widget _buildBookingListContent() {
-    if (_selectedDate == null) {
-      return const Center(child: Text('لا يوجد تاريخ محدد'));
-    }
-
-    final dateKey = _selectedDate!.toIso8601String().split('T')[0];
-    final bookingsOnDate = _schedules[dateKey];
-
-    return Padding(
-      key: const ValueKey('bookingList'),
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header with back button
-          Row(
-            children: [
-              GestureDetector(
-                onTap: () {
-                  _playSound();
-                  setState(() {
-                    _previousView = _currentView;
-                    _currentView = SubscriptionCardView.calendar;
-                  });
-                },
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    CupertinoIcons.chevron_back,
-                    size: 20,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'اختار المواعيد',
-                      style: AppTheme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    Text(
-                      DateFormat('EEEE d MMMM', 'ar').format(_selectedDate!),
-                      style: AppTheme.textTheme.bodySmall?.copyWith(
-                        color: Colors.white70,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          const Divider(height: 1, color: Colors.white10),
-          const SizedBox(height: 24),
-
-          // Booking or empty message
-          if (bookingsOnDate == null)
-            Expanded(
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      CupertinoIcons.calendar_badge_minus,
-                      size: 64,
-                      color: Colors.white.withValues(alpha: 0.3),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'لا يوجد حجز في هذا اليوم',
-                      style: AppTheme.textTheme.titleMedium?.copyWith(
-                        color: Colors.white70,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            )
-          else
-            Expanded(
-              child: GestureDetector(
-                onTap: () {
-                  _playSound();
-                  setState(() {
-                    _selectedTripType = bookingsOnDate.tripType;
-                    _selectedDepartureTime = bookingsOnDate.departureTime;
-                    _selectedReturnTime = bookingsOnDate.returnTime;
-                    _previousView = _currentView;
-                    _currentView = SubscriptionCardView.timeSelection;
-                  });
-                },
-                child: Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: AppTheme.primaryColor.withValues(alpha: 0.3),
-                    ),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
+              ).animate().fadeIn().slideX(begin: -0.2, end: 0),
+              const SizedBox(height: 24),
+              // Show selected booking data or subscription info
+              if (_selectedDate != null) ...[
+                // Times - Moved up as Date header is removed
+                if (_selectedDepartureTime != null ||
+                    _selectedReturnTime != null) ...[
+                  Row(
                     children: [
-                      Row(
-                        children: [
-                          Icon(
-                            bookingsOnDate.tripType == 'round_trip'
-                                ? CupertinoIcons.arrow_right_arrow_left
-                                : bookingsOnDate.tripType == 'departure_only'
-                                ? CupertinoIcons.arrow_right
-                                : CupertinoIcons.arrow_left,
-                            color: AppTheme.primaryColor,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 12),
-                          Text(
-                            bookingsOnDate.tripType == 'round_trip'
-                                ? 'ذهاب وعودة'
-                                : bookingsOnDate.tripType == 'departure_only'
-                                ? 'ذهاب فقط'
-                                : 'عودة فقط',
-                            style: AppTheme.textTheme.titleMedium?.copyWith(
-                              color: AppTheme.primaryColor,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      if (bookingsOnDate.departureTime != null) ...[
-                        Row(
-                          children: [
-                            const Icon(
-                              CupertinoIcons.time,
-                              size: 16,
-                              color: Colors.white70,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'ميعاد الذهاب: ${bookingsOnDate.departureTime}',
-                              style: AppTheme.textTheme.bodyMedium?.copyWith(
-                                color: Colors.white,
+                      if (_selectedDepartureTime != null) ...[
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'ميعاد الذهاب',
+                                style: AppTheme.textTheme.bodySmall?.copyWith(
+                                  color: Colors.white70,
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                      ],
-                      const SizedBox(height: 16),
-
-                      // Trip Type
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            _getTripTypeLabel(_selectedTripType),
-                            style: AppTheme.textTheme.headlineSmall?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Icon(
-                              CupertinoIcons.arrow_right_arrow_left,
-                              color: AppTheme.primaryColor,
-                              size: 20,
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 24),
-
-                      // Route info with university name
-                      Row(
-                        children: [
-                          const Icon(
-                            CupertinoIcons.location_fill,
-                            color: AppTheme.primaryColor,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              'من منطقتك إلى ${_universityName ?? "الجامعة"}',
-                              style: AppTheme.textTheme.bodyLarge?.copyWith(
-                                color: Colors.white,
+                              const SizedBox(height: 4),
+                              Text(
+                                _selectedDepartureTime!,
+                                style: AppTheme.textTheme.titleLarge?.copyWith(
+                                  color: AppTheme.primaryColor,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                            ),
+                            ],
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      if (bookingsOnDate.returnTime != null) ...[
-                        Row(
-                          children: [
-                            const Icon(
-                              CupertinoIcons.time,
-                              size: 16,
-                              color: Colors.white70,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'ميعاد العودة: ${bookingsOnDate.returnTime}',
-                              style: AppTheme.textTheme.bodyMedium?.copyWith(
-                                color: Colors.white,
-                              ),
-                            ),
-                          ],
                         ),
                       ],
-                      const SizedBox(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          Text(
-                            'اضغط لتعديل المواعيد',
-                            style: AppTheme.textTheme.bodySmall?.copyWith(
-                              color: AppTheme.primaryColor,
-                            ),
+                      if (_selectedReturnTime != null) ...[
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'ميعاد العودة',
+                                style: AppTheme.textTheme.bodySmall?.copyWith(
+                                  color: Colors.white70,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                _selectedReturnTime!,
+                                style: AppTheme.textTheme.titleLarge?.copyWith(
+                                  color: AppTheme.primaryColor,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 8),
-                          Icon(
-                            CupertinoIcons.arrow_right,
-                            size: 16,
-                            color: AppTheme.primaryColor,
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ],
                   ),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTimeSelectionContent() {
-    return Container(
-      key: const ValueKey('timeSelection'),
-      height: 500, // Slightly taller for time selection
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(24),
-            child: Row(
-              children: [
-                GestureDetector(
-                  onTap: _onBackToCalendar,
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white10,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(
-                      CupertinoIcons.chevron_back,
-                      size: 20,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'اختار المواعيد',
-                        style: AppTheme.textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      if (_selectedDate != null)
+                ],
+              ],
+              const SizedBox(height: 24),
+              // Start and End dates side by side
+              Row(
+                children: [
+                  // Trip Date
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                         Text(
-                          DateFormat(
-                            'EEEE، d MMMM',
-                            'ar',
-                          ).format(_selectedDate!),
+                          'تاريخ الرحلة',
                           style: AppTheme.textTheme.bodySmall?.copyWith(
                             color: Colors.white70,
                           ),
                         ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const Divider(height: 1, color: Colors.white10),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'نوع الرحلة',
-                    style: AppTheme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                        const SizedBox(height: 4),
+                        Text(
+                          DateFormat('d MMMM', 'ar').format(
+                            _selectedDate ?? widget.subscription.startDate,
+                          ),
+                          style: AppTheme.textTheme.titleLarge?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  _buildTripTypeSelector()
-                      .animate()
-                      .fadeIn(delay: 100.ms)
-                      .slideX(begin: 0.1, end: 0),
-                  const SizedBox(height: 24),
-                  if (_selectedTripType != 'return_only') ...[
-                    Text(
-                      'ميعاد الذهاب',
-                      style: AppTheme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ).animate().fadeIn(delay: 200.ms),
-                    const SizedBox(height: 12),
-                    _buildTimeSelector(
-                          times: _departureTimes,
-                          selectedTime: _selectedDepartureTime,
-                          onSelect: (time) {
-                            _playSound();
-                            setState(() {
-                              if (_selectedDepartureTime == time) {
-                                _selectedDepartureTime = null;
-                              } else {
-                                _selectedDepartureTime = time;
-                              }
-                            });
-                          },
-                        )
-                        .animate()
-                        .fadeIn(delay: 250.ms)
-                        .slideX(begin: 0.1, end: 0),
-                    const SizedBox(height: 24),
-                  ],
-                  if (_selectedTripType != 'departure_only') ...[
-                    Text(
-                      'ميعاد العودة',
-                      style: AppTheme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ).animate().fadeIn(delay: 300.ms),
-                    const SizedBox(height: 12),
-                    _buildTimeSelector(
-                          times: _returnTimes,
-                          selectedTime: _selectedReturnTime,
-                          onSelect: (time) {
-                            _playSound();
-                            setState(() {
-                              if (_selectedReturnTime == time) {
-                                _selectedReturnTime = null;
-                              } else {
-                                _selectedReturnTime = time;
-                              }
-                            });
-                          },
-                        )
-                        .animate()
-                        .fadeIn(delay: 350.ms)
-                        .slideX(begin: 0.1, end: 0),
-                  ],
                 ],
               ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(24),
-            child: SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _canConfirm() ? _onConfirmSchedule : null,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryColor,
-                  foregroundColor: Colors.black,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+              const SizedBox(height: 24),
+              const Divider(color: Colors.white24),
+              const SizedBox(height: 16),
+              // Route Info with green arrow icon
+              Row(
+                children: [
+                  const Icon(
+                    CupertinoIcons.arrow_right,
+                    color: AppTheme.primaryColor,
+                    size: 20,
                   ),
-                  disabledBackgroundColor: Colors.white10,
-                ),
-                child: const Text(
-                  'تأكيد الجدول',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ),
-          ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.2, end: 0),
-        ],
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'من منطقتك إلى ${_universityName ?? "الجامعة"}',
+                      style: AppTheme.textTheme.bodyLarge?.copyWith(
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.2, end: 0),
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildTripTypeSelector() {
-    final types = [
-      {'value': 'departure_only', 'label': 'ذهاب فقط'},
-      {'value': 'return_only', 'label': 'عودة فقط'},
-      {'value': 'round_trip', 'label': 'ذهاب وعودة'},
-    ];
-
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: Colors.white10,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: types.map((type) {
-          final isSelected = _selectedTripType == type['value'];
-          return Expanded(
-            child: GestureDetector(
-              onTap: () {
-                _playSound();
-                setState(() => _selectedTripType = type['value'] as String);
-              },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                decoration: BoxDecoration(
-                  color: isSelected ? Colors.white : Colors.transparent,
-                  borderRadius: BorderRadius.circular(10),
-                  boxShadow: isSelected
-                      ? [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.05),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ]
-                      : [],
-                ),
-                child: Text(
-                  type['label'] as String,
-                  textAlign: TextAlign.center,
-                  style: AppTheme.textTheme.bodyMedium?.copyWith(
-                    color: isSelected ? Colors.black : Colors.white60,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                  ),
-                ),
-              ),
-            ),
-          );
-        }).toList(),
-      ),
+  void _runSpringBack() {
+    _springAnimation = Tween<double>(begin: _dragOffsetY, end: 0.0).animate(
+      CurvedAnimation(parent: _springController, curve: Curves.elasticOut),
     );
-  }
 
-  Widget _buildTimeSelector({
-    required List<String> times,
-    required String? selectedTime,
-    required Function(String) onSelect,
-  }) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: times.map((time) {
-        final isSelected = selectedTime == time;
-        return Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: () => onSelect(time),
-            borderRadius: BorderRadius.circular(12),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: isSelected ? AppTheme.primaryColor : Colors.white10,
-                borderRadius: BorderRadius.circular(12),
-                border: isSelected
-                    ? Border.all(color: AppTheme.primaryColor, width: 2)
-                    : Border.all(color: Colors.transparent, width: 2),
-              ),
-              child: Text(
-                time,
-                style: AppTheme.textTheme.bodyMedium?.copyWith(
-                  color: isSelected ? Colors.black : Colors.white70,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                ),
-              ),
-            ),
-          ),
-        );
-      }).toList(),
-    );
+    _springController.reset();
+    _springController.forward();
+    _springController.addListener(() {
+      setState(() {
+        _dragOffsetY = _springAnimation.value;
+      });
+    });
   }
 }

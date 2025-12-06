@@ -1,4 +1,5 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/trip_type.dart';
 import '../../domain/entities/city_entity.dart';
 import '../../domain/entities/university_entity.dart';
@@ -13,7 +14,7 @@ part 'booking_provider.g.dart';
 
 // Booking Repository Provider
 @riverpod
-BookingRepository bookingRepository(BookingRepositoryRef ref) {
+BookingRepository bookingRepository(Ref ref) {
   final dataSource = BookingDataSourceImpl();
   // Watch auth provider to ensure repository is rebuilt when auth state changes
   final user = ref.watch(authProvider);
@@ -26,7 +27,7 @@ BookingRepository bookingRepository(BookingRepositoryRef ref) {
 
 // User Bookings Provider
 @riverpod
-Future<List<BookingEntity>> userBookings(UserBookingsRef ref) async {
+Future<List<BookingEntity>> userBookings(Ref ref) async {
   final repository = ref.watch(bookingRepositoryProvider);
   final result = await repository.getUserBookings();
   return result.fold(
@@ -37,7 +38,7 @@ Future<List<BookingEntity>> userBookings(UserBookingsRef ref) async {
 
 // Upcoming Booking Provider
 @riverpod
-Future<BookingEntity?> upcomingBooking(UpcomingBookingRef ref) async {
+Future<BookingEntity?> upcomingBooking(Ref ref) async {
   final repository = ref.watch(bookingRepositoryProvider);
   final result = await repository.getUpcomingBooking();
   return result.fold(

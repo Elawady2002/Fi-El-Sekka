@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../../core/utils/logger.dart';
 import '../providers/subscription_provider.dart';
 import '../../domain/entities/subscription_entity.dart';
 import '../../../home/presentation/pages/home_page.dart';
@@ -41,11 +42,11 @@ class _MySubscriptionPageState extends ConsumerState<MySubscriptionPage> {
           ? const Center(child: Text('يرجى تسجيل الدخول'))
           : subscriptionState.when(
               data: (subscriptions) {
-                print(
+                AppLogger.info(
                   'DEBUG MySubscriptionPage: Found ${subscriptions.length} subscriptions',
                 );
                 for (var sub in subscriptions) {
-                  print(
+                  AppLogger.info(
                     '  - ID: ${sub.id}, Status: ${sub.status}, Type: ${sub.planType}',
                   );
                 }
@@ -70,13 +71,13 @@ class _MySubscriptionPageState extends ConsumerState<MySubscriptionPage> {
 
                 if (activeSubscription.id == null ||
                     activeSubscription.id!.isEmpty) {
-                  print(
+                  AppLogger.info(
                     'DEBUG MySubscriptionPage: No active/pending subscription found',
                   );
                   return _buildNoActiveSubscription();
                 }
 
-                print(
+                AppLogger.info(
                   'DEBUG MySubscriptionPage: Showing subscription ${activeSubscription.id}',
                 );
                 return _buildActiveSubscription(activeSubscription);
@@ -325,7 +326,7 @@ class _MySubscriptionPageState extends ConsumerState<MySubscriptionPage> {
   void _showCancelDialog(String subscriptionId) {
     showCupertinoDialog(
       context: context,
-      builder: (context) => CupertinoAlertDialog(
+      builder: (dialogContext) => CupertinoAlertDialog(
         title: const Text('إلغاء الاشتراك'),
         content: const Text(
           'هل أنت متأكد من رغبتك في إلغاء الاشتراك؟ سيتم إيقاف الخدمة فوراً.',
@@ -333,19 +334,19 @@ class _MySubscriptionPageState extends ConsumerState<MySubscriptionPage> {
         actions: [
           CupertinoDialogAction(
             child: const Text('تراجع'),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
           ),
           CupertinoDialogAction(
             isDestructiveAction: true,
             child: const Text('تأكيد الإلغاء'),
             onPressed: () async {
-              Navigator.pop(context); // Close dialog
+              Navigator.pop(dialogContext); // Close dialog
 
               // Show loading
               showDialog(
                 context: context,
                 barrierDismissible: false,
-                builder: (context) =>
+                builder: (loadingContext) =>
                     const Center(child: CupertinoActivityIndicator()),
               );
 
@@ -355,7 +356,7 @@ class _MySubscriptionPageState extends ConsumerState<MySubscriptionPage> {
                     .cancelSubscription(subscriptionId);
 
                 if (!mounted) return;
-                Navigator.pop(context); // Close loading
+                if (context.mounted) Navigator.pop(context); // Close loading
 
                 result.fold(
                   (failure) {
@@ -380,7 +381,7 @@ class _MySubscriptionPageState extends ConsumerState<MySubscriptionPage> {
                 );
               } catch (e) {
                 if (!mounted) return;
-                Navigator.pop(context); // Close loading
+                if (context.mounted) Navigator.pop(context); // Close loading
 
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(

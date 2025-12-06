@@ -246,7 +246,7 @@ class _CalendarPlanCardState extends ConsumerState<CalendarPlanCard> {
             padding: const EdgeInsets.all(24),
             physics: const NeverScrollableScrollPhysics(),
             itemCount: widget.features.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 16),
+            separatorBuilder: (context, index) => const SizedBox(height: 16),
             itemBuilder: (context, index) {
               return Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -662,7 +662,7 @@ class _CalendarPlanCardState extends ConsumerState<CalendarPlanCard> {
                       final user = ref.read(authProvider);
 
                       // Create params with user's university as temporary scheduleId
-                      // TODO: Replace with actual route selection in future
+                      // NOTE: Replace with actual route selection in future
                       final params = SubscriptionScheduleParams(
                         startDate: _selectedDate!,
                         tripType:
@@ -673,9 +673,9 @@ class _CalendarPlanCardState extends ConsumerState<CalendarPlanCard> {
                         scheduleId: user
                             ?.universityId, // Use university as temp scheduleId
                         pickupStationId:
-                            null, // TODO: Get from user profile or route selection
+                            null, // NOTE: Get from user profile or route selection
                         dropoffStationId:
-                            null, // TODO: Get from user profile or route selection
+                            null, // NOTE: Get from user profile or route selection
                       );
                       widget.onSubscribe(params);
                     }

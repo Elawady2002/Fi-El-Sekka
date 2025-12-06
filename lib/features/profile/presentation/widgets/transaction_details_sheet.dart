@@ -196,7 +196,7 @@ class TransactionDetailsSheet extends StatelessWidget {
           child: CircularProgressIndicator(color: AppTheme.primaryColor),
         );
       },
-      errorBuilder: (_, error, __) {
+      errorBuilder: (context, error, stackTrace) {
         AppLogger.error('❌ Error loading image: $error');
         return Center(
           child: Column(

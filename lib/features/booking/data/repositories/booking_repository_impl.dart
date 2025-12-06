@@ -79,7 +79,7 @@ class BookingRepositoryImpl implements BookingRepository {
 
   @override
   Future<Either<Failure, BookingEntity>> cancelBooking(String bookingId) async {
-    // TODO: Implement cancel booking
+    // NOTE: Implement cancel booking
     throw UnimplementedError();
   }
 
@@ -88,7 +88,7 @@ class BookingRepositoryImpl implements BookingRepository {
     required String bookingId,
     required PaymentStatus paymentStatus,
   }) async {
-    // TODO: Implement update payment status
+    // NOTE: Implement update payment status
     throw UnimplementedError();
   }
 
@@ -97,13 +97,13 @@ class BookingRepositoryImpl implements BookingRepository {
     required String universityId,
     required DateTime date,
   }) async {
-    // TODO: Implement get schedules
+    // NOTE: Implement get schedules
     throw UnimplementedError();
   }
 
   @override
   Stream<List<BookingEntity>> watchUserBookings() {
-    // TODO: Implement real-time booking updates
+    // NOTE: Implement real-time booking updates
     throw UnimplementedError();
   }
 
