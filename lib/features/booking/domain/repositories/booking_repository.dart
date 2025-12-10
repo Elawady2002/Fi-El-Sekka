@@ -31,6 +31,17 @@ abstract class BookingRepository {
   /// Get a specific booking by ID
   Future<Either<Failure, BookingEntity>> getBookingById(String id);
 
+  Future<Either<Failure, BookingEntity>> updateBooking({
+    required String bookingId,
+    required DateTime bookingDate,
+    required String tripType,
+    String? pickupStationId,
+    String? dropoffStationId,
+    String? departureTime,
+    String? returnTime,
+    required double totalPrice,
+  });
+
   /// Cancel a booking
   Future<Either<Failure, BookingEntity>> cancelBooking(String bookingId);
 

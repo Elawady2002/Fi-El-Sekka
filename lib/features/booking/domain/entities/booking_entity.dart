@@ -37,7 +37,8 @@ enum PaymentStatus {
 class BookingEntity extends Equatable {
   final String id;
   final String userId;
-  final String scheduleId;
+  final String?
+  scheduleId; // Made nullable - can be null for subscription bookings
   final String?
   subscriptionId; // Link to subscription if booking is from subscription
   final DateTime bookingDate;
@@ -57,7 +58,7 @@ class BookingEntity extends Equatable {
   const BookingEntity({
     required this.id,
     required this.userId,
-    required this.scheduleId,
+    this.scheduleId, // Made optional
     this.subscriptionId,
     required this.bookingDate,
     required this.tripType,

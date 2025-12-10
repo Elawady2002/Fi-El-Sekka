@@ -78,6 +78,34 @@ class BookingRepositoryImpl implements BookingRepository {
   }
 
   @override
+  Future<Either<Failure, BookingEntity>> updateBooking({
+    required String bookingId,
+    required DateTime bookingDate,
+    required String tripType,
+    String? pickupStationId,
+    String? dropoffStationId,
+    String? departureTime,
+    String? returnTime,
+    required double totalPrice,
+  }) async {
+    try {
+      final booking = await _dataSource.updateBooking(
+        bookingId: bookingId,
+        bookingDate: bookingDate,
+        tripType: tripType,
+        pickupStationId: pickupStationId,
+        dropoffStationId: dropoffStationId,
+        departureTime: departureTime,
+        returnTime: returnTime,
+        totalPrice: totalPrice,
+      );
+      return Right(booking);
+    } catch (e) {
+      return Left(_handleError(e));
+    }
+  }
+
+  @override
   Future<Either<Failure, BookingEntity>> cancelBooking(String bookingId) async {
     // NOTE: Implement cancel booking
     throw UnimplementedError();

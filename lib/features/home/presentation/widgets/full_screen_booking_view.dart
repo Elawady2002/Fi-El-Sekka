@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart'; // Added
-import 'package:supabase_flutter/supabase_flutter.dart'; // Added
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../booking/presentation/providers/booking_provider.dart';
 import '../../../subscription/domain/entities/subscription_schedule_entity.dart';
 import '../../../subscription/domain/entities/subscription_entity.dart';
-import '../../../auth/presentation/providers/auth_provider.dart'; // Added
+import '../../../auth/presentation/providers/auth_provider.dart';
 
 enum FullScreenView { bookingList, timeEditor }
 
@@ -100,7 +101,34 @@ class _FullScreenBookingViewState extends ConsumerState<FullScreenBookingView>
 
   Future<void> _saveBooking() async {
     final user = ref.read(authProvider);
-    if (user == null) return;
+    if (user == null) {
+      debugPrint('❌ No user logged in');
+      return;
+    }
+
+    // Validate time selection based on trip type
+    bool isValid = true;
+    String validationError = '';
+
+    if (_editingTripType == 'departure_only' && _editingDepartureTime == null) {
+      isValid = false;
+      validationError = 'يرجى اختيار ميعاد الذهاب';
+    } else if (_editingTripType == 'return_only' &&
+        _editingReturnTime == null) {
+      isValid = false;
+      validationError = 'يرجى اختيار ميعاد العودة';
+    } else if (_editingTripType == 'round_trip' &&
+        (_editingDepartureTime == null || _editingReturnTime == null)) {
+      isValid = false;
+      validationError = 'يرجى اختيار ميعاد الذهاب والعودة';
+    }
+
+    if (!isValid) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(validationError)));
+      return;
+    }
 
     setState(() => _isLoading = true);
 
@@ -108,42 +136,90 @@ class _FullScreenBookingViewState extends ConsumerState<FullScreenBookingView>
       final supabase = Supabase.instance.client;
       final bookingDate = _selectedDate.toIso8601String().split('T')[0];
 
+      // Calculate price based on trip type
+      double price;
+      switch (_editingTripType) {
+        case 'departure_only':
+        case 'return_only':
+          price = 50.0;
+          break;
+        case 'round_trip':
+        default:
+          price = 80.0;
+          break;
+      }
+
+      debugPrint('📝 Saving booking...');
+      debugPrint('   User ID: ${user.id}');
+      debugPrint('   Booking Date: $bookingDate');
+      debugPrint('   Trip Type: $_editingTripType');
+      debugPrint(
+        '   Departure: $_editingDepartureTime -> ${_toDbTime(_editingDepartureTime)}',
+      );
+      debugPrint(
+        '   Return: $_editingReturnTime -> ${_toDbTime(_editingReturnTime)}',
+      );
+      debugPrint('   Price: $price');
+      debugPrint('   Selected Booking ID: ${_selectedBooking?.id}');
+
       if (_selectedBooking == null) {
-        // Insert new booking
+        // Create new booking
+        debugPrint('➕ Inserting new booking...');
+
         await supabase.from('bookings').insert({
           'user_id': user.id,
           'subscription_id': widget.subscription.id,
+          // schedule_id is optional - not needed for subscription bookings
           'booking_date': bookingDate,
           'trip_type': _editingTripType,
           'departure_time': _toDbTime(_editingDepartureTime),
           'return_time': _toDbTime(_editingReturnTime),
           'status': 'confirmed',
-          'payment_status': 'paid', // Covered by subscription
-          // 'schedule_id': ..., // Ideally link to schedule if strictly required, but often optional for ad-hoc
+          'payment_status': 'paid',
+          'total_price': price,
+          'created_at': DateTime.now().toIso8601String(),
+          'updated_at': DateTime.now().toIso8601String(),
         });
+
+        debugPrint('✅ New booking created successfully!');
       } else {
         // Update existing booking
-        await supabase
+        debugPrint('🔄 Updating booking ${_selectedBooking!.id}...');
+
+        final response = await supabase
             .from('bookings')
             .update({
               'trip_type': _editingTripType,
               'departure_time': _toDbTime(_editingDepartureTime),
               'return_time': _toDbTime(_editingReturnTime),
+              'total_price': price,
+              'updated_at': DateTime.now().toIso8601String(),
             })
-            .eq('id', _selectedBooking!.id);
+            .eq('id', _selectedBooking!.id)
+            .select(); // Add .select() to get the updated row
+
+        debugPrint('✅ Booking update response: $response');
+
+        if (response.isEmpty) {
+          debugPrint(
+            '⚠️ No rows were updated! Check RLS policies or booking ID.',
+          );
+        }
       }
 
       if (mounted) {
-        // Refresh parent by popping. The parent usually refetches or we can rely on real-time if enabled.
+        // Refresh providers
+        ref.invalidate(userBookingsProvider);
+        ref.invalidate(upcomingBookingProvider);
         Navigator.of(context).pop();
       }
     } catch (e) {
-      debugPrint('Error saving booking: $e');
+      debugPrint('❌ Error saving booking: $e');
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('حدث خطأ: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('حدث خطأ: $e'), backgroundColor: Colors.red),
+        );
       }
     }
   }

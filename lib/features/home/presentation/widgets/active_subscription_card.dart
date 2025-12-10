@@ -186,70 +186,77 @@ class _ActiveSubscriptionCardState extends ConsumerState<ActiveSubscriptionCard>
 
   void _openFullScreenView() {
     _playSound();
-    Navigator.of(context).push(
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) {
-          return FullScreenBookingView(
-            initialDate: _selectedDate ?? DateTime.now(),
-            schedules: _schedules,
-            subscription: widget.subscription,
-            onDateSelected: (date) {
-              setState(() {
-                _selectedDate = date;
-                final dateKey = date.toIso8601String().split('T')[0];
-                final schedule = _schedules[dateKey];
-                if (schedule != null) {
-                  // _selectedTripType = schedule.tripType;
-                  // _selectedDepartureTime = schedule.departureTime;
-                  // _selectedReturnTime = schedule.returnTime;
-                }
-              });
+    Navigator.of(context)
+        .push(
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) {
+              return FullScreenBookingView(
+                initialDate: _selectedDate ?? DateTime.now(),
+                schedules: _schedules,
+                subscription: widget.subscription,
+                onDateSelected: (date) {
+                  setState(() {
+                    _selectedDate = date;
+                    final dateKey = date.toIso8601String().split('T')[0];
+                    final schedule = _schedules[dateKey];
+                    if (schedule != null) {
+                      // _selectedTripType = schedule.tripType;
+                      // _selectedDepartureTime = schedule.departureTime;
+                      // _selectedReturnTime = schedule.returnTime;
+                    }
+                  });
+                },
+                onBookingTap: (booking) {
+                  Navigator.of(context).pop();
+                  // Just update the displayed details on the card
+                  setState(() {
+                    _selectedDate = booking.tripDate;
+                    // _selectedTripType = booking.tripType;
+                    // _selectedDepartureTime = booking.departureTime;
+                    // _selectedReturnTime = booking.returnTime;
+                  });
+                },
+              );
             },
-            onBookingTap: (booking) {
-              Navigator.of(context).pop();
-              // Just update the displayed details on the card
-              setState(() {
-                _selectedDate = booking.tripDate;
-                // _selectedTripType = booking.tripType;
-                // _selectedDepartureTime = booking.departureTime;
-                // _selectedReturnTime = booking.returnTime;
-              });
-            },
-          );
-        },
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          // Custom curve for realistic expansion
-          final curvedAnimation = CurvedAnimation(
-            parent: animation,
-            curve: Curves.easeOutCubic,
-          );
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+                  // Custom curve for realistic expansion
+                  final curvedAnimation = CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeOutCubic,
+                  );
 
-          // Scale from card size to full screen
-          final scaleAnimation = Tween<double>(
-            begin: 0.85,
-            end: 1.0,
-          ).animate(curvedAnimation);
+                  // Scale from card size to full screen
+                  final scaleAnimation = Tween<double>(
+                    begin: 0.85,
+                    end: 1.0,
+                  ).animate(curvedAnimation);
 
-          // Slide up slightly for natural feel
-          final slideAnimation = Tween<Offset>(
-            begin: const Offset(0, 0.1),
-            end: Offset.zero,
-          ).animate(curvedAnimation);
+                  // Slide up slightly for natural feel
+                  final slideAnimation = Tween<Offset>(
+                    begin: const Offset(0, 0.1),
+                    end: Offset.zero,
+                  ).animate(curvedAnimation);
 
-          return SlideTransition(
-            position: slideAnimation,
-            child: ScaleTransition(
-              scale: scaleAnimation,
-              alignment: Alignment.center,
-              child: FadeTransition(opacity: animation, child: child),
-            ),
-          );
-        },
-        transitionDuration: const Duration(milliseconds: 400),
-        opaque: false,
-        barrierColor: Colors.black87,
-      ),
-    );
+                  return SlideTransition(
+                    position: slideAnimation,
+                    child: ScaleTransition(
+                      scale: scaleAnimation,
+                      alignment: Alignment.center,
+                      child: FadeTransition(opacity: animation, child: child),
+                    ),
+                  );
+                },
+            transitionDuration: const Duration(milliseconds: 400),
+            opaque: false,
+            barrierColor: Colors.black87,
+          ),
+        )
+        .then((_) {
+          // Refresh schedules when returning from FullScreenBookingView
+          debugPrint('🔄 Refreshing schedules after booking view closed...');
+          _fetchSchedules();
+        });
   }
 
   @override

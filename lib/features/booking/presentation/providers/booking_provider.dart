@@ -154,6 +154,35 @@ class BookingState extends _$BookingState {
       return 'حدث خطأ أثناء الحجز: $e';
     }
   }
+
+  Future<String?> updateBooking(
+    BookingRepository repository, {
+    required String bookingId,
+  }) async {
+    if (!isBookingComplete) {
+      return 'يرجى إكمال جميع بيانات الحجز';
+    }
+
+    try {
+      final result = await repository.updateBooking(
+        bookingId: bookingId,
+        bookingDate: state.selectedDate,
+        tripType: state.tripType.toDbValue(),
+        pickupStationId: state.selectedStation?.id,
+        dropoffStationId: state.selectedStation?.id,
+        departureTime: state.selectedDepartureTime,
+        returnTime: state.selectedReturnTime,
+        totalPrice: totalPrice,
+      );
+
+      return result.fold(
+        (failure) => failure.message,
+        (_) => null, // Success
+      );
+    } catch (e) {
+      return 'حدث خطأ أثناء تعديل الحجز: $e';
+    }
+  }
 }
 
 class BookingStateModel {

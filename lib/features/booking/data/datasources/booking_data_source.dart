@@ -35,6 +35,17 @@ abstract class BookingDataSource {
   Future<List<BookingModel>> getUserBookings(String userId);
   Future<BookingModel?> getUpcomingBooking(String userId);
   Future<BookingModel> getBookingById(String bookingId);
+
+  Future<BookingModel> updateBooking({
+    required String bookingId,
+    required DateTime bookingDate,
+    required String tripType,
+    String? pickupStationId,
+    String? dropoffStationId,
+    String? departureTime,
+    String? returnTime,
+    required double totalPrice,
+  });
 }
 
 class BookingDataSourceImpl implements BookingDataSource {
@@ -289,6 +300,52 @@ class BookingDataSourceImpl implements BookingDataSource {
       throw Exception('Database error: ${e.message}');
     } catch (e) {
       throw Exception('Unexpected error fetching booking: $e');
+    }
+  }
+
+  @override
+  Future<BookingModel> updateBooking({
+    required String bookingId,
+    required DateTime bookingDate,
+    required String tripType,
+    String? pickupStationId,
+    String? dropoffStationId,
+    String? departureTime,
+    String? returnTime,
+    required double totalPrice,
+  }) async {
+    try {
+      final now = DateTime.now();
+      AppLogger.info('🔄 Updating booking $bookingId...');
+      AppLogger.info('   Trip Type: $tripType');
+      AppLogger.info('   Total Price: $totalPrice');
+
+      final response = await _client
+          .from('bookings')
+          .update({
+            'booking_date': bookingDate.toIso8601String(),
+            'trip_type': tripType,
+            'pickup_station_id': pickupStationId,
+            'dropoff_station_id': dropoffStationId,
+            'departure_time': departureTime,
+            'return_time': returnTime,
+            'total_price': totalPrice,
+            'updated_at': now.toIso8601String(),
+          })
+          .eq('id', bookingId)
+          .select()
+          .single();
+
+      AppLogger.info('✅ Booking updated successfully');
+      return BookingModel.fromJson(response);
+    } on PostgrestException catch (e) {
+      AppLogger.error('❌ Database error updating booking:');
+      AppLogger.error('   Code: ${e.code}');
+      AppLogger.error('   Message: ${e.message}');
+      throw Exception('Database error: ${e.message}');
+    } catch (e) {
+      AppLogger.error('❌ Unexpected error updating booking: $e');
+      throw Exception('Unexpected error during booking update: $e');
     }
   }
 }

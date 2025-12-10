@@ -5,7 +5,7 @@ class BookingModel extends BookingEntity {
   const BookingModel({
     required super.id,
     required super.userId,
-    required super.scheduleId,
+    super.scheduleId, // Made optional to match entity
     super.subscriptionId,
     required super.bookingDate,
     required super.tripType,
@@ -27,7 +27,7 @@ class BookingModel extends BookingEntity {
     return BookingModel(
       id: json['id'] as String,
       userId: json['user_id'] as String,
-      scheduleId: json['schedule_id'] as String,
+      scheduleId: json['schedule_id'] as String?, // Handle null
       subscriptionId: json['subscription_id'] as String?,
       bookingDate: DateTime.parse(json['booking_date'] as String),
       tripType: json['trip_type'] as String,
