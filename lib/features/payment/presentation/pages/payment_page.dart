@@ -215,7 +215,10 @@ class _PaymentPageState extends ConsumerState<PaymentPage>
                     builder: (sheetContext) => PaymentProofSheet(
                       onConfirm: (imagePath, accountNumber) async {
                         final storageService = ref.read(storageServiceProvider);
-                        final user = ref.read(authProvider);
+                            final user = ref.read(authProvider).value;
+                            if (user == null) {
+                              throw Exception('المستخدم غير مسجل الدخول');
+                            }
 
 
 

@@ -136,7 +136,7 @@ class SupabaseAuthDataSource {
           LoggerService.info('User $userId recovered to public.users table');
           return UserModel.fromJson(recoveredUserData);
         } catch (recoveryError) {
-          LoggerService.error('Failed to recover user', recoveryError);
+          LoggerService.error('Failed to recover user', error: recoveryError);
           throw Exception(
             'حساب المستخدم غير موجود في قاعدة البيانات. فشلت محاولة الاستعادة التلقائية. يرجى التواصل مع الدعم.',
           );
@@ -153,12 +153,12 @@ class SupabaseAuthDataSource {
       throw Exception('Authentication error: ${e.message}');
     } on PostgrestException catch (e) {
       LoggerService.error(
-        'Database error in signIn: ${e.message}',
-        'Code: ${e.code}, Details: ${e.details}',
+        'Database error in signIn: ${e.message}. Code: ${e.code}, Details: ${e.details}',
+        error: e,
       );
       throw Exception('Database error: ${e.message}');
     } catch (e) {
-      LoggerService.error('Unexpected error in signIn', e);
+      LoggerService.error('Unexpected error in signIn', error: e);
       throw Exception('Unexpected error during sign in: $e');
     }
   }
@@ -202,12 +202,12 @@ class SupabaseAuthDataSource {
       return UserModel.fromJson(response);
     } on PostgrestException catch (e) {
       LoggerService.error(
-        'Database error in getCurrentUser: ${e.message}',
-        'Code: ${e.code}, Details: ${e.details}',
+        'Database error in getCurrentUser: ${e.message}. Code: ${e.code}, Details: ${e.details}',
+        error: e,
       );
       throw Exception('Database error: ${e.message}');
     } catch (e) {
-      LoggerService.error('Unexpected error in getCurrentUser', e);
+      LoggerService.error('Unexpected error in getCurrentUser', error: e);
       // No user authenticated
       return null;
     }
@@ -238,7 +238,7 @@ class SupabaseAuthDataSource {
 
         return UserModel.fromJson(response);
       } catch (e) {
-        LoggerService.error('Error in authStateChanges', e);
+        LoggerService.error('Error in authStateChanges', error: e);
         return null;
       }
     });
@@ -286,7 +286,7 @@ class SupabaseAuthDataSource {
       LoggerService.error('Database error in verifyOtp: ${e.message}');
       throw Exception('Database error: ${e.message}');
     } catch (e) {
-      LoggerService.error('Unexpected error in verifyOtp', e);
+      LoggerService.error('Unexpected error in verifyOtp', error: e);
       throw Exception('Unexpected error during OTP verification: $e');
     }
   }
@@ -334,14 +334,14 @@ class SupabaseAuthDataSource {
       return UserModel.fromJson(response);
     } on PostgrestException catch (e) {
       LoggerService.error(
-        'Database error in updateProfile: ${e.message}',
-        'Code: ${e.code}, Details: ${e.details}',
+        'Database error in updateProfile: ${e.message}. Code: ${e.code}, Details: ${e.details}',
+        error: e,
       );
       throw Exception('Database error: ${e.message}');
     } on AuthException catch (e) {
       throw Exception('Auth update error: ${e.message}');
     } catch (e) {
-      LoggerService.error('Unexpected error in updateProfile', e);
+      LoggerService.error('Unexpected error in updateProfile', error: e);
       throw Exception('Unexpected error during profile update: $e');
     }
   }

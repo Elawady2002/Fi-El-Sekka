@@ -17,7 +17,8 @@ part 'booking_provider.g.dart';
 BookingRepository bookingRepository(Ref ref) {
   final dataSource = BookingDataSourceImpl();
   // Watch auth provider to ensure repository is rebuilt when auth state changes
-  final user = ref.watch(authProvider);
+  final userAsync = ref.watch(authProvider);
+  final user = userAsync.value;
 
   return BookingRepositoryImpl(dataSource, () {
     if (user == null) throw Exception('User not authenticated');

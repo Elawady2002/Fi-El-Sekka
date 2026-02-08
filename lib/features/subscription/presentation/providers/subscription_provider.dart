@@ -27,8 +27,11 @@ SubscriptionRepository subscriptionRepository(Ref ref) {
 // User Subscriptions Provider (all subscriptions)
 @riverpod
 Future<List<SubscriptionEntity>> userSubscriptions(Ref ref) async {
-  final user = ref.watch(authProvider);
-
+  final userAsync = ref.watch(authProvider);
+  final user = userAsync.value;
+  if (user == null) {
+    return [];
+  }
 
   final repository = ref.watch(subscriptionRepositoryProvider);
   final result = await repository.getUserSubscriptions(user.id);

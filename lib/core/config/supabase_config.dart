@@ -15,12 +15,10 @@ class SupabaseConfig {
     await Supabase.initialize(
       url: Env.supabaseUrl,
       anonKey: Env.supabaseAnonKey,
-      url: Env.supabaseUrl,
-      anonKey: Env.supabaseAnonKey,
       authOptions: FlutterAuthClientOptions(
         authFlowType: AuthFlowType.pkce,
         autoRefreshToken: true,
-        storage: SecureStorageService(),
+        localStorage: SecureStorageService(),
       ),
     );
 

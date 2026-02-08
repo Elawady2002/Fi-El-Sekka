@@ -101,7 +101,15 @@ class _FullScreenBookingViewState extends ConsumerState<FullScreenBookingView>
   }
 
   Future<void> _saveBooking() async {
-    final user = ref.read(authProvider);
+    final user = ref.read(authProvider).value;
+    if (user == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('المستخدم غير مسجل الدخول')),
+        );
+      }
+      return;
+    }
 
 
     // Validate time selection based on trip type

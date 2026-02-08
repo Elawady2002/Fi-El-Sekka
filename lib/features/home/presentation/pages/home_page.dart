@@ -906,7 +906,7 @@ class _LocationSelectionDrawerState
                   onTap: () => Navigator.pop(context),
                   child: Consumer(
                     builder: (context, ref, child) {
-                      final user = ref.watch(authProvider);
+                      final user = ref.watch(authProvider).valueOrNull;
                       return Container(
                         width: 48,
                         height: 48,

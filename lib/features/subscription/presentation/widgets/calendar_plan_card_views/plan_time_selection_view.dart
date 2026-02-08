@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../../../core/theme/app_theme.dart';
 import '../../../../../core/widgets/custom_button.dart';
-import '../../../../domain/entities/subscription_entity.dart';
+import '../../../domain/entities/subscription_entity.dart';
 
 class PlanTimeSelectionView extends StatefulWidget {
   final DateTime selectedDate;
