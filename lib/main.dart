@@ -5,8 +5,8 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'core/theme/app_theme.dart';
 import 'core/config/supabase_config.dart';
 import 'core/widgets/auth_wrapper.dart';
+import 'core/services/logger_service.dart';
 import 'dart:async';
-import 'dart:developer';
 import 'package:intl/date_symbol_data_local.dart';
 
 void main() {
@@ -19,17 +19,16 @@ void main() {
       try {
         // Load environment variables
         await dotenv.load(fileName: '.env');
-        log('Environment variables loaded successfully', name: 'AppLaunch');
+        LoggerService.info('Environment variables loaded successfully');
 
         // Initialize Supabase
         await SupabaseConfig.initialize();
-        log('Supabase initialized successfully', name: 'AppLaunch');
+        LoggerService.info('Supabase initialized successfully');
       } catch (error, stack) {
-        log(
+        LoggerService.error(
           'CRITICAL ERROR during initialization',
           error: error,
           stackTrace: stack,
-          name: 'AppLaunch',
         );
         // You might want to show an error screen here
         // For now, we'll continue to allow the app to run
@@ -38,11 +37,10 @@ void main() {
       runApp(const ProviderScope(child: MyApp()));
     },
     (error, stack) {
-      log(
+      LoggerService.error(
         'CRITICAL ERROR: Caught error in runZonedGuarded',
         error: error,
         stackTrace: stack,
-        name: 'AppLaunch',
       );
     },
   );

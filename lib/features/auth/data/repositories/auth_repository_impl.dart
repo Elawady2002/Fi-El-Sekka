@@ -9,8 +9,7 @@ import '../datasources/supabase_auth_data_source.dart';
 class AuthRepositoryImpl implements AuthRepository {
   final SupabaseAuthDataSource _dataSource;
 
-  AuthRepositoryImpl({SupabaseAuthDataSource? dataSource})
-    : _dataSource = dataSource ?? SupabaseAuthDataSource();
+  AuthRepositoryImpl(this._dataSource);
 
   @override
   Future<Either<Failure, UserEntity>> signUp({

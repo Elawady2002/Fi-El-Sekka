@@ -8,7 +8,10 @@ import '../../../../core/widgets/ios_components.dart';
 import '../../domain/entities/trip_type.dart';
 import '../providers/booking_provider.dart';
 import '../../../payment/presentation/pages/payment_page.dart';
-import '../../../subscription/presentation/widgets/subscription_plans_sheet.dart';
+import '../widgets/student_packages_button.dart';
+import '../widgets/trip_type_selector.dart';
+import '../widgets/booking_date_card.dart';
+import '../widgets/time_selection_card.dart';
 
 class BookingPage extends ConsumerStatefulWidget {
   const BookingPage({super.key});
@@ -75,7 +78,7 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 children: [
                   // Student Packages Button
-                  _buildStudentPackagesButton(),
+                  const StudentPackagesButton(),
                   const SizedBox(height: 24),
 
                   // Same-day booking warning - AT THE TOP
@@ -119,9 +122,9 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                   // Trip Type Selector
                   _buildSectionTitle('نوع الرحلة'),
                   const SizedBox(height: 16),
-                  _buildTripTypeSelector(
-                    bookingState.tripType,
-                    bookingNotifier,
+                  TripTypeSelector(
+                    selectedType: bookingState.tripType,
+                    onSelect: bookingNotifier.selectTripType,
                   ),
 
                   const SizedBox(height: 32),
@@ -129,7 +132,10 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                   // Date Picker
                   _buildSectionTitle('التاريخ'),
                   const SizedBox(height: 16),
-                  _buildDateCard(bookingState.selectedDate, bookingNotifier),
+                  BookingDateCard(
+                    selectedDate: bookingState.selectedDate,
+                    onDateSelected: bookingNotifier.selectDate,
+                  ),
 
                   const SizedBox(height: 32),
 
@@ -138,7 +144,7 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                       bookingState.tripType == TripType.roundTrip) ...[
                     _buildSectionTitle('ميعاد الذهاب'),
                     const SizedBox(height: 16),
-                    _buildTimeSelectionCard(
+                    TimeSelectionCard(
                       title: 'وقت التحرك',
                       selectedTime: bookingState.selectedDepartureTime,
                       icon: CupertinoIcons.arrow_up_circle_fill,
@@ -155,7 +161,7 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                       bookingState.tripType == TripType.roundTrip) ...[
                     _buildSectionTitle('ميعاد العودة'),
                     const SizedBox(height: 16),
-                    _buildTimeSelectionCard(
+                    TimeSelectionCard(
                       title: 'وقت الرجوع',
                       selectedTime: bookingState.selectedReturnTime,
                       icon: CupertinoIcons.arrow_down_circle_fill,
@@ -223,315 +229,6 @@ class _BookingPageState extends ConsumerState<BookingPage> {
       style: AppTheme.textTheme.titleLarge?.copyWith(
         fontWeight: FontWeight.bold,
         fontSize: 20,
-      ),
-    );
-  }
-
-  Widget _buildTripTypeSelector(TripType selectedType, BookingState notifier) {
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: TripType.values.map((type) {
-          final isSelected = type == selectedType;
-          return Expanded(
-            child: GestureDetector(
-              onTap: () => notifier.selectTripType(type),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                decoration: BoxDecoration(
-                  color: isSelected ? Colors.white : Colors.transparent,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: isSelected
-                      ? [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.05),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ]
-                      : [],
-                ),
-                child: Column(
-                  children: [
-                    Text(
-                      type.displayName,
-                      textAlign: TextAlign.center,
-                      style: AppTheme.textTheme.bodyMedium?.copyWith(
-                        color: isSelected
-                            ? Colors.black
-                            : AppTheme.textSecondary,
-                        fontWeight: isSelected
-                            ? FontWeight.bold
-                            : FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${type.price.toStringAsFixed(0)} جنيه',
-                      style: AppTheme.textTheme.bodySmall?.copyWith(
-                        color: isSelected
-                            ? AppTheme.primaryDark
-                            : AppTheme.textTertiary,
-                        fontWeight: isSelected
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                        fontSize: 11,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-
-  Widget _buildDateCard(DateTime selectedDate, BookingState notifier) {
-    return GestureDetector(
-      onTap: () => _showDatePicker(selectedDate, notifier),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: AppTheme.cardShadow,
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(
-                CupertinoIcons.calendar,
-                color: Colors.black,
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'تاريخ الرحلة',
-                    style: AppTheme.textTheme.bodySmall?.copyWith(
-                      color: AppTheme.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    DateFormat('EEEE، d MMMM', 'ar').format(selectedDate),
-                    style: AppTheme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                DateFormat('yyyy', 'ar').format(selectedDate),
-                style: AppTheme.textTheme.bodySmall?.copyWith(
-                  color: AppTheme.textSecondary,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showDatePicker(DateTime currentDate, BookingState notifier) async {
-    // Ensure initial date is not before today
-    final now = DateTime.now();
-    final initialDate = currentDate.isBefore(now) ? now : currentDate;
-
-    final selectedDate = await showDatePicker(
-      context: context,
-      initialDate: initialDate,
-      firstDate: now,
-      lastDate: DateTime(now.year + 1), // Next year only
-      locale: const Locale('ar', 'EG'),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: AppTheme.primaryColor,
-              onPrimary: Colors.black,
-              surface: Colors.white,
-              onSurface: Colors.black,
-            ),
-            dialogTheme: const DialogThemeData(backgroundColor: Colors.white),
-            textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(foregroundColor: Colors.black),
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (selectedDate != null) {
-      notifier.selectDate(selectedDate);
-    }
-  }
-
-  Widget _buildTimeSelectionCard({
-    required String title,
-    required String? selectedTime,
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
-    final isSelected = selectedTime != null;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: AppTheme.cardShadow,
-          border: isSelected
-              ? Border.all(color: AppTheme.primaryColor, width: 1.5)
-              : null,
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: isSelected ? AppTheme.primaryColor : Colors.grey.shade50,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                icon,
-                color: isSelected ? Colors.black : AppTheme.textTertiary,
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: AppTheme.textTheme.bodySmall?.copyWith(
-                      color: AppTheme.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    selectedTime ?? 'اختار الميعاد',
-                    style: AppTheme.textTheme.titleMedium?.copyWith(
-                      fontWeight: isSelected
-                          ? FontWeight.bold
-                          : FontWeight.normal,
-                      color: isSelected ? Colors.black : AppTheme.textTertiary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              CupertinoIcons.chevron_down,
-              color: AppTheme.textTertiary,
-              size: 20,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStudentPackagesButton() {
-    return GestureDetector(
-      onTap: () {
-        showCupertinoModalPopup(
-          context: context,
-          builder: (_) => const SubscriptionPlansSheet(),
-        );
-      },
-      child: Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: const Color(0xFF1A1A1A), // Dark charcoal
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.2),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                CupertinoIcons.star_fill,
-                color: Color(0xFFFFD700), // Gold
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'باقات الطلاب المميزة',
-                    style: AppTheme.textTheme.titleMedium?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'وفر فلوسك مع باقات الشهر والترم',
-                    style: AppTheme.textTheme.bodySmall?.copyWith(
-                      color: Colors.white70,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: AppTheme.primaryColor,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Icon(
-                CupertinoIcons.arrow_left,
-                color: Colors.black,
-                size: 16,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

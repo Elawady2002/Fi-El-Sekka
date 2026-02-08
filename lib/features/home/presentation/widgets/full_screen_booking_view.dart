@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/custom_button.dart';
 import '../../../booking/presentation/providers/booking_provider.dart';
 import '../../../subscription/domain/entities/subscription_schedule_entity.dart';
 import '../../../subscription/domain/entities/subscription_entity.dart';
@@ -101,10 +102,7 @@ class _FullScreenBookingViewState extends ConsumerState<FullScreenBookingView>
 
   Future<void> _saveBooking() async {
     final user = ref.read(authProvider);
-    if (user == null) {
-      debugPrint('❌ No user logged in');
-      return;
-    }
+
 
     // Validate time selection based on trip type
     bool isValid = true;
@@ -543,7 +541,10 @@ class _FullScreenBookingViewState extends ConsumerState<FullScreenBookingView>
         ),
 
         // Full month calendar
-        SizedBox(height: 450, child: _buildCalendarGrid()),
+        SizedBox(
+          height: MediaQuery.of(context).size.height * 0.55,
+          child: _buildCalendarGrid(),
+        ),
 
         const SizedBox(height: 16),
 
@@ -747,42 +748,12 @@ class _FullScreenBookingViewState extends ConsumerState<FullScreenBookingView>
         // Confirm button
         Padding(
           padding: const EdgeInsets.all(24),
-          child: SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _isLoading
-                  ? null
-                  : () {
-                      _saveBooking();
-                    },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
-                disabledBackgroundColor: AppTheme.primaryColor.withValues(
-                  alpha: 0.5,
-                ),
-                foregroundColor: Colors.black,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: _isLoading
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
-                      ),
-                    )
-                  : Text(
-                      'تأكيد الجدول',
-                      style: AppTheme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
-                      ),
-                    ),
-            ),
+          child: CustomButton(
+            text: 'تأكيد الجدول',
+            onPressed: _isLoading ? null : _saveBooking,
+            isLoading: _isLoading,
+            backgroundColor: AppTheme.primaryColor,
+            textColor: Colors.black,
           ),
         ),
       ],

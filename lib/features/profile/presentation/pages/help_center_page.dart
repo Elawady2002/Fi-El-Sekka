@@ -58,21 +58,12 @@ class HelpCenterPage extends StatelessWidget {
               'يمكنك إلغاء الرحلة من صفحة "سجل الرحلات" قبل موعد الرحلة بساعة على الأقل.',
             ),
             const SizedBox(height: 32),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () {},
-                icon: const Icon(CupertinoIcons.phone_fill),
-                label: const Text('تواصل مع الدعم الفني'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryColor,
-                  foregroundColor: Colors.black,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
+            CustomButton(
+              onPressed: () {},
+              text: 'تواصل مع الدعم الفني',
+              icon: CupertinoIcons.phone_fill,
+              backgroundColor: AppTheme.primaryColor,
+              textColor: Colors.black,
             ),
           ],
         ),

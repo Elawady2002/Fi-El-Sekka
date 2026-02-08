@@ -2,7 +2,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/logger.dart';
+import '../../../../core/widgets/custom_button.dart';
 import '../../../booking/domain/entities/booking_entity.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class TransactionDetailsSheet extends StatelessWidget {
   final BookingEntity booking;
@@ -17,93 +19,85 @@ class TransactionDetailsSheet extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Drag Handle
-          Center(
-            child: Container(
-              width: 40,
-              height: 5,
-              decoration: BoxDecoration(
-                color: Colors.grey.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(10),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Drag Handle
+            Center(
+              child: Container(
+                width: 40,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: Colors.grey.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 24),
+            const SizedBox(height: 24),
 
-          // Header
-          Text(
-            'تفاصيل المعاملة',
-            textAlign: TextAlign.center,
-            style: AppTheme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 32),
-
-          // Status Badge
-          Center(child: _buildStatusBadge(booking.status)),
-          const SizedBox(height: 24),
-
-          // Details
-          _buildDetailRow('التاريخ', _formatDate(booking.bookingDate)),
-          _buildDetailRow('نوع الرحلة', _getTripTypeLabel(booking.tripType)),
-          _buildDetailRow('المبلغ', '${booking.totalPrice} ج.م'),
-
-          if (booking.transferNumber != null &&
-              booking.transferNumber!.isNotEmpty)
-            _buildDetailRow('رقم التحويل', booking.transferNumber!),
-
-          const SizedBox(height: 24),
-
-          // Payment Proof Image
-          if (booking.paymentProofImage != null &&
-              booking.paymentProofImage!.isNotEmpty) ...[
+            // Header
             Text(
-              'صورة الإثبات',
-              style: AppTheme.textTheme.titleMedium?.copyWith(
+              'تفاصيل المعاملة',
+              textAlign: TextAlign.center,
+              style: AppTheme.textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 12),
-            Container(
-              height: 200,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppTheme.dividerColor),
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: _buildImage(booking.paymentProofImage!),
-            ),
-            const SizedBox(height: 24),
-          ],
+            const SizedBox(height: 32),
 
-          // Close Button
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () => Navigator.pop(context),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
-                foregroundColor: Colors.black,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+            // Status Badge
+            Center(child: _buildStatusBadge(booking.status)),
+            const SizedBox(height: 24),
+
+            // Details
+            _buildDetailRow('التاريخ', _formatDate(booking.bookingDate)),
+            _buildDetailRow('نوع الرحلة', _getTripTypeLabel(booking.tripType)),
+            _buildDetailRow('المبلغ', '${booking.totalPrice} ج.م'),
+
+            if (booking.transferNumber != null &&
+                booking.transferNumber!.isNotEmpty)
+              _buildDetailRow('رقم التحويل', booking.transferNumber!),
+
+            const SizedBox(height: 24),
+
+            // Payment Proof Image
+            if (booking.paymentProofImage != null &&
+                booking.paymentProofImage!.isNotEmpty) ...[
+              Text(
+                'صورة الإثبات',
+                style: AppTheme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
                 ),
-                elevation: 0,
               ),
-              child: const Text(
-                'إغلاق',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              const SizedBox(height: 12),
+              Container(
+                height: 200,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppTheme.dividerColor),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: _buildImage(booking.paymentProofImage!),
+              ),
+              const SizedBox(height: 24),
+            ],
+
+            // Close Button
+            SizedBox(
+              width: double.infinity,
+              child: CustomButton(
+                text: 'إغلاق',
+                onPressed: () => Navigator.pop(context),
+                backgroundColor: AppTheme.primaryColor,
+                textColor: Colors.black,
               ),
             ),
-          ),
-          SizedBox(height: MediaQuery.of(context).padding.bottom),
-        ],
+            SizedBox(height: MediaQuery.of(context).padding.bottom),
+          ],
+        ),
       ),
     );
   }
@@ -187,16 +181,13 @@ class TransactionDetailsSheet extends StatelessWidget {
   Widget _buildImage(String imageUrl) {
     AppLogger.info('🖼️ Loading payment proof image from: $imageUrl');
 
-    return Image.network(
-      imageUrl,
+    return CachedNetworkImage(
+      imageUrl: imageUrl,
       fit: BoxFit.cover,
-      loadingBuilder: (context, child, loadingProgress) {
-        if (loadingProgress == null) return child;
-        return const Center(
-          child: CircularProgressIndicator(color: AppTheme.primaryColor),
-        );
-      },
-      errorBuilder: (context, error, stackTrace) {
+      placeholder: (context, url) => const Center(
+        child: CircularProgressIndicator(color: AppTheme.primaryColor),
+      ),
+      errorWidget: (context, url, error) {
         AppLogger.error('❌ Error loading image: $error');
         return Center(
           child: Column(

@@ -6,7 +6,7 @@ import '../../domain/repositories/subscription_repository.dart';
 import '../../data/datasources/subscription_data_source.dart';
 import '../../domain/entities/subscription_entity.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
-import '../../../../core/utils/logger.dart';
+import '../../../../core/services/logger_service.dart';
 import '../../data/repositories/subscription_repository_impl.dart';
 
 part 'subscription_provider.g.dart';
@@ -28,7 +28,7 @@ SubscriptionRepository subscriptionRepository(Ref ref) {
 @riverpod
 Future<List<SubscriptionEntity>> userSubscriptions(Ref ref) async {
   final user = ref.watch(authProvider);
-  if (user == null) return [];
+
 
   final repository = ref.watch(subscriptionRepositoryProvider);
   final result = await repository.getUserSubscriptions(user.id);
@@ -46,7 +46,7 @@ Future<SubscriptionEntity?> activeSubscription(Ref ref) async {
 
   // Find the first active or pending subscription
   try {
-    AppLogger.info(
+    LoggerService.info(
       'DEBUG: Filtering ${subscriptions.length} subscriptions for active/pending',
     );
     final activeSub = subscriptions.firstWhere((sub) {
@@ -54,15 +54,15 @@ Future<SubscriptionEntity?> activeSubscription(Ref ref) async {
           sub.status == SubscriptionStatus.active ||
           sub.status == SubscriptionStatus.pending;
       final isNotExpired = sub.endDate.isAfter(DateTime.now());
-      AppLogger.info(
+      LoggerService.info(
         'DEBUG: Sub ${sub.id}: Status=${sub.status}, End=${sub.endDate}, Active/Pending=$isActiveOrPending, NotExpired=$isNotExpired',
       );
       return isActiveOrPending && isNotExpired;
     });
-    AppLogger.info('DEBUG: Found active subscription: ${activeSub.id}');
+    LoggerService.info('DEBUG: Found active subscription: ${activeSub.id}');
     return activeSub;
   } catch (e) {
-    AppLogger.info('DEBUG: No active subscription found: $e');
+    LoggerService.info('DEBUG: No active subscription found: $e');
     return null;
   }
 }

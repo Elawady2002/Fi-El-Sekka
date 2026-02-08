@@ -5,6 +5,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/custom_button.dart';
 import '../../../tracking/presentation/pages/confirmation_page.dart';
 import '../providers/booking_provider.dart';
+import '../widgets/time_grid_selector.dart';
 
 class SchedulingPage extends ConsumerStatefulWidget {
   const SchedulingPage({super.key});
@@ -122,35 +123,14 @@ class _SchedulingPageState extends ConsumerState<SchedulingPage> {
                 style: Theme.of(context).textTheme.titleLarge,
               ).animate().fadeIn(delay: 300.ms).slideX(),
               const SizedBox(height: 16),
-              Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                children: _departureTimes.map((time) {
-                  final isSelected = bookingState.selectedDepartureTime == time;
-                  return ChoiceChip(
-                    label: Text(time),
-                    selected: isSelected,
-                    onSelected: (selected) {
-                      ref
-                          .read(bookingStateProvider.notifier)
-                          .selectDepartureTime(selected ? time : null);
-                    },
-                    selectedColor: AppTheme.primaryColor,
-                    labelStyle: TextStyle(
-                      color: isSelected ? Colors.black : AppTheme.textPrimary,
-                      fontWeight: FontWeight.w600,
-                      decoration: TextDecoration.none,
-                    ),
-                    backgroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  );
-                }).toList(),
+              TimeGridSelector(
+                times: _departureTimes,
+                selectedTime: bookingState.selectedDepartureTime,
+                onSelect: (time) {
+                  ref
+                      .read(bookingStateProvider.notifier)
+                      .selectDepartureTime(time);
+                },
               ).animate().fadeIn(delay: 400.ms),
 
               const SizedBox(height: 32),
@@ -159,35 +139,12 @@ class _SchedulingPageState extends ConsumerState<SchedulingPage> {
                 style: Theme.of(context).textTheme.titleLarge,
               ).animate().fadeIn(delay: 500.ms).slideX(),
               const SizedBox(height: 16),
-              Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                children: _returnTimes.map((time) {
-                  final isSelected = bookingState.selectedReturnTime == time;
-                  return ChoiceChip(
-                    label: Text(time),
-                    selected: isSelected,
-                    onSelected: (selected) {
-                      ref
-                          .read(bookingStateProvider.notifier)
-                          .selectReturnTime(selected ? time : null);
-                    },
-                    selectedColor: AppTheme.primaryColor,
-                    labelStyle: TextStyle(
-                      color: isSelected ? Colors.black : AppTheme.textPrimary,
-                      fontWeight: FontWeight.w600,
-                      decoration: TextDecoration.none,
-                    ),
-                    backgroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  );
-                }).toList(),
+              TimeGridSelector(
+                times: _returnTimes,
+                selectedTime: bookingState.selectedReturnTime,
+                onSelect: (time) {
+                  ref.read(bookingStateProvider.notifier).selectReturnTime(time);
+                },
               ).animate().fadeIn(delay: 600.ms),
 
               const SizedBox(height: 48),

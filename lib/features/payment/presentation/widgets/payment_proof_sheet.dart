@@ -5,7 +5,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path/path.dart' as path;
 import '../../../../core/theme/app_theme.dart';
-import '../../../../core/widgets/ios_components.dart';
+import '../../../../core/widgets/custom_button.dart';
+import '../../../../core/widgets/custom_input.dart';
 import '../../../../core/widgets/top_notification.dart';
 
 class PaymentProofSheet extends StatefulWidget {
@@ -186,90 +187,75 @@ class _PaymentProofSheetState extends State<PaymentProofSheet> {
                 ),
               ),
               const SizedBox(height: 8),
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade50,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppTheme.dividerColor),
-                ),
-                child: TextField(
-                  controller: _accountController,
-                  keyboardType: TextInputType.number,
-                  enabled: !_isLoading,
-                  decoration: const InputDecoration(
-                    hintText: '010xxxxxxxx',
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
-                    ),
-                  ),
-                ),
+              CustomInput(
+                controller: _accountController,
+                hintText: '010xxxxxxxx',
+                keyboardType: TextInputType.number,
+                // inputFormatters could be added here if needed
               ),
             ],
           ),
           const SizedBox(height: 32),
 
           // Confirm Button
-          IOSButton(
-            text: _isLoading ? 'جاري الحفظ...' : 'تأكيد الطلب',
-            onPressed: _isLoading
-                ? null
-                : () async {
-                    if (_imageFile == null) {
-                      showTopNotification(context, 'من فضلك ارفع صورة التحويل');
-                      return;
-                    }
+          CustomButton(
+            text: 'تأكيد الطلب',
+            isLoading: _isLoading,
+            onPressed: () async {
+              if (_imageFile == null) {
+                showTopNotification(context, 'من فضلك ارفع صورة التحويل');
+                return;
+              }
 
-                    if (_accountController.text.isEmpty) {
-                      showTopNotification(context, 'من فضلك اكتب رقم المحفظة');
-                      return;
-                    }
+              if (_accountController.text.isEmpty) {
+                showTopNotification(context, 'من فضلك اكتب رقم المحفظة');
+                return;
+              }
 
-                    setState(() {
-                      _isLoading = true;
-                    });
+              setState(() {
+                _isLoading = true;
+              });
 
-                    try {
-                      debugPrint(
-                        '🔄 PaymentProofSheet: Calling onConfirm callback...',
-                      );
+              try {
+                debugPrint(
+                  '🔄 PaymentProofSheet: Calling onConfirm callback...',
+                );
 
-                      // Call the onConfirm callback which will save the booking
-                      await widget.onConfirm(
-                        _imageFile?.path,
-                        _accountController.text,
-                      );
+                // Call the onConfirm callback which will save the booking
+                await widget.onConfirm(
+                  _imageFile?.path,
+                  _accountController.text,
+                );
 
-                      debugPrint(
-                        '✅ PaymentProofSheet: onConfirm completed successfully!',
-                      );
-                      debugPrint(
-                        '✅ PaymentProofSheet: Closing sheet with result=true',
-                      );
+                debugPrint(
+                  '✅ PaymentProofSheet: onConfirm completed successfully!',
+                );
+                debugPrint(
+                  '✅ PaymentProofSheet: Closing sheet with result=true',
+                );
 
-                      // Close sheet only if still mounted
-                      if (mounted) {
-                        Navigator.pop(context, true);
-                      }
-                    } catch (e, stackTrace) {
-                      debugPrint('❌ PaymentProofSheet: Error in onConfirm: $e');
-                      debugPrint('❌ Stack trace: $stackTrace');
+                // Close sheet only if still mounted
+                if (mounted) {
+                  Navigator.pop(context, true);
+                }
+              } catch (e, stackTrace) {
+                debugPrint('❌ PaymentProofSheet: Error in onConfirm: $e');
+                debugPrint('❌ Stack trace: $stackTrace');
 
-                      if (mounted) {
-                        setState(() {
-                          _isLoading = false;
-                        });
+                if (mounted) {
+                  setState(() {
+                    _isLoading = false;
+                  });
 
-                        // Show error to user
-                        showTopNotification(
-                          context,
-                          'حدث خطأ: ${e.toString()}',
-                        );
-                      }
-                    }
-                  },
-            color: _isLoading ? AppTheme.dividerColor : AppTheme.primaryColor,
+                  // Show error to user
+                  showTopNotification(
+                    context,
+                    'حدث خطأ: ${e.toString()}',
+                  );
+                }
+              }
+            },
+            backgroundColor: AppTheme.primaryColor,
           ),
         ],
       ),

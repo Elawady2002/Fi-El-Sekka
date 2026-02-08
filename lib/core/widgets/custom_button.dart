@@ -9,6 +9,7 @@ class CustomButton extends StatelessWidget {
   final Color? backgroundColor;
   final Color? textColor;
   final double? width;
+  final IconData? icon;
 
   const CustomButton({
     super.key,
@@ -18,6 +19,7 @@ class CustomButton extends StatelessWidget {
     this.backgroundColor,
     this.textColor,
     this.width,
+    this.icon,
   });
 
   @override
@@ -30,6 +32,7 @@ class CustomButton extends StatelessWidget {
         isLoading: isLoading,
         color: backgroundColor,
         textColor: textColor,
+        icon: icon,
       ),
     );
   }

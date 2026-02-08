@@ -217,9 +217,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage>
                         final storageService = ref.read(storageServiceProvider);
                         final user = ref.read(authProvider);
 
-                        if (user == null) {
-                          throw Exception('المستخدم غير مسجل الدخول');
-                        }
+
 
                         String? imageUrl;
 
@@ -325,7 +323,6 @@ class _PaymentPageState extends ConsumerState<PaymentPage>
                               '❌ Booking creation failed: $error',
                             );
                             if (!mounted) return;
-                            if (!context.mounted) return;
 
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(

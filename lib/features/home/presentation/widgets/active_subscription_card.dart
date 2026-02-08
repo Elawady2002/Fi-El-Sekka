@@ -69,7 +69,7 @@ class _ActiveSubscriptionCardState extends ConsumerState<ActiveSubscriptionCard>
   }
 
   Future<void> _fetchUniversityName() async {
-    final user = ref.read(authProvider);
+    final user = ref.read(authProvider).valueOrNull;
     if (user?.universityId != null) {
       try {
         final response = await Supabase.instance.client
@@ -79,7 +79,7 @@ class _ActiveSubscriptionCardState extends ConsumerState<ActiveSubscriptionCard>
             .single();
         if (mounted) {
           setState(() {
-            _universityName = response['name'] as String;
+            _universityName = response['name'] as String?;
           });
         }
       } catch (e) {
@@ -107,9 +107,9 @@ class _ActiveSubscriptionCardState extends ConsumerState<ActiveSubscriptionCard>
 
         schedulesMap[dateKey] = SubscriptionScheduleEntity(
           id: booking['id'] as String,
-          subscriptionId: booking['subscription_id'] as String,
+          subscriptionId: (booking['subscription_id'] as String?) ?? '',
           tripDate: bookingDate,
-          tripType: booking['trip_type'] as String,
+          tripType: (booking['trip_type'] as String?) ?? 'round_trip',
           departureTime: booking['departure_time'] as String?,
           returnTime: booking['return_time'] as String?,
           createdAt: DateTime.parse(booking['created_at'] as String),

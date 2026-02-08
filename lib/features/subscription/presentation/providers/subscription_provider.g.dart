@@ -7,7 +7,7 @@ part of 'subscription_provider.dart';
 // **************************************************************************
 
 String _$subscriptionDataSourceHash() =>
-    r'32581cc664940b74bae60e366ac2203288a1bd15';
+    r'04e0aba5726739867015028daa9766585d456fc2';
 
 /// See also [subscriptionDataSource].
 @ProviderFor(subscriptionDataSource)
@@ -27,7 +27,7 @@ final subscriptionDataSourceProvider =
 typedef SubscriptionDataSourceRef =
     AutoDisposeProviderRef<SubscriptionDataSource>;
 String _$subscriptionRepositoryHash() =>
-    r'cf97877f8e511c6b0c249c9982c666f1cdb819f0';
+    r'27bedcb0dda880bd2682b4415a9d73b099c3184a';
 
 /// See also [subscriptionRepository].
 @ProviderFor(subscriptionRepository)
@@ -46,7 +46,7 @@ final subscriptionRepositoryProvider =
 // ignore: unused_element
 typedef SubscriptionRepositoryRef =
     AutoDisposeProviderRef<SubscriptionRepository>;
-String _$userSubscriptionsHash() => r'9498cc8e44990966333645874e3a91ff2ea98d4f';
+String _$userSubscriptionsHash() => r'e136e55f8c698f33a6529ca9c1cf6f54a0bffeb7';
 
 /// See also [userSubscriptions].
 @ProviderFor(userSubscriptions)
@@ -66,7 +66,7 @@ final userSubscriptionsProvider =
 typedef UserSubscriptionsRef =
     AutoDisposeFutureProviderRef<List<SubscriptionEntity>>;
 String _$activeSubscriptionHash() =>
-    r'8cf48aa4fd25773f003d48372e45d311b2535445';
+    r'27d9d0c6797ce34e9fa7e2683d99afc73609aa1e';
 
 /// See also [activeSubscription].
 @ProviderFor(activeSubscription)

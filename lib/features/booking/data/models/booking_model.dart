@@ -30,16 +30,23 @@ class BookingModel extends BookingEntity {
       scheduleId: json['schedule_id'] as String?, // Handle null
       subscriptionId: json['subscription_id'] as String?,
       bookingDate: DateTime.parse(json['booking_date'] as String),
-      tripType: json['trip_type'] as String,
+      tripType:
+          (json['trip_type'] as String?) ??
+          'round_trip', // Handle null with default
       pickupStationId: json['pickup_station_id'] as String?,
       dropoffStationId: json['dropoff_station_id'] as String?,
       departureTime: json['departure_time'] as String?,
       returnTime: json['return_time'] as String?,
       paymentProofImage: json['payment_proof_image'] as String?,
       transferNumber: json['transfer_number'] as String?,
-      status: BookingStatus.fromJson(json['status'] as String),
-      paymentStatus: PaymentStatus.fromJson(json['payment_status'] as String),
-      totalPrice: (json['total_price'] as num).toDouble(),
+      status: BookingStatus.fromJson(
+        (json['status'] as String?) ?? 'pending',
+      ), // Handle null
+      paymentStatus: PaymentStatus.fromJson(
+        (json['payment_status'] as String?) ?? 'unpaid',
+      ), // Handle null
+      totalPrice:
+          (json['total_price'] as num?)?.toDouble() ?? 0.0, // Handle null
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
     );

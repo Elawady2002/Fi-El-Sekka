@@ -104,23 +104,11 @@ class WalletPage extends ConsumerWidget {
                       ],
                     ),
                     const SizedBox(height: 24),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () {},
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primaryColor,
-                          foregroundColor: Colors.black,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: const Text(
-                          'شحن الرصيد',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
+                    CustomButton(
+                      text: 'شحن الرصيد',
+                      onPressed: () {},
+                      backgroundColor: AppTheme.primaryColor,
+                      textColor: Colors.black,
                     ),
                   ],
                 ),

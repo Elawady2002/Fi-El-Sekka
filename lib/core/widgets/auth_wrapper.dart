@@ -1,50 +1,41 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/utils/logger.dart';
+import '../../../core/services/logger_service.dart';
 import '../../features/auth/presentation/providers/auth_provider.dart';
 import '../../features/auth/presentation/pages/onboarding_page.dart';
 import '../../features/home/presentation/pages/home_page.dart';
 
 /// Authentication wrapper that routes based on auth state
-class AuthWrapper extends ConsumerStatefulWidget {
+class AuthWrapper extends ConsumerWidget {
   const AuthWrapper({super.key});
 
   @override
-  ConsumerState<AuthWrapper> createState() => _AuthWrapperState();
-}
-
-class _AuthWrapperState extends ConsumerState<AuthWrapper> {
-  bool _isInitialized = false;
-
-  @override
-  void initState() {
-    super.initState();
-    // Give the auth provider time to initialize
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (mounted) {
-        setState(() {
-          _isInitialized = true;
-        });
-      }
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    AppLogger.debug('OnboardingPage build called');
-    AppLogger.debug(
-      'AuthWrapper build called. _isInitialized: $_isInitialized',
-    );
+  Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
-    AppLogger.debug('AuthWrapper authState: $authState');
+    
+    LoggerService.debug('AuthWrapper build called. State: $authState');
 
-    // Show loading screen while initializing
-    if (!_isInitialized) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
-
-    // authState is UserEntity? - null means not authenticated
-    // If null, show onboarding; if not null, show home page
-    return authState != null ? const HomePage() : const OnboardingPage();
+    return authState.when(
+      data: (user) {
+        if (user != null) {
+          return const HomePage();
+        } else {
+          return const OnboardingPage();
+        }
+      },
+      loading: () => const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      ),
+      error: (error, stackTrace) {
+        LoggerService.error('AuthWrapper error', error: error, stackTrace: stackTrace);
+        return Scaffold(
+          body: Center(
+            child: Text('حدث خطأ أثناء تحميل البيانات: $error'),
+          ),
+        );
+      },
+    );
   }
 }

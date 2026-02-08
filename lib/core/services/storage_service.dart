@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:path/path.dart' as path;
-import '../utils/logger.dart';
+import 'logger_service.dart';
 
 /// Service for handling file uploads to Supabase Storage
 class StorageService {
@@ -24,28 +24,28 @@ class StorageService {
       final extension = path.extension(imageFile.path);
       final fileName = '$userId/$timestamp$extension';
 
-      AppLogger.info('📤 Uploading payment proof: $fileName');
+      LoggerService.info('📤 Uploading payment proof: $fileName');
 
       // Upload file to Supabase Storage
       final uploadPath = await _client.storage
           .from(_bucketName)
           .upload(fileName, imageFile);
 
-      AppLogger.info('✅ Upload successful: $uploadPath');
+      LoggerService.info('✅ Upload successful: $uploadPath');
 
       // Get public URL
       final publicUrl = _client.storage
           .from(_bucketName)
           .getPublicUrl(fileName);
 
-      AppLogger.info('🔗 Public URL: $publicUrl');
+      LoggerService.info('🔗 Public URL: $publicUrl');
 
       return publicUrl;
     } on StorageException catch (e) {
-      AppLogger.error('❌ Storage error: ${e.message}');
+      LoggerService.error('❌ Storage error: ${e.message}');
       throw Exception('فشل رفع الصورة: ${e.message}');
     } catch (e) {
-      AppLogger.error('❌ Unexpected error uploading image: $e');
+      LoggerService.error('❌ Unexpected error uploading image: $e');
       throw Exception('حدث خطأ أثناء رفع الصورة');
     }
   }
@@ -67,16 +67,16 @@ class StorageService {
 
       final filePath = pathSegments.sublist(bucketIndex + 1).join('/');
 
-      AppLogger.info('🗑️ Deleting payment proof: $filePath');
+      LoggerService.info('🗑️ Deleting payment proof: $filePath');
 
       await _client.storage.from(_bucketName).remove([filePath]);
 
-      AppLogger.info('✅ Image deleted successfully');
+      LoggerService.info('✅ Image deleted successfully');
     } on StorageException catch (e) {
-      AppLogger.error('❌ Storage error: ${e.message}');
+      LoggerService.error('❌ Storage error: ${e.message}');
       throw Exception('فشل حذف الصورة: ${e.message}');
     } catch (e) {
-      AppLogger.error('❌ Unexpected error deleting image: $e');
+      LoggerService.error('❌ Unexpected error deleting image: $e');
       throw Exception('حدث خطأ أثناء حذف الصورة');
     }
   }

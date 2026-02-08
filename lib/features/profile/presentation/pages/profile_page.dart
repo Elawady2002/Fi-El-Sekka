@@ -514,7 +514,7 @@ class _ProfileHeaderState extends ConsumerState<_ProfileHeader> {
 
   @override
   Widget build(BuildContext context) {
-    final user = ref.watch(authProvider);
+    final user = ref.watch(authProvider).valueOrNull;
     final userName = user?.fullName ?? 'مستخدم';
     final university = user?.universityId ?? 'غير محدد';
     final avatarUrl = user?.avatarUrl;

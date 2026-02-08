@@ -16,7 +16,7 @@ class AppTheme {
 
   static const Color textPrimary = Color(0xFF000000);
   static const Color textSecondary = Color(0xFF666666);
-  static const Color textTertiary = Color(0xFF999999);
+  static const Color textTertiary = Color(0xFF757575); // Darkened for better contrast
 
   static const Color dividerColor = Color(0xFFE0E0E0);
   static const Color errorColor = Color(0xFFFF3B30);

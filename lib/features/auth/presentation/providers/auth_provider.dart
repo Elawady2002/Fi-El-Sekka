@@ -1,71 +1,28 @@
 import 'dart:io';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../../core/domain/entities/user_entity.dart';
-import '../../domain/repositories/auth_repository.dart';
-import '../../data/repositories/auth_repository_impl.dart';
-import '../../../../core/config/supabase_config.dart';
+import 'auth_providers.dart';
 
 part 'auth_provider.g.dart';
-
-/// Provider for AuthRepository
-@riverpod
-AuthRepository authRepository(Ref ref) {
-  return AuthRepositoryImpl();
-}
 
 /// Authentication state provider
 @riverpod
 class Auth extends _$Auth {
-  late final AuthRepository _repository;
-
   @override
-  UserEntity? build() {
-    // Check if Supabase is initialized
-    if (!SupabaseConfig.isInitialized) {
-      return null;
-    }
-
-    _repository = ref.read(authRepositoryProvider);
-
-    // Listen to auth state changes
-    _repository.authStateChanges().listen((user) {
-      state = user;
-    });
-
-    // Initialize with current user
-    _initializeAuth();
-
-    return null; // Initial state: no user
-  }
-
-  /// Initialize authentication state
-  Future<void> _initializeAuth() async {
-    final result = await _repository.getCurrentUser();
-    result.fold(
-      (failure) {
-        // Handle error silently or log it
-        state = null;
-      },
-      (user) {
-        state = user;
-      },
-    );
+  Stream<UserEntity?> build() {
+    return ref.watch(authRepositoryProvider).authStateChanges();
   }
 
   /// Login with email and password
   Future<String?> login(String email, String password) async {
-    final result = await _repository.signIn(email: email, password: password);
+    final result = await ref.read(authRepositoryProvider).signIn(
+          email: email,
+          password: password,
+        );
 
     return result.fold(
-      (failure) {
-        // Return error message
-        return failure.message;
-      },
-      (user) {
-        state = user;
-        return null; // Success
-      },
+      (failure) => failure.message,
+      (_) => null,
     );
   }
 
@@ -78,55 +35,43 @@ class Auth extends _$Auth {
     String? studentId,
     String? universityId,
   }) async {
-    final result = await _repository.signUp(
-      email: email,
-      password: password,
-      fullName: name,
-      phone: phone,
-      studentId: studentId,
-      universityId: universityId,
-    );
+    final result = await ref.read(authRepositoryProvider).signUp(
+          email: email,
+          password: password,
+          fullName: name,
+          phone: phone,
+          studentId: studentId,
+          universityId: universityId,
+        );
 
     return result.fold(
-      (failure) {
-        // Return error message
-        return failure.message;
-      },
-      (user) {
-        state = user;
-        return null; // Success
-      },
+      (failure) => failure.message,
+      (_) => null,
     );
   }
 
   /// Verify OTP code
   Future<String?> verifyOtp(String otp, String email) async {
-    final result = await _repository.verifyOtp(email: email, otp: otp);
+    final result = await ref.read(authRepositoryProvider).verifyOtp(
+          email: email,
+          otp: otp,
+        );
 
     return result.fold(
-      (failure) {
-        // Return error message
-        return failure.message;
-      },
-      (user) {
-        state = user;
-        return null; // Success
-      },
+      (failure) => failure.message,
+      (_) => null,
     );
   }
 
   /// Resend OTP code
   Future<String?> resendOtp(String email) async {
-    final result = await _repository.resendOtp(email: email);
+    final result = await ref.read(authRepositoryProvider).resendOtp(
+          email: email,
+        );
 
     return result.fold(
-      (failure) {
-        // Return error message
-        return failure.message;
-      },
-      (_) {
-        return null; // Success
-      },
+      (failure) => failure.message,
+      (_) => null,
     );
   }
 
@@ -136,41 +81,36 @@ class Auth extends _$Auth {
     required String phone,
     String? avatarUrl,
   }) async {
-    final currentUser = state;
+    final currentUser = state.value;
     if (currentUser == null) {
       return 'User not authenticated';
     }
 
-    final result = await _repository.updateProfile(
-      userId: currentUser.id,
-      fullName: fullName,
-      phone: phone,
-      avatarUrl: avatarUrl,
-    );
+    final result = await ref.read(authRepositoryProvider).updateProfile(
+          userId: currentUser.id,
+          fullName: fullName,
+          phone: phone,
+          avatarUrl: avatarUrl,
+        );
 
     return result.fold(
-      (failure) {
-        return failure.message;
-      },
-      (user) {
-        state = user;
-        return null; // Success
-      },
+      (failure) => failure.message,
+      (_) => null,
     );
   }
 
   /// Upload profile image
   Future<String?> uploadProfileImage(File image) async {
-    final currentUser = state;
+    final currentUser = state.value;
     if (currentUser == null) {
       return 'User not authenticated';
     }
 
     // 1. Upload image
-    final uploadResult = await _repository.uploadProfileImage(
-      image: image,
-      userId: currentUser.id,
-    );
+    final uploadResult = await ref.read(authRepositoryProvider).uploadProfileImage(
+          image: image,
+          userId: currentUser.id,
+        );
 
     return uploadResult.fold((failure) => failure.message, (imageUrl) async {
       // 2. Update user profile with new image URL
@@ -184,7 +124,7 @@ class Auth extends _$Auth {
 
   /// Remove profile image
   Future<String?> removeProfileImage() async {
-    final currentUser = state;
+    final currentUser = state.value;
     if (currentUser == null) {
       return 'User not authenticated';
     }
@@ -199,23 +139,18 @@ class Auth extends _$Auth {
 
   /// Logout
   Future<String?> logout() async {
-    final result = await _repository.signOut();
+    final result = await ref.read(authRepositoryProvider).signOut();
 
     return result.fold(
-      (failure) {
-        // Return error message
-        return failure.message;
-      },
-      (_) {
-        state = null;
-        return null; // Success
-      },
+      (failure) => failure.message,
+      (_) => null,
     );
   }
 
-  /// Check if user is authenticated
-  bool get isAuthenticated => state != null;
+  /// Check if user is authenticated (Helper for synchronous checks, but prefer watching state)
+  bool get isAuthenticated => state.value != null;
 
-  /// Get current user
-  UserEntity? get currentUser => state;
+  /// Get current user (Helper)
+  UserEntity? get currentUser => state.value;
 }
+

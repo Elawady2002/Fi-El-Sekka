@@ -54,7 +54,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                       ),
                       Consumer(
                         builder: (context, ref, child) {
-                          final user = ref.watch(authProvider);
+                          final user = ref.watch(authProvider).valueOrNull;
                           final firstName =
                               user?.fullName.split(' ').first ?? 'يا صديقي';
                           return Text(
@@ -79,7 +79,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                     },
                     child: Consumer(
                       builder: (context, ref, child) {
-                        final user = ref.watch(authProvider);
+                        final user = ref.watch(authProvider).valueOrNull;
                         return Container(
                           width: 48,
                           height: 48,

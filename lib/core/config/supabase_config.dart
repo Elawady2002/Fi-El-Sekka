@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'env.dart';
+import '../services/secure_storage_service.dart';
 
 /// Supabase configuration and initialization
 class SupabaseConfig {
@@ -14,10 +15,12 @@ class SupabaseConfig {
     await Supabase.initialize(
       url: Env.supabaseUrl,
       anonKey: Env.supabaseAnonKey,
-      authOptions: const FlutterAuthClientOptions(
+      url: Env.supabaseUrl,
+      anonKey: Env.supabaseAnonKey,
+      authOptions: FlutterAuthClientOptions(
         authFlowType: AuthFlowType.pkce,
-        // Auto-refresh tokens
         autoRefreshToken: true,
+        storage: SecureStorageService(),
       ),
     );
 
