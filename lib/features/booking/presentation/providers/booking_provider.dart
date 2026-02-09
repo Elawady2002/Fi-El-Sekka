@@ -8,6 +8,7 @@ import '../../domain/entities/booking_entity.dart';
 import '../../domain/repositories/booking_repository.dart';
 import '../../data/repositories/booking_repository_impl.dart';
 import '../../data/datasources/booking_data_source.dart';
+import '../../domain/entities/schedule_entity.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 
 part 'booking_provider.g.dart';
@@ -70,7 +71,27 @@ class BookingState extends _$BookingState {
   }
 
   void selectDate(DateTime date) {
-    state = state.copyWith(selectedDate: date);
+    state = state.copyWith(
+      selectedDate: date,
+      selectedDepartureSchedule: null,
+      selectedReturnSchedule: null,
+      selectedDepartureTime: null,
+      selectedReturnTime: null,
+    );
+  }
+
+  void selectDepartureSchedule(ScheduleEntity? schedule) {
+    state = state.copyWith(
+      selectedDepartureSchedule: schedule,
+      selectedDepartureTime: schedule?.departureTime,
+    );
+  }
+
+  void selectReturnSchedule(ScheduleEntity? schedule) {
+    state = state.copyWith(
+      selectedReturnSchedule: schedule,
+      selectedReturnTime: schedule?.departureTime,
+    );
   }
 
   void selectDepartureTime(String? time) {
@@ -109,12 +130,12 @@ class BookingState extends _$BookingState {
     // Must have required times based on trip type
     switch (state.tripType) {
       case TripType.departureOnly:
-        return state.selectedDepartureTime != null;
+        return state.selectedDepartureTime != null || state.selectedDepartureSchedule != null;
       case TripType.returnOnly:
-        return state.selectedReturnTime != null;
+        return state.selectedReturnTime != null || state.selectedReturnSchedule != null;
       case TripType.roundTrip:
-        return state.selectedDepartureTime != null &&
-            state.selectedReturnTime != null;
+        return (state.selectedDepartureTime != null || state.selectedDepartureSchedule != null) &&
+            (state.selectedReturnTime != null || state.selectedReturnSchedule != null);
     }
   }
 
@@ -130,9 +151,10 @@ class BookingState extends _$BookingState {
     }
 
     try {
-      // Generate a temporary UUID for schedule_id
-      // In a real app, this should come from the selected schedule
-      const scheduleId = '00000000-0000-0000-0000-000000000000';
+      // Use selected schedule ID if available, otherwise use default
+      final scheduleId = state.selectedDepartureSchedule?.id ?? 
+                        state.selectedReturnSchedule?.id ?? 
+                        '00000000-0000-0000-0000-000000000000';
 
       final result = await repository.createBooking(
         scheduleId: scheduleId,
@@ -192,6 +214,8 @@ class BookingStateModel {
   final DateTime selectedDate;
   final String? selectedDepartureTime;
   final String? selectedReturnTime;
+  final ScheduleEntity? selectedDepartureSchedule;
+  final ScheduleEntity? selectedReturnSchedule;
   final CityEntity? selectedCity;
   final UniversityEntity? selectedUniversity;
   final StationEntity? selectedStation;
@@ -202,6 +226,8 @@ class BookingStateModel {
     required this.selectedDate,
     this.selectedDepartureTime,
     this.selectedReturnTime,
+    this.selectedDepartureSchedule,
+    this.selectedReturnSchedule,
     this.selectedCity,
     this.selectedUniversity,
     this.selectedStation,
@@ -213,6 +239,8 @@ class BookingStateModel {
     DateTime? selectedDate,
     String? selectedDepartureTime,
     String? selectedReturnTime,
+    ScheduleEntity? selectedDepartureSchedule,
+    ScheduleEntity? selectedReturnSchedule,
     CityEntity? selectedCity,
     UniversityEntity? selectedUniversity,
     StationEntity? selectedStation,
@@ -224,6 +252,10 @@ class BookingStateModel {
       selectedDepartureTime:
           selectedDepartureTime ?? this.selectedDepartureTime,
       selectedReturnTime: selectedReturnTime ?? this.selectedReturnTime,
+      selectedDepartureSchedule: 
+          selectedDepartureSchedule ?? this.selectedDepartureSchedule,
+      selectedReturnSchedule: 
+          selectedReturnSchedule ?? this.selectedReturnSchedule,
       selectedCity: selectedCity ?? this.selectedCity,
       selectedUniversity: selectedUniversity ?? this.selectedUniversity,
       selectedStation: selectedStation ?? this.selectedStation,

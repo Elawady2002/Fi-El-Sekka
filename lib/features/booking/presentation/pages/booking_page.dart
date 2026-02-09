@@ -9,9 +9,11 @@ import '../../domain/entities/trip_type.dart';
 import '../providers/booking_provider.dart';
 import '../../../payment/presentation/pages/payment_page.dart';
 import '../widgets/student_packages_button.dart';
-import '../widgets/trip_type_selector.dart';
+
 import '../widgets/booking_date_card.dart';
 import '../widgets/time_selection_card.dart';
+import '../../../home/presentation/providers/home_provider.dart';
+import '../../domain/entities/schedule_entity.dart';
 
 class BookingPage extends ConsumerStatefulWidget {
   const BookingPage({super.key});
@@ -21,16 +23,6 @@ class BookingPage extends ConsumerStatefulWidget {
 }
 
 class _BookingPageState extends ConsumerState<BookingPage> {
-  final departureTimes = [
-    'AM 6:00',
-    'AM 6:30',
-    'AM 7:00',
-    'AM 7:30',
-    'AM 8:00',
-  ];
-
-  final returnTimes = ['PM 2:00', 'PM 2:30', 'PM 3:00', 'PM 3:30', 'PM 4:00'];
-
   @override
   Widget build(BuildContext context) {
     final bookingState = ref.watch(bookingStateProvider);
@@ -120,14 +112,7 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                   ],
 
                   // Trip Type Selector
-                  _buildSectionTitle('نوع الرحلة'),
-                  const SizedBox(height: 16),
-                  TripTypeSelector(
-                    selectedType: bookingState.tripType,
-                    onSelect: bookingNotifier.selectTripType,
-                  ),
 
-                  const SizedBox(height: 32),
 
                   // Date Picker
                   _buildSectionTitle('التاريخ'),
@@ -137,42 +122,8 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                     onDateSelected: bookingNotifier.selectDate,
                   ),
 
-                  const SizedBox(height: 32),
-
-                  // Time Selection
-                  if (bookingState.tripType == TripType.departureOnly ||
-                      bookingState.tripType == TripType.roundTrip) ...[
-                    _buildSectionTitle('ميعاد الذهاب'),
-                    const SizedBox(height: 16),
-                    TimeSelectionCard(
-                      title: 'وقت التحرك',
-                      selectedTime: bookingState.selectedDepartureTime,
-                      icon: CupertinoIcons.arrow_up_circle_fill,
-                      onTap: () => _showTimePicker(
-                        title: 'اختار ميعاد الذهاب',
-                        items: departureTimes,
-                        onSelect: bookingNotifier.selectDepartureTime,
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-                  ],
-
-                  if (bookingState.tripType == TripType.returnOnly ||
-                      bookingState.tripType == TripType.roundTrip) ...[
-                    _buildSectionTitle('ميعاد العودة'),
-                    const SizedBox(height: 16),
-                    TimeSelectionCard(
-                      title: 'وقت الرجوع',
-                      selectedTime: bookingState.selectedReturnTime,
-                      icon: CupertinoIcons.arrow_down_circle_fill,
-                      onTap: () => _showTimePicker(
-                        title: 'اختار ميعاد العودة',
-                        items: returnTimes,
-                        onSelect: bookingNotifier.selectReturnTime,
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-                  ],
+                  // Schedule Selection
+                  ..._buildScheduleSections(context, ref, bookingState, bookingNotifier),
 
                   const SizedBox(height: 100),
                 ],
@@ -221,6 +172,125 @@ class _BookingPageState extends ConsumerState<BookingPage> {
         ),
       ),
     );
+  }
+
+  List<Widget> _buildScheduleSections(
+    BuildContext context,
+    WidgetRef ref,
+    BookingStateModel state,
+    BookingState bookingNotifier,
+  ) {
+    // For now, if no university is selected, use a fake ID to show fake schedules
+    final universityId = state.selectedUniversity?.id ?? 'fake-uni-id';
+    final routesAsync = ref.watch(routesProvider(universityId));
+
+    return routesAsync.when(
+      data: (routes) {
+        if (routes.isEmpty) {
+          return [const Center(child: Text('لا يوجد رحلات متاحة لهذه الجامعة'))];
+        }
+
+        // For now, we take the first route. Ideally, we match by station or let user select.
+        final route = routes.first;
+        final schedulesAsync = ref.watch(schedulesProvider(route.id));
+
+        return [
+          schedulesAsync.when(
+            data: (schedules) {
+              final goingSchedules = schedules
+                  .where((s) => s.direction == RouteDirection.toUniversity)
+                  .toList();
+              final returningSchedules = schedules
+                  .where((s) => s.direction == RouteDirection.fromUniversity)
+                  .toList();
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (goingSchedules.isNotEmpty) ...[
+                    _buildSectionTitle('مواعيد الذهاب'),
+                    const SizedBox(height: 16),
+                    _buildScheduleGrid(
+                      context,
+                      goingSchedules,
+                      state.selectedDepartureSchedule,
+                      bookingNotifier.selectDepartureSchedule,
+                    ),
+                    const SizedBox(height: 32),
+                  ],
+                  if (returningSchedules.isNotEmpty) ...[
+                    _buildSectionTitle('مواعيد العودة'),
+                    const SizedBox(height: 16),
+                    _buildScheduleGrid(
+                      context,
+                      returningSchedules,
+                      state.selectedReturnSchedule,
+                      bookingNotifier.selectReturnSchedule,
+                    ),
+                  ],
+                ],
+              );
+            },
+            loading: () => const Center(child: CupertinoActivityIndicator()),
+            error: (err, _) => Center(child: Text('Error: $err')),
+          ),
+        ];
+      },
+      loading: () => [const Center(child: CupertinoActivityIndicator())],
+      error: (err, _) => [Center(child: Text('Error: $err'))],
+    );
+  }
+
+  Widget _buildScheduleGrid(
+    BuildContext context,
+    List<ScheduleEntity> schedules,
+    ScheduleEntity? selectedSchedule,
+    void Function(ScheduleEntity?) onSelect,
+  ) {
+    return Wrap(
+      spacing: 12,
+      runSpacing: 12,
+      children: schedules.map((schedule) {
+        final isSelected = selectedSchedule?.id == schedule.id;
+
+        return GestureDetector(
+          onTap: () => onSelect(isSelected ? null : schedule),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            decoration: BoxDecoration(
+              color: isSelected ? AppTheme.primaryColor : Colors.white,
+              borderRadius: BorderRadius.circular(15),
+              boxShadow: AppTheme.cardShadow,
+              border: isSelected
+                  ? Border.all(color: AppTheme.primaryColor, width: 2)
+                  : Border.all(color: Colors.transparent, width: 2),
+            ),
+            child: Text(
+              _formatTime(schedule.departureTime),
+              style: AppTheme.textTheme.bodyLarge?.copyWith(
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                color: isSelected ? Colors.black : AppTheme.textPrimary,
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  String _formatTime(String time) {
+    // Basic formatting from "HH:mm" to "h:mm a" if needed, 
+    // but the entity says "departureTime" is String.
+    try {
+      final parts = time.split(':');
+      final hour = int.parse(parts[0]);
+      final minute = int.parse(parts[1]);
+      final dt = DateTime(2022, 1, 1, hour, minute);
+      return DateFormat('h:mm a', 'ar').format(dt);
+    } catch (e) {
+      return time;
+    }
   }
 
   Widget _buildSectionTitle(String title) {

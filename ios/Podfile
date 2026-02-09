@@ -29,6 +29,7 @@ flutter_ios_podfile_setup
 
 target 'Runner' do
   use_frameworks!
+  inhibit_all_warnings!
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
   target 'RunnerTests' do
@@ -36,32 +37,89 @@ target 'Runner' do
   end
 end
 
+# Permanent Fix: Automatically repair broken xcconfig paths
+def fix_xcconfigs(installer)
+  flutter_dir = File.expand_path('Flutter', File.dirname(__FILE__))
+  Dir.glob(File.join(flutter_dir, '*.xcconfig')).each do |file_path|
+    content = File.read(file_path)
+    config_name = File.basename(file_path, '.xcconfig').downcase
+    
+    # Target configurations (debug/release/profile)
+    pod_config_part = case config_name
+                      when 'debug' then 'debug'
+                      when 'release' then 'release'
+                      when 'profile' then 'profile'
+                      else next
+                      end
+    
+    pods_include = "#include \"../Pods/Target Support Files/Pods-Runner/Pods-Runner.#{pod_config_part}.xcconfig\""
+    
+    # Remove any incorrect includes (without ../ prefix) and ensure the correct one is present
+    wrong_include = "#include \"Pods/Target Support Files/Pods-Runner/Pods-Runner.#{pod_config_part}.xcconfig\""
+    
+    if content.include?(wrong_include)
+      content = content.gsub(wrong_include, pods_include)
+      File.write(file_path, content)
+      puts "Fixed incorrect Pods include in #{File.basename(file_path)}"
+    elsif !content.include?(pods_include)
+      File.open(file_path, 'a') { |f| f.puts "\n#{pods_include}" }
+      puts "Added missing Pods include to #{File.basename(file_path)}"
+    end
+  end
+end
+
 post_install do |installer|
+  # 1. Run xcconfig auto-repair
+  fix_xcconfigs(installer)
+
+  # 2. Update all pod targets
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
     
-    # Update deployment target to iOS 14.0 for all pods
     target.build_configurations.each do |config|
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '14.0'
       config.build_settings['ENABLE_BITCODE'] = 'NO'
       config.build_settings['ONLY_ACTIVE_ARCH'] = 'YES'
       config.build_settings['ENABLE_USER_SCRIPT_SANDBOXING'] = 'NO'
+      config.build_settings['GCC_WARN_INHIBIT_ALL_WARNINGS'] = 'YES'
+      config.build_settings['CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER'] = 'NO'
+      
+      # Recommended settings for Xcode 15+
+      config.build_settings['ASSETCATALOG_COMPILER_GENERATE_ASSET_SYMBOLS'] = 'YES'
+      config.build_settings['CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED'] = 'YES'
     end
   end
   
-  # Update project settings
+  # 3. Update project-level settings
   installer.pods_project.build_configurations.each do |config|
     config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '14.0'
     config.build_settings['ENABLE_USER_SCRIPT_SANDBOXING'] = 'NO'
+    config.build_settings['GCC_WARN_INHIBIT_ALL_WARNINGS'] = 'YES'
+    config.build_settings['CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER'] = 'NO'
+
+    # Recommended settings for Xcode 15+
+    config.build_settings['ASSETCATALOG_COMPILER_GENERATE_ASSET_SYMBOLS'] = 'YES'
+    config.build_settings['CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED'] = 'YES'
   end
 
-  # Fix for PhaseScriptExecution failed with a nonzero exit code
-  # This fixes the "readlink" issue in the frameworks script
-  installer.pods_project.targets.each do |target|
-    target.build_configurations.each do |config|
-        if config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'].to_f < 14.0
-          config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '14.0'
-        end
+  # Set LastUpgradeCheck for Pods project
+  installer.pods_project.root_object.attributes['LastUpgradeCheck'] = '1600'
+
+  # 4. Patch Embed/Copy Pods scripts for User Project
+  installer.aggregate_targets.each do |target|
+    target.user_project.native_targets.each do |native_target|
+      # Disable sandboxing for main Runner targets too
+      native_target.build_configurations.each do |config|
+        config.build_settings['ENABLE_USER_SCRIPT_SANDBOXING'] = 'NO'
+      end
+
+      native_target.build_phases.grep(Xcodeproj::Project::Object::PBXShellScriptBuildPhase).each do |phase|
+        # Fix for "PhaseScriptExecution" errors with readlink and rsync
+        phase.shell_script = phase.shell_script.gsub('readlink -f', 'readlink')
+        phase.shell_script = phase.shell_script.gsub('rsync --delete', 'rsync')
+      end
     end
+    # Ensure project changes are saved
+    target.user_project.save
   end
 end
