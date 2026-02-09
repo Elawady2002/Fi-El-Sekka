@@ -53,10 +53,15 @@ Future<BookingEntity?> upcomingBooking(Ref ref) async {
 class BookingState extends _$BookingState {
   @override
   BookingStateModel build() {
+    final now = DateTime.now();
+    final initialDate = now.hour >= 7 
+        ? DateTime(now.year, now.month, now.day + 1) 
+        : now;
+
     return BookingStateModel(
-      tripType: TripType.roundTrip, // Default to round trip
+      tripType: TripType.departureOnly, // Default to single trip
       selectedPlanIndex: 1, // Default to Monthly
-      selectedDate: DateTime.now(),
+      selectedDate: initialDate,
       selectedDepartureTime: null,
       selectedReturnTime: null,
     );
@@ -127,16 +132,11 @@ class BookingState extends _$BookingState {
   }
 
   bool get isBookingComplete {
-    // Must have required times based on trip type
-    switch (state.tripType) {
-      case TripType.departureOnly:
-        return state.selectedDepartureTime != null || state.selectedDepartureSchedule != null;
-      case TripType.returnOnly:
-        return state.selectedReturnTime != null || state.selectedReturnSchedule != null;
-      case TripType.roundTrip:
-        return (state.selectedDepartureTime != null || state.selectedDepartureSchedule != null) &&
-            (state.selectedReturnTime != null || state.selectedReturnSchedule != null);
-    }
+    // For the simplified UI, any selection is enough
+    return state.selectedDepartureSchedule != null || 
+           state.selectedReturnSchedule != null ||
+           state.selectedDepartureTime != null ||
+           state.selectedReturnTime != null;
   }
 
   double get totalPrice => state.tripType.price;

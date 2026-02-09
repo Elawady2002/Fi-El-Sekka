@@ -73,44 +73,6 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                   const StudentPackagesButton(),
                   const SizedBox(height: 24),
 
-                  // Same-day booking warning - AT THE TOP
-                  if (!bookingNotifier.isSameDayBookingAllowed) ...[
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.orange.shade50,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: Colors.orange.shade200,
-                          width: 1,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            CupertinoIcons.info_circle_fill,
-                            color: Colors.orange.shade800,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              'الحجز في نفس اليوم متاح بس قبل الساعة 7 الصبح',
-                              style: AppTheme.textTheme.bodyMedium?.copyWith(
-                                color: Colors.orange.shade900,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                  ],
-
                   // Trip Type Selector
 
 
@@ -197,37 +159,37 @@ class _BookingPageState extends ConsumerState<BookingPage> {
         return [
           schedulesAsync.when(
             data: (schedules) {
-              final goingSchedules = schedules
-                  .where((s) => s.direction == RouteDirection.toUniversity)
-                  .toList();
-              final returningSchedules = schedules
-                  .where((s) => s.direction == RouteDirection.fromUniversity)
-                  .toList();
+              final allSchedules = schedules;
+              final selectedSchedule = state.selectedDepartureSchedule ?? state.selectedReturnSchedule;
 
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (goingSchedules.isNotEmpty) ...[
-                    _buildSectionTitle('مواعيد الذهاب'),
-                    const SizedBox(height: 16),
-                    _buildScheduleGrid(
-                      context,
-                      goingSchedules,
-                      state.selectedDepartureSchedule,
-                      bookingNotifier.selectDepartureSchedule,
-                    ),
-                    const SizedBox(height: 32),
-                  ],
-                  if (returningSchedules.isNotEmpty) ...[
-                    _buildSectionTitle('مواعيد العودة'),
-                    const SizedBox(height: 16),
-                    _buildScheduleGrid(
-                      context,
-                      returningSchedules,
-                      state.selectedReturnSchedule,
-                      bookingNotifier.selectReturnSchedule,
-                    ),
-                  ],
+                  const SizedBox(height: 32),
+                  _buildSectionTitle('موعد الرحلة'),
+                  const SizedBox(height: 16),
+                  TimeSelectionCard(
+                    title: 'اختار ميعاد الرحلة',
+                    selectedTime: selectedSchedule != null 
+                        ? _formatTime(selectedSchedule.departureTime) 
+                        : null,
+                    icon: CupertinoIcons.clock,
+                    onTap: () {
+                      final items = allSchedules.map((s) => _formatTime(s.departureTime)).toList();
+                      _showTimePicker(
+                        title: 'موعد الرحلة',
+                        items: items,
+                        onSelect: (time) {
+                          if (time != null) {
+                            final schedule = allSchedules.firstWhere(
+                              (s) => _formatTime(s.departureTime) == time
+                            );
+                            bookingNotifier.selectDepartureSchedule(schedule);
+                          }
+                        },
+                      );
+                    },
+                  ),
                 ],
               );
             },
@@ -238,44 +200,6 @@ class _BookingPageState extends ConsumerState<BookingPage> {
       },
       loading: () => [const Center(child: CupertinoActivityIndicator())],
       error: (err, _) => [Center(child: Text('Error: $err'))],
-    );
-  }
-
-  Widget _buildScheduleGrid(
-    BuildContext context,
-    List<ScheduleEntity> schedules,
-    ScheduleEntity? selectedSchedule,
-    void Function(ScheduleEntity?) onSelect,
-  ) {
-    return Wrap(
-      spacing: 12,
-      runSpacing: 12,
-      children: schedules.map((schedule) {
-        final isSelected = selectedSchedule?.id == schedule.id;
-
-        return GestureDetector(
-          onTap: () => onSelect(isSelected ? null : schedule),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            decoration: BoxDecoration(
-              color: isSelected ? AppTheme.primaryColor : Colors.white,
-              borderRadius: BorderRadius.circular(15),
-              boxShadow: AppTheme.cardShadow,
-              border: isSelected
-                  ? Border.all(color: AppTheme.primaryColor, width: 2)
-                  : Border.all(color: Colors.transparent, width: 2),
-            ),
-            child: Text(
-              _formatTime(schedule.departureTime),
-              style: AppTheme.textTheme.bodyLarge?.copyWith(
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                color: isSelected ? Colors.black : AppTheme.textPrimary,
-              ),
-            ),
-          ),
-        );
-      }).toList(),
     );
   }
 

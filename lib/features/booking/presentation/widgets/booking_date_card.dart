@@ -14,14 +14,20 @@ class BookingDateCard extends StatelessWidget {
   });
 
   void _showDatePicker(BuildContext context) async {
-    // Ensure initial date is not before today
     final now = DateTime.now();
-    final initialDate = selectedDate.isBefore(now) ? now : selectedDate;
+    // If it's after 7 AM, today is not allowed
+    final firstAllowedDate = now.hour >= 7 
+        ? DateTime(now.year, now.month, now.day + 1) 
+        : DateTime(now.year, now.month, now.day);
+    
+    final initialDate = selectedDate.isBefore(firstAllowedDate) 
+        ? firstAllowedDate 
+        : selectedDate;
 
     final pickedDate = await showDatePicker(
       context: context,
       initialDate: initialDate,
-      firstDate: now,
+      firstDate: firstAllowedDate,
       lastDate: DateTime(now.year + 1), // Next year only
       locale: const Locale('ar', 'EG'),
       builder: (context, child) {
