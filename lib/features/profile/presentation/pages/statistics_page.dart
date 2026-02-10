@@ -13,7 +13,7 @@ class StatisticsPage extends StatelessWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(CupertinoIcons.back, color: Colors.black),
+          icon: const Icon(CupertinoIcons.chevron_right, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(

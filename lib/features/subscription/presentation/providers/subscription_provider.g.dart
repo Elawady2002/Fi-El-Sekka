@@ -46,7 +46,7 @@ final subscriptionRepositoryProvider =
 // ignore: unused_element
 typedef SubscriptionRepositoryRef =
     AutoDisposeProviderRef<SubscriptionRepository>;
-String _$userSubscriptionsHash() => r'e136e55f8c698f33a6529ca9c1cf6f54a0bffeb7';
+String _$userSubscriptionsHash() => r'd84a008c8ae24742c8f07fee9e5c868dcd6dbb76';
 
 /// See also [userSubscriptions].
 @ProviderFor(userSubscriptions)
@@ -66,7 +66,7 @@ final userSubscriptionsProvider =
 typedef UserSubscriptionsRef =
     AutoDisposeFutureProviderRef<List<SubscriptionEntity>>;
 String _$activeSubscriptionHash() =>
-    r'27d9d0c6797ce34e9fa7e2683d99afc73609aa1e';
+    r'35102edbf478748805d0e06ddb35ecb9c0a69799';
 
 /// See also [activeSubscription].
 @ProviderFor(activeSubscription)

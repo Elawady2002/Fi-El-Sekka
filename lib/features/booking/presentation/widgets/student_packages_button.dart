@@ -71,7 +71,7 @@ class StudentPackagesButton extends StatelessWidget {
                 borderRadius: BorderRadius.circular(20),
               ),
               child: const Icon(
-                CupertinoIcons.arrow_left,
+                CupertinoIcons.chevron_left,
                 color: Colors.black,
                 size: 16,
               ),

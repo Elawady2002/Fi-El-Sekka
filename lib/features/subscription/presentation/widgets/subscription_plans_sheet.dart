@@ -93,16 +93,19 @@ class _SubscriptionPlansSheetState
               children: [
                 Text(
                   'باقات الطلاب',
-                  style: AppTheme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
+                  style: AppTheme.textTheme.displayMedium?.copyWith(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 34,
+                    letterSpacing: -1,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 4),
                 Text(
                   'اختار الباقة المناسبة ليك ووفر فلوسك',
                   textAlign: TextAlign.center,
-                  style: AppTheme.textTheme.bodyMedium?.copyWith(
+                  style: AppTheme.textTheme.bodyLarge?.copyWith(
                     color: AppTheme.textSecondary,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
@@ -111,7 +114,7 @@ class _SubscriptionPlansSheetState
 
           // Plans PageView
           SizedBox(
-            height: 540, // Increased height for the cards
+            height: 600, // Increased height for the new premium cards
             child: PageView.builder(
               controller: _pageController,
               itemCount: _plans.length,

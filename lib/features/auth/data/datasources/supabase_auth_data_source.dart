@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/config/supabase_config.dart';
 import '../../../../core/services/logger_service.dart';
+import '../../../../core/domain/entities/user_entity.dart';
 import '../models/user_model.dart';
 
 /// Supabase authentication data source
@@ -215,31 +216,49 @@ class SupabaseAuthDataSource {
 
   /// Stream of authentication state changes
   Stream<UserModel?> authStateChanges() {
-    return _client.auth.onAuthStateChange.asyncMap((data) async {
+    return _client.auth.onAuthStateChange.asyncExpand((data) async* {
       final session = data.session;
       if (session == null) {
-        return null;
+        yield null;
+        return;
       }
 
       try {
-        final userId = session.user.id;
+        final authUser = session.user;
+        final metadata = authUser.userMetadata ?? {};
+        
+        // 1. Emit initial user data from Auth metadata immediately to avoid blocking the UI
+        LoggerService.info('Auth: Emitting initial user from metadata for ${authUser.id}');
+        yield UserModel(
+          id: authUser.id,
+          email: authUser.email ?? '',
+          phone: metadata['phone'] ?? '',
+          fullName: metadata['full_name'] ?? 'مستخدم',
+          userType: UserType.fromJson(metadata['user_type'] ?? 'student'),
+          studentId: metadata['student_id'],
+          universityId: metadata['university_id'],
+          avatarUrl: metadata['avatar_url'],
+          isVerified: true,
+          createdAt: DateTime.tryParse(authUser.createdAt) ?? DateTime.now(),
+        );
+
+        // 2. Fetch full profile from DB in background
+        final userId = authUser.id;
         final response = await _client
             .from('users')
             .select()
             .eq('id', userId)
-            .maybeSingle(); // Use maybeSingle() to handle 0 or 1 results
+            .maybeSingle();
 
-        if (response == null) {
-          LoggerService.warning(
-            'User $userId has auth session but no database record',
-          );
-          return null;
+        if (response != null) {
+          LoggerService.info('Auth: Full profile loaded for $userId');
+          yield UserModel.fromJson(response);
+        } else {
+          LoggerService.warning('Auth: No database record found for $userId');
         }
-
-        return UserModel.fromJson(response);
       } catch (e) {
         LoggerService.error('Error in authStateChanges', error: e);
-        return null;
+        // We already yielded the metadata version, so the app is at least usable
       }
     });
   }

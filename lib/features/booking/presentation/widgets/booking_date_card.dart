@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_theme.dart';
+import 'premium_calendar_sheet.dart';
 
 class BookingDateCard extends StatelessWidget {
   final DateTime selectedDate;
@@ -24,29 +25,11 @@ class BookingDateCard extends StatelessWidget {
         ? firstAllowedDate 
         : selectedDate;
 
-    final pickedDate = await showDatePicker(
+    final pickedDate = await PremiumCalendarSheet.show(
       context: context,
       initialDate: initialDate,
       firstDate: firstAllowedDate,
-      lastDate: DateTime(now.year + 1), // Next year only
-      locale: const Locale('ar', 'EG'),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: AppTheme.primaryColor,
-              onPrimary: Colors.black,
-              surface: Colors.white,
-              onSurface: Colors.black,
-            ),
-            dialogTheme: const DialogThemeData(backgroundColor: Colors.white),
-            textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(foregroundColor: Colors.black),
-            ),
-          ),
-          child: child!,
-        );
-      },
+      lastDate: DateTime(now.year + 1),
     );
 
     if (pickedDate != null) {

@@ -1,5 +1,6 @@
-import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../domain/entities/trip_type.dart';
 import '../../domain/entities/city_entity.dart';
 import '../../domain/entities/university_entity.dart';
@@ -49,7 +50,7 @@ Future<BookingEntity?> upcomingBooking(Ref ref) async {
   );
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 class BookingState extends _$BookingState {
   @override
   BookingStateModel build() {
@@ -60,11 +61,16 @@ class BookingState extends _$BookingState {
 
     return BookingStateModel(
       tripType: TripType.departureOnly, // Default to single trip
+      isToUniversity: true, // Default to university trip
       selectedPlanIndex: 1, // Default to Monthly
       selectedDate: initialDate,
       selectedDepartureTime: null,
       selectedReturnTime: null,
     );
+  }
+
+  void setIsToUniversity(bool value) {
+    state = state.copyWith(isToUniversity: value);
   }
 
   void selectTripType(TripType tripType) {
@@ -109,15 +115,30 @@ class BookingState extends _$BookingState {
 
   void setLocationData({
     required CityEntity city,
-    required UniversityEntity university,
-    required StationEntity station,
+    UniversityEntity? university,
+    required StationEntity pickupStation,
+    StationEntity? arrivalStation,
+    bool? isToUniversity,
   }) {
+    // Debug logging to trace data flow
+    debugPrint('🔵 setLocationData called:');
+    debugPrint('   City: ${city.nameAr}');
+    debugPrint('   University: ${university?.nameAr}');
+    debugPrint('   Pickup Station: ${pickupStation.nameAr}');
+    debugPrint('   Arrival Station: ${arrivalStation?.nameAr}');
+    debugPrint('   isToUniversity: $isToUniversity');
+    
     state = state.copyWith(
       selectedCity: city,
       selectedUniversity: university,
-      selectedStation: station,
+      selectedStation: pickupStation,
+      selectedArrivalStation: arrivalStation,
+      isToUniversity: isToUniversity ?? state.isToUniversity,
     );
+    
+    debugPrint('🟢 State updated - City now: ${state.selectedCity?.nameAr}');
   }
+
 
   bool get isSameDayBookingAllowed {
     final now = DateTime.now();
@@ -161,7 +182,7 @@ class BookingState extends _$BookingState {
         bookingDate: state.selectedDate,
         tripType: state.tripType.toDbValue(),
         pickupStationId: state.selectedStation?.id,
-        dropoffStationId: state.selectedStation?.id,
+        dropoffStationId: state.isToUniversity ? null : state.selectedArrivalStation?.id,
         departureTime: state.selectedDepartureTime,
         returnTime: state.selectedReturnTime,
         paymentProofImage: paymentProofImage,
@@ -192,7 +213,7 @@ class BookingState extends _$BookingState {
         bookingDate: state.selectedDate,
         tripType: state.tripType.toDbValue(),
         pickupStationId: state.selectedStation?.id,
-        dropoffStationId: state.selectedStation?.id,
+        dropoffStationId: state.isToUniversity ? null : state.selectedArrivalStation?.id,
         departureTime: state.selectedDepartureTime,
         returnTime: state.selectedReturnTime,
         totalPrice: totalPrice,
@@ -210,6 +231,7 @@ class BookingState extends _$BookingState {
 
 class BookingStateModel {
   final TripType tripType;
+  final bool isToUniversity;
   final int selectedPlanIndex;
   final DateTime selectedDate;
   final String? selectedDepartureTime;
@@ -219,9 +241,11 @@ class BookingStateModel {
   final CityEntity? selectedCity;
   final UniversityEntity? selectedUniversity;
   final StationEntity? selectedStation;
+  final StationEntity? selectedArrivalStation;
 
   BookingStateModel({
     required this.tripType,
+    required this.isToUniversity,
     required this.selectedPlanIndex,
     required this.selectedDate,
     this.selectedDepartureTime,
@@ -231,10 +255,12 @@ class BookingStateModel {
     this.selectedCity,
     this.selectedUniversity,
     this.selectedStation,
+    this.selectedArrivalStation,
   });
 
   BookingStateModel copyWith({
     TripType? tripType,
+    bool? isToUniversity,
     int? selectedPlanIndex,
     DateTime? selectedDate,
     String? selectedDepartureTime,
@@ -244,9 +270,11 @@ class BookingStateModel {
     CityEntity? selectedCity,
     UniversityEntity? selectedUniversity,
     StationEntity? selectedStation,
+    StationEntity? selectedArrivalStation,
   }) {
     return BookingStateModel(
       tripType: tripType ?? this.tripType,
+      isToUniversity: isToUniversity ?? this.isToUniversity,
       selectedPlanIndex: selectedPlanIndex ?? this.selectedPlanIndex,
       selectedDate: selectedDate ?? this.selectedDate,
       selectedDepartureTime:
@@ -259,6 +287,8 @@ class BookingStateModel {
       selectedCity: selectedCity ?? this.selectedCity,
       selectedUniversity: selectedUniversity ?? this.selectedUniversity,
       selectedStation: selectedStation ?? this.selectedStation,
+      selectedArrivalStation: selectedArrivalStation ?? this.selectedArrivalStation,
     );
   }
 }
+

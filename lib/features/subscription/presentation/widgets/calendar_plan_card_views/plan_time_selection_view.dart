@@ -82,7 +82,7 @@ class _PlanTimeSelectionViewState extends State<PlanTimeSelectionView> {
                     color: Colors.grey.shade100,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(CupertinoIcons.chevron_back, size: 20),
+                  child: const Icon(CupertinoIcons.chevron_right, size: 20),
                 ),
               ),
               const SizedBox(width: 16),

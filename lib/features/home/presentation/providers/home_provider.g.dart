@@ -318,7 +318,7 @@ class _StationsProviderElement
   String get cityId => (origin as StationsProvider).cityId;
 }
 
-String _$routesHash() => r'aa9b6dc4f47a6d33f0598946c045b050ccc9aa59';
+String _$routesHash() => r'4225e3185e23df4cbfae621444990fbc5e3dfbeb';
 
 /// See also [routes].
 @ProviderFor(routes)
@@ -330,7 +330,7 @@ class RoutesFamily extends Family<AsyncValue<List<RouteEntity>>> {
   const RoutesFamily();
 
   /// See also [routes].
-  RoutesProvider call(String universityId) {
+  RoutesProvider call(String? universityId) {
     return RoutesProvider(universityId);
   }
 
@@ -357,7 +357,7 @@ class RoutesFamily extends Family<AsyncValue<List<RouteEntity>>> {
 /// See also [routes].
 class RoutesProvider extends AutoDisposeFutureProvider<List<RouteEntity>> {
   /// See also [routes].
-  RoutesProvider(String universityId)
+  RoutesProvider(String? universityId)
     : this._internal(
         (ref) => routes(ref as RoutesRef, universityId),
         from: routesProvider,
@@ -380,7 +380,7 @@ class RoutesProvider extends AutoDisposeFutureProvider<List<RouteEntity>> {
     required this.universityId,
   }) : super.internal();
 
-  final String universityId;
+  final String? universityId;
 
   @override
   Override overrideWith(
@@ -423,7 +423,7 @@ class RoutesProvider extends AutoDisposeFutureProvider<List<RouteEntity>> {
 // ignore: unused_element
 mixin RoutesRef on AutoDisposeFutureProviderRef<List<RouteEntity>> {
   /// The parameter `universityId` of this provider.
-  String get universityId;
+  String? get universityId;
 }
 
 class _RoutesProviderElement
@@ -432,10 +432,10 @@ class _RoutesProviderElement
   _RoutesProviderElement(super.provider);
 
   @override
-  String get universityId => (origin as RoutesProvider).universityId;
+  String? get universityId => (origin as RoutesProvider).universityId;
 }
 
-String _$schedulesHash() => r'abfa14e5b56a7278b69c50265f0ec5224373bd73';
+String _$schedulesHash() => r'6b7a38efc46ea5819becbc9da827d648f87aa8c1';
 
 /// See also [schedules].
 @ProviderFor(schedules)

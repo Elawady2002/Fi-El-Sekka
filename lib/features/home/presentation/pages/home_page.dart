@@ -639,9 +639,11 @@ class _LocationSelectionDrawerState
     extends ConsumerState<LocationSelectionDrawer> {
   CityEntity? selectedCity;
   UniversityEntity? selectedUniversity;
-  StationEntity? selectedStation;
+  StationEntity? selectedPickupStation;
+  StationEntity? selectedArrivalStation;
+  bool isToUniversity = true;
 
-  Widget _buildSelectionCard({
+  Widget _buildSelectionItem({
     required String title,
     required String? value,
     required String placeholder,
@@ -654,42 +656,27 @@ class _LocationSelectionDrawerState
 
     return GestureDetector(
       onTap: isEnabled ? onTap : null,
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: isEnabled ? Colors.white : Colors.grey.shade100,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isSelected ? AppTheme.primaryColor : AppTheme.dividerColor,
-            width: isSelected ? 2 : 1,
-          ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : [],
-        ),
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
         child: Row(
           children: [
+            // Icon on the right (RTL harmony)
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: isSelected
-                    ? AppTheme.primaryColor
-                    : AppTheme.backgroundColor,
+                    ? AppTheme.primaryColor.withValues(alpha: 0.1)
+                    : Colors.grey.shade50,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: isLoading
                   ? const SizedBox(
-                      width: 24,
-                      height: 24,
+                      width: 20,
+                      height: 20,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : Icon(icon, color: Colors.black, size: 24),
+                  : Icon(icon, color: isSelected ? AppTheme.primaryColor : AppTheme.textTertiary, size: 22),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -701,28 +688,24 @@ class _LocationSelectionDrawerState
                     style: AppTheme.textTheme.bodySmall?.copyWith(
                       color: AppTheme.textSecondary,
                       fontWeight: FontWeight.w500,
+                      fontSize: 12,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     value ?? placeholder,
-                    style: isSelected
-                        ? AppTheme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          )
-                        : AppTheme.textTheme.bodyLarge?.copyWith(
-                            color: AppTheme.textTertiary,
-                          ),
+                    style: AppTheme.textTheme.titleMedium?.copyWith(
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                      color: isSelected ? Colors.black : AppTheme.textTertiary,
+                    ),
                   ),
                 ],
               ),
             ),
             Icon(
-              isSelected
-                  ? CupertinoIcons.checkmark_circle_fill
-                  : CupertinoIcons.chevron_left,
-              color: isSelected ? AppTheme.primaryColor : AppTheme.textTertiary,
-              size: 24,
+              CupertinoIcons.chevron_left,
+              color: AppTheme.textTertiary.withValues(alpha: 0.5),
+              size: 18,
             ),
           ],
         ),
@@ -736,7 +719,6 @@ class _LocationSelectionDrawerState
     required String Function(T) labelBuilder,
     required ValueChanged<T> onSelected,
   }) {
-    // Removed empty check - every city now has universities and stations
     int selectedIndex = 0;
     showCupertinoModalPopup(
       context: context,
@@ -756,7 +738,6 @@ class _LocationSelectionDrawerState
         child: Column(
           children: [
             const SizedBox(height: 12),
-            // Drag Handle
             Container(
               width: 40,
               height: 5,
@@ -766,8 +747,6 @@ class _LocationSelectionDrawerState
               ),
             ),
             const SizedBox(height: 20),
-
-            // Header with Buttons
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Row(
@@ -806,10 +785,7 @@ class _LocationSelectionDrawerState
                 ],
               ),
             ),
-
             const SizedBox(height: 20),
-
-            // Picker
             Expanded(
               child: CupertinoPicker.builder(
                 itemExtent: 48,
@@ -857,27 +833,34 @@ class _LocationSelectionDrawerState
   @override
   Widget build(BuildContext context) {
     final citiesAsync = ref.watch(citiesProvider);
-    final universitiesAsync = selectedCity != null
+    final universitiesAsync = (selectedCity != null && isToUniversity)
         ? ref.watch(universitiesProvider(selectedCity!.id))
         : const AsyncValue.data(<UniversityEntity>[]);
-    final stationsAsync =
-        selectedCity !=
-            null // Changed from selectedUniversity to selectedCity
-        ? ref.watch(
-            stationsProvider(selectedCity!.id),
-          ) // Changed from selectedUniversity!.id to selectedCity!.id
+    final stationsAsync = selectedCity != null
+        ? ref.watch(stationsProvider(selectedCity!.id))
         : const AsyncValue.data(<StationEntity>[]);
 
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.85,
-      decoration: const BoxDecoration(
-        color: AppTheme.backgroundColor,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-      ),
-      child: Column(
+    final bool isComplete = isToUniversity 
+        ? (selectedCity != null && selectedUniversity != null && selectedPickupStation != null)
+        : (selectedCity != null && selectedPickupStation != null && selectedArrivalStation != null);
+
+    final int currentStep = isComplete 
+        ? 2 
+        : (isToUniversity 
+            ? (selectedUniversity != null ? 1 : (selectedCity != null ? 0 : -1))
+            : (selectedPickupStation != null ? 1 : (selectedCity != null ? 0 : -1)));
+
+    return Material(
+      color: Colors.transparent,
+      child: Container(
+        height: MediaQuery.of(context).size.height * 0.85,
+        decoration: const BoxDecoration(
+          color: AppTheme.backgroundColor,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+        ),
+        child: Column(
         children: [
           const SizedBox(height: 12),
-          // Drag Handle
           Container(
             width: 40,
             height: 5,
@@ -886,75 +869,97 @@ class _LocationSelectionDrawerState
               borderRadius: BorderRadius.circular(10),
             ),
           ),
-          const SizedBox(height: 20),
-
+          const SizedBox(height: 10),
           // Header
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            decoration: BoxDecoration(
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+            child: SizedBox(
+              width: double.infinity,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'اختار موقعك',
+                    textAlign: TextAlign.start,
+                    style: AppTheme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    isToUniversity ? 'حدد المدينة، الجامعة، والمحطة' : 'حدد المدينة، محطة الركوب، والوصول',
+                    textAlign: TextAlign.start,
+                    style: AppTheme.textTheme.bodySmall?.copyWith(
+                      color: AppTheme.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            child: Row(
+          ),
+
+          // Trip Type Toggle (Smooth Sliding Animation)
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Stack(
               children: [
-                GestureDetector(
-                  onTap: () => Navigator.pop(context),
-                  child: Consumer(
-                    builder: (context, ref, child) {
-                      final user = ref.watch(authProvider).valueOrNull;
-                      return Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                          image: user?.avatarUrl != null
-                              ? DecorationImage(
-                                  image: NetworkImage(user!.avatarUrl!),
-                                  fit: BoxFit.cover,
-                                )
-                              : null,
-                        ),
-                        child: user?.avatarUrl == null
-                            ? Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Icon(
-                                  CupertinoIcons.person_fill,
-                                  color: AppTheme.primaryColor,
-                                  size: 24,
-                                ),
-                              )
-                            : null,
-                      );
-                    },
+                // Sliding Background Indicator
+                AnimatedAlign(
+                  duration: const Duration(milliseconds: 350),
+                  curve: Curves.easeInOutQuart,
+                  alignment: isToUniversity ? Alignment.centerLeft : Alignment.centerRight,
+                  child: FractionallySizedBox(
+                    widthFactor: 0.5,
+                    child: Container(
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.primaryColor.withValues(alpha: 0.25),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'اختار موقعك',
-                        style: AppTheme.textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'حدد المدينة، الجامعة، والمحطة',
-                        style: AppTheme.textTheme.bodySmall?.copyWith(
-                          color: AppTheme.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
+                // Toggle Buttons
+                Row(
+                  children: [
+                    _buildToggleItem(
+                      title: 'من موقف لموقف',
+                      isSelected: !isToUniversity,
+                      onTap: () {
+                        setState(() {
+                          isToUniversity = false;
+                          selectedUniversity = null;
+                          selectedPickupStation = null;
+                          selectedArrivalStation = null;
+                        });
+                      },
+                    ),
+                    _buildToggleItem(
+                      title: 'للجامعة',
+                      isSelected: isToUniversity,
+                      onTap: () {
+                        setState(() {
+                          isToUniversity = true;
+                          selectedUniversity = null;
+                          selectedPickupStation = null;
+                          selectedArrivalStation = null;
+                        });
+                      },
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -964,15 +969,11 @@ class _LocationSelectionDrawerState
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             child: AnimatedProgressSlider(
-              currentStep: selectedStation != null
-                  ? 2 // Final step (Station)
-                  : (selectedUniversity != null
-                        ? 1 // University step
-                        : (selectedCity != null
-                              ? 0
-                              : -1)), // City step or initial (-1)
+              currentStep: currentStep,
               totalSteps: 3,
-              labels: const ['المدينة', 'الجامعة', 'المحطة'],
+              labels: isToUniversity 
+                  ? const ['المدينة', 'الجامعة', 'المحطة']
+                  : const ['المدينة', 'موقف الركوب', 'موقف الوصول'],
             ),
           ),
 
@@ -981,104 +982,190 @@ class _LocationSelectionDrawerState
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               children: [
-                // City Selection
-                citiesAsync.when(
-                  data: (cities) => _buildSelectionCard(
-                    title: 'المدينة',
-                    value: selectedCity?.nameAr,
-                    placeholder: 'اختار المدينة',
-                    icon: CupertinoIcons.building_2_fill,
-                    onTap: () => _showPicker<CityEntity>(
-                      title: 'اختار المدينة',
-                      items: cities,
-                      labelBuilder: (city) => city.nameAr,
-                      onSelected: (city) {
-                        setState(() {
-                          selectedCity = city;
-                          selectedUniversity = null;
-                          selectedStation = null;
-                        });
-                      },
-                    ),
-                  ),
-                  loading: () => _buildSelectionCard(
-                    title: 'المدينة',
-                    value: null,
-                    placeholder: 'جاري التحميل...',
-                    icon: CupertinoIcons.building_2_fill,
-                    onTap: () {},
-                    isLoading: true,
-                    isEnabled: false,
-                  ),
-                  error: (err, stack) => Text('Error: $err'),
-                ),
-
-                if (selectedCity != null) ...[
-                  const SizedBox(height: 12),
-                  // University Selection
-                  universitiesAsync.when(
-                    data: (universities) => _buildSelectionCard(
-                      title: 'الجامعة',
-                      value: selectedUniversity?.nameAr,
-                      placeholder: 'اختار الجامعة',
-                      icon: CupertinoIcons.book_fill,
-                      onTap: () => _showPicker<UniversityEntity>(
-                        title: 'اختار الجامعة',
-                        items: universities,
-                        labelBuilder: (uni) => uni.nameAr,
-                        onSelected: (uni) {
-                          setState(() {
-                            selectedUniversity = uni;
-                            selectedStation = null;
-                          });
-                        },
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 16,
+                        offset: const Offset(0, 4),
                       ),
-                    ),
-                    loading: () => _buildSelectionCard(
-                      title: 'الجامعة',
-                      value: null,
-                      placeholder: 'جاري التحميل...',
-                      icon: CupertinoIcons.book_fill,
-                      onTap: () {},
-                      isLoading: true,
-                      isEnabled: false,
-                    ),
-                    error: (err, stack) => Text('Error: $err'),
+                    ],
                   ),
-                ],
-
-                if (selectedUniversity != null) ...[
-                  const SizedBox(height: 12),
-                  // Station Selection
-                  stationsAsync.when(
-                    data: (stations) => _buildSelectionCard(
-                      title: 'المحطة',
-                      value: selectedStation?.nameAr,
-                      placeholder: 'اختار المحطة',
-                      icon: CupertinoIcons.location_fill,
-                      onTap: () => _showPicker<StationEntity>(
-                        title: 'اختار المحطة',
-                        items: stations,
-                        labelBuilder: (station) => station.nameAr,
-                        onSelected: (station) {
-                          setState(() {
-                            selectedStation = station;
-                          });
-                        },
+                  child: Column(
+                    children: [
+                      // City Selection
+                      citiesAsync.when(
+                        data: (cities) => _buildSelectionItem(
+                          title: 'المدينة',
+                          value: selectedCity?.nameAr,
+                          placeholder: 'اختار المدينة',
+                          icon: CupertinoIcons.building_2_fill,
+                          onTap: () => _showPicker<CityEntity>(
+                            title: 'اختار المدينة',
+                            items: cities,
+                            labelBuilder: (city) => city.nameAr,
+                            onSelected: (city) {
+                              setState(() {
+                                selectedCity = city;
+                                selectedUniversity = null;
+                                selectedPickupStation = null;
+                                selectedArrivalStation = null;
+                              });
+                            },
+                          ),
+                        ),
+                        loading: () => _buildSelectionItem(
+                          title: 'المدينة',
+                          value: null,
+                          placeholder: 'جاري التحميل...',
+                          icon: CupertinoIcons.building_2_fill,
+                          onTap: () {},
+                          isLoading: true,
+                          isEnabled: false,
+                        ),
+                        error: (err, stack) => Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Text('Error: $err'),
+                        ),
                       ),
-                    ),
-                    loading: () => _buildSelectionCard(
-                      title: 'المحطة',
-                      value: null,
-                      placeholder: 'جاري التحميل...',
-                      icon: CupertinoIcons.location_fill,
-                      onTap: () {},
-                      isLoading: true,
-                      isEnabled: false,
-                    ),
-                    error: (err, stack) => Text('Error: $err'),
-                  ),
+
+                      if (selectedCity != null) ...[
+                        Divider(height: 1, color: Colors.grey.shade100, indent: 16, endIndent: 16),
+                        if (isToUniversity) ...[
+                          // University Selection
+                          universitiesAsync.when(
+                            data: (universities) => _buildSelectionItem(
+                              title: 'الجامعة',
+                              value: selectedUniversity?.nameAr,
+                              placeholder: 'اختار الجامعة',
+                              icon: CupertinoIcons.book_fill,
+                              onTap: () => _showPicker<UniversityEntity>(
+                                title: 'اختار الجامعة',
+                                items: universities,
+                                labelBuilder: (uni) => uni.nameAr,
+                                onSelected: (uni) {
+                                  setState(() {
+                                    selectedUniversity = uni;
+                                    selectedPickupStation = null;
+                                  });
+                                },
+                              ),
+                            ),
+                            loading: () => _buildSelectionItem(
+                              title: 'الجامعة',
+                              value: null,
+                              placeholder: 'جاري التحميل...',
+                              icon: CupertinoIcons.book_fill,
+                              onTap: () {},
+                              isLoading: true,
+                              isEnabled: false,
+                            ),
+                            error: (err, stack) => Text('Error: $err'),
+                          ),
+                        ] else ...[
+                          // Departure Station Selection
+                          stationsAsync.when(
+                            data: (stations) => _buildSelectionItem(
+                              title: 'موقف الركوب',
+                              value: selectedPickupStation?.nameAr,
+                              placeholder: 'اختار موقف الركوب',
+                              icon: CupertinoIcons.location_fill,
+                              onTap: () => _showPicker<StationEntity>(
+                                title: 'اختار موقف الركوب',
+                                items: stations,
+                                labelBuilder: (station) => station.nameAr,
+                                onSelected: (station) {
+                                  setState(() {
+                                    selectedPickupStation = station;
+                                    selectedArrivalStation = null;
+                                  });
+                                },
+                              ),
+                            ),
+                            loading: () => _buildSelectionItem(
+                              title: 'موقف الركوب',
+                              value: null,
+                              placeholder: 'جاري التحميل...',
+                              icon: CupertinoIcons.location_fill,
+                              onTap: () {},
+                              isLoading: true,
+                              isEnabled: false,
+                            ),
+                            error: (err, stack) => Text('Error: $err'),
+                          ),
+                        ],
+                      ],
+
+                      if (selectedCity != null && (isToUniversity ? selectedUniversity != null : selectedPickupStation != null)) ...[
+                        Divider(height: 1, color: Colors.grey.shade100, indent: 16, endIndent: 16),
+                        if (isToUniversity) ...[
+                          // Station Selection (Pickup)
+                          stationsAsync.when(
+                            data: (stations) => _buildSelectionItem(
+                              title: 'المحطة',
+                              value: selectedPickupStation?.nameAr,
+                              placeholder: 'اختار المحطة',
+                              icon: CupertinoIcons.location_fill,
+                              onTap: () => _showPicker<StationEntity>(
+                                title: 'اختار المحطة',
+                                items: stations,
+                                labelBuilder: (station) => station.nameAr,
+                                onSelected: (station) {
+                                  setState(() {
+                                    selectedPickupStation = station;
+                                  });
+                                },
+                              ),
+                            ),
+                            loading: () => _buildSelectionItem(
+                              title: 'المحطة',
+                              value: null,
+                              placeholder: 'جاري التحميل...',
+                              icon: CupertinoIcons.location_fill,
+                              onTap: () {},
+                              isLoading: true,
+                              isEnabled: false,
+                        ),
+                        error: (err, stack) => Text('Error: $err'),
+                      ),
+                    ] else ...[
+                      // Arrival Station Selection
+                      stationsAsync.when(
+                        data: (stations) => _buildSelectionItem(
+                          title: 'موقف الوصول',
+                          value: selectedArrivalStation?.nameAr,
+                          placeholder: 'اختار موقف الوصول',
+                          icon: CupertinoIcons.pin_fill,
+                          onTap: () => _showPicker<StationEntity>(
+                            title: 'اختار موقف الوصول',
+                            items: stations.where((s) => s.id != selectedPickupStation?.id).toList(),
+                            labelBuilder: (station) => station.nameAr,
+                            onSelected: (station) {
+                              setState(() {
+                                selectedArrivalStation = station;
+                              });
+                            },
+                          ),
+                        ),
+                        loading: () => _buildSelectionItem(
+                          title: 'موقف الوصول',
+                          value: null,
+                          placeholder: 'جاري التحميل...',
+                          icon: CupertinoIcons.pin_fill,
+                          onTap: () {},
+                          isLoading: true,
+                          isEnabled: false,
+                        ),
+                        error: (err, stack) => Text('Error: $err'),
+                      ),
+                    ],
+                  ],
                 ],
+              ),
+            ),
                 const SizedBox(height: 20),
               ],
             ),
@@ -1099,28 +1186,27 @@ class _LocationSelectionDrawerState
             ),
             child: IOSButton(
               text: 'متابعة',
-              onPressed: selectedStation != null
+              onPressed: isComplete
                   ? () {
                       // Set location data in Booking Provider
                       ref
                           .read(bookingStateProvider.notifier)
                           .setLocationData(
                             city: selectedCity!,
-                            university: selectedUniversity!,
-                            station: selectedStation!,
+                            university: selectedUniversity, // can be null
+                            pickupStation: selectedPickupStation!,
+                            arrivalStation: selectedArrivalStation,
+                            isToUniversity: isToUniversity,
                           );
 
                       Navigator.pop(context);
 
-                      // Navigate based on mode
                       if (widget.navigateToSubscription) {
-                        // Show subscription plans sheet
                         showCupertinoModalPopup(
                           context: context,
                           builder: (context) => const SubscriptionPlansSheet(),
                         );
                       } else {
-                        // Navigate to booking page
                         Navigator.push(
                           context,
                           CupertinoPageRoute(
@@ -1130,13 +1216,46 @@ class _LocationSelectionDrawerState
                       }
                     }
                   : null,
-              color: selectedStation != null
+              color: isComplete
                   ? AppTheme.primaryColor
                   : AppTheme.dividerColor,
             ),
           ),
         ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildToggleItem({
+    required String title,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: SizedBox(
+          height: 48,
+          child: Center(
+            child: AnimatedDefaultTextStyle(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+              style: AppTheme.textTheme.bodyLarge?.copyWith(
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                    color: isSelected ? Colors.black : AppTheme.textSecondary,
+                  ) ??
+                  const TextStyle(),
+              child: Text(
+                title,
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
 }
+

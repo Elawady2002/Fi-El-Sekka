@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/custom_button.dart';
-import '../../../tracking/presentation/pages/confirmation_page.dart';
 import '../providers/booking_provider.dart';
 import '../widgets/time_grid_selector.dart';
 
@@ -155,10 +154,23 @@ class _SchedulingPageState extends ConsumerState<SchedulingPage> {
                         bookingState.selectedDepartureTime != null &&
                         bookingState.selectedReturnTime != null
                     ? () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const ConfirmationPage(),
+                        // Go back to home
+                        Navigator.popUntil(context, (route) => route.isFirst);
+
+                        // Show success notification
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Row(
+                              children: [
+                                const Icon(Icons.check_circle_outline, color: Colors.white),
+                                const SizedBox(width: 12),
+                                const Text('تم تحديد المواعيد بنجاح'),
+                              ],
+                            ),
+                            backgroundColor: AppTheme.primaryColor,
+                            behavior: SnackBarBehavior.floating,
+                            margin: const EdgeInsets.all(20),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                           ),
                         );
                       }

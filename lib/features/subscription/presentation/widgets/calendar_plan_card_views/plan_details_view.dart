@@ -34,7 +34,7 @@ class PlanDetailsView extends StatelessWidget {
       children: [
         // Card Header
         Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.fromLTRB(24, 32, 24, 20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -43,57 +43,75 @@ class PlanDetailsView extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: AppTheme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
+                    style: AppTheme.textTheme.displayMedium?.copyWith(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 32,
+                      letterSpacing: -1,
                     ),
                   ),
                   if (isPopular)
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 6,
+                        horizontal: 16,
+                        vertical: 8,
                       ),
                       decoration: BoxDecoration(
-                        color: accentColor.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(20),
+                        color: accentColor,
+                        borderRadius: BorderRadius.circular(30),
+                        boxShadow: [
+                          BoxShadow(
+                            color: accentColor.withValues(alpha: 0.3),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                       ),
-                      child: Text(
-                        'الاكثر توفيرا',
+                      child: const Text(
+                        'الأكثر توفيراً',
                         style: TextStyle(
-                          color: accentColor,
+                          color: Colors.black,
                           fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          decoration: TextDecoration.none,
-                          decorationColor: Colors.transparent,
+                          fontWeight: FontWeight.w900,
                         ),
                       ),
                     ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               Row(
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
                     price,
                     style: AppTheme.textTheme.displayLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w900,
                       color: Colors.black,
+                      fontSize: 64,
+                      height: 0.9,
                     ),
                   ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'ج.م',
-                    style: AppTheme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.textSecondary,
-                    ),
-                  ),
-                  Text(
-                    ' / $period',
-                    style: AppTheme.textTheme.bodyMedium?.copyWith(
-                      color: AppTheme.textSecondary,
+                  const SizedBox(width: 8),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'ج.م',
+                          style: AppTheme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w900,
+                            color: Colors.black,
+                            fontSize: 18,
+                          ),
+                        ),
+                        Text(
+                          period,
+                          style: AppTheme.textTheme.bodyMedium?.copyWith(
+                            color: AppTheme.textSecondary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   const Spacer(),
@@ -101,15 +119,18 @@ class PlanDetailsView extends StatelessWidget {
                   GestureDetector(
                     onTap: onCalendarTap,
                     child: Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: accentColor.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(12),
+                        color: Colors.black.withValues(alpha: 0.04),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: Colors.black.withValues(alpha: 0.05),
+                        ),
                       ),
                       child: Icon(
                         CupertinoIcons.calendar,
-                        color: accentColor,
-                        size: 24,
+                        color: Colors.black87,
+                        size: 26,
                       ),
                     ),
                   ),
@@ -156,12 +177,13 @@ class PlanDetailsView extends StatelessWidget {
 
         // Action Button
         Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
           child: CustomButton(
             text: 'اشترك الآن',
             onPressed: onSubscribeTap,
             backgroundColor: isPopular ? accentColor : Colors.black,
-            textColor: isPopular ? Colors.black : Colors.white,
+            textColor: Colors.black,
+            height: 60,
           ),
         ),
       ],

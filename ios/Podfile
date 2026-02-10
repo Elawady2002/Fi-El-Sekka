@@ -100,26 +100,48 @@ post_install do |installer|
     # Recommended settings for Xcode 15+
     config.build_settings['ASSETCATALOG_COMPILER_GENERATE_ASSET_SYMBOLS'] = 'YES'
     config.build_settings['CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED'] = 'YES'
+    config.build_settings['ENABLE_USER_SCRIPT_SANDBOXING'] = 'NO'
   end
 
-  # Set LastUpgradeCheck for Pods project
+  # Set Upgrade Check versions for Pods project
   installer.pods_project.root_object.attributes['LastUpgradeCheck'] = '1600'
+  installer.pods_project.root_object.attributes['LastSwiftUpdateCheck'] = '1600'
+  installer.pods_project.root_object.attributes['LastTestingUpgradeCheck'] = '1600'
 
-  # 4. Patch Embed/Copy Pods scripts for User Project
+  # 4. Patch Embed/Copy Pods scripts (Actual files on disk)
   installer.aggregate_targets.each do |target|
-    target.user_project.native_targets.each do |native_target|
-      # Disable sandboxing for main Runner targets too
-      native_target.build_configurations.each do |config|
-        config.build_settings['ENABLE_USER_SCRIPT_SANDBOXING'] = 'NO'
-      end
+    # Patch the shell scripts directly
+    support_files_dir = target.support_files_dir
+    Dir.glob(File.join(support_files_dir, '*.sh')).each do |script_path|
+      puts "Patching script: #{script_path}"
+      script_content = File.read(script_path)
+      
+      # Fix readlink -f (standard macOS incompatibility)
+      # This version uses a python-based absolute path resolution.
+      updated_content = script_content.gsub(/readlink -f ["']\$([^"']+)["']/, 'python3 -c "import os,sys;print(os.path.realpath(sys.argv[1]))" "$\1"')
+      updated_content = updated_content.gsub(/readlink -f \$([a-zA-Z0-9_]+)/, 'python3 -c "import os,sys;print(os.path.realpath(sys.argv[1]))" $\1')
+      updated_content = updated_content.gsub('readlink -f', 'python3 -c "import os,sys;print(os.path.realpath(sys.argv[1]))"')
+      
+      # Fix realpath -mq (CocoaPods error handler incompatibility with macOS)
+      # realpath -mq is often used in the on_error trap and fails on Mac
+      updated_content = updated_content.gsub(/realpath -mq ["']\$([^"']+)["']/, 'python3 -c "import os,sys;print(os.path.realpath(sys.argv[1]))" "$\1"')
+      updated_content = updated_content.gsub('realpath -mq', 'python3 -c "import os,sys;print(os.path.realpath(sys.argv[1]))"')
 
-      native_target.build_phases.grep(Xcodeproj::Project::Object::PBXShellScriptBuildPhase).each do |phase|
-        # Fix for "PhaseScriptExecution" errors with readlink and rsync
-        phase.shell_script = phase.shell_script.gsub('readlink -f', 'readlink')
-        phase.shell_script = phase.shell_script.gsub('rsync --delete', 'rsync')
+      if script_content != updated_content
+        File.write(script_path, updated_content)
+        puts "✅ Successfully patched #{File.basename(script_path)} with robust realpath"
       end
     end
-    # Ensure project changes are saved
+
+    # Also update native targets for sandboxing and recommended settings
+    target.user_project.native_targets.each do |native_target|
+      native_target.build_configurations.each do |config|
+        config.build_settings['ENABLE_USER_SCRIPT_SANDBOXING'] = 'NO'
+        config.build_settings['ASSETCATALOG_COMPILER_GENERATE_ASSET_SYMBOLS'] = 'YES'
+        config.build_settings['CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED'] = 'YES'
+        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '14.0'
+      end
+    end
     target.user_project.save
   end
 end

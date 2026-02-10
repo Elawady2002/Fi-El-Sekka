@@ -17,17 +17,21 @@ class AuthWrapper extends ConsumerWidget {
 
     return authState.when(
       data: (user) {
+        LoggerService.info('AuthWrapper: Data state, user is ${user?.fullName ?? 'null'}');
         if (user != null) {
           return const HomePage();
         } else {
           return const OnboardingPage();
         }
       },
-      loading: () => const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      ),
+      loading: () {
+        LoggerService.info('AuthWrapper: Loading state');
+        return const Scaffold(
+          body: Center(
+            child: CircularProgressIndicator(),
+          ),
+        );
+      },
       error: (error, stackTrace) {
         LoggerService.error('AuthWrapper error', error: error, stackTrace: stackTrace);
         return Scaffold(

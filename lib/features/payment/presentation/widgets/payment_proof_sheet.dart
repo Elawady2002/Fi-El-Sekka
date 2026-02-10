@@ -5,7 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path/path.dart' as path;
 import '../../../../core/theme/app_theme.dart';
-import '../../../../core/widgets/custom_button.dart';
+import '../../../../core/widgets/ios_components.dart';
 import '../../../../core/widgets/custom_input.dart';
 import '../../../../core/widgets/top_notification.dart';
 
@@ -135,14 +135,14 @@ class _PaymentProofSheetState extends State<PaymentProofSheet> {
           GestureDetector(
             onTap: _isLoading ? null : _pickImage,
             child: Container(
-              height: 160,
+              height: 180,
               decoration: BoxDecoration(
-                color: Colors.grey.shade50,
-                borderRadius: BorderRadius.circular(20),
+                color: const Color(0xFFF8F8FA),
+                borderRadius: BorderRadius.circular(24),
                 border: Border.all(
                   color: _imageFile != null
                       ? AppTheme.primaryColor
-                      : AppTheme.dividerColor,
+                      : const Color(0xFFEEEEEE),
                   width: _imageFile != null ? 2 : 1,
                 ),
                 image: _imageFile != null
@@ -156,16 +156,29 @@ class _PaymentProofSheetState extends State<PaymentProofSheet> {
                   ? Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          CupertinoIcons.camera_fill,
-                          size: 48,
-                          color: Colors.grey.shade400,
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.05),
+                                blurRadius: 10,
+                              ),
+                            ],
+                          ),
+                          child: Icon(
+                            CupertinoIcons.camera_fill,
+                            size: 32,
+                            color: Colors.grey.shade400,
+                          ),
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 16),
                         Text(
                           'اضغط لرفع صورة التحويل',
-                          style: AppTheme.textTheme.bodyMedium?.copyWith(
-                            color: Colors.grey.shade600,
+                          style: AppTheme.textTheme.bodyLarge?.copyWith(
+                            color: AppTheme.textSecondary,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -198,7 +211,7 @@ class _PaymentProofSheetState extends State<PaymentProofSheet> {
           const SizedBox(height: 32),
 
           // Confirm Button
-          CustomButton(
+          IOSButton(
             text: 'تأكيد الطلب',
             isLoading: _isLoading,
             onPressed: () async {
@@ -255,7 +268,7 @@ class _PaymentProofSheetState extends State<PaymentProofSheet> {
                 }
               }
             },
-            backgroundColor: AppTheme.primaryColor,
+            color: AppTheme.primaryColor,
           ),
         ],
       ),

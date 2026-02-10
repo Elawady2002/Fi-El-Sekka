@@ -48,7 +48,7 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                         boxShadow: AppTheme.floatingShadow,
                       ),
                       child: const Icon(
-                        CupertinoIcons.chevron_back,
+                        CupertinoIcons.chevron_right,
                         color: Colors.black,
                       ),
                     ),
@@ -75,6 +75,10 @@ class _BookingPageState extends ConsumerState<BookingPage> {
 
                   // Trip Type Selector
 
+
+                  // Trip Detail Summary
+                  _buildTripSummaryCard(bookingState),
+                  const SizedBox(height: 24),
 
                   // Date Picker
                   _buildSectionTitle('التاريخ'),
@@ -142,8 +146,7 @@ class _BookingPageState extends ConsumerState<BookingPage> {
     BookingStateModel state,
     BookingState bookingNotifier,
   ) {
-    // For now, if no university is selected, use a fake ID to show fake schedules
-    final universityId = state.selectedUniversity?.id ?? 'fake-uni-id';
+    final universityId = state.selectedUniversity?.id;
     final routesAsync = ref.watch(routesProvider(universityId));
 
     return routesAsync.when(
@@ -338,6 +341,94 @@ class _BookingPageState extends ConsumerState<BookingPage> {
             SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildTripSummaryCard(BookingStateModel state) {
+    String destinationName = state.isToUniversity 
+        ? (state.selectedUniversity?.nameAr ?? 'الجامعة')
+        : (state.selectedArrivalStation?.nameAr ?? 'موقف الوصول');
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          _buildSummaryRow(
+            icon: CupertinoIcons.building_2_fill,
+            label: 'المدينة',
+            value: state.selectedCity?.nameAr ?? '-',
+          ),
+          Divider(height: 1, color: Colors.grey.shade100, indent: 64, endIndent: 20),
+          _buildSummaryRow(
+            icon: state.isToUniversity ? CupertinoIcons.book_fill : CupertinoIcons.pin_fill,
+            label: state.isToUniversity ? 'الجامعة' : 'موقف الوصول',
+            value: destinationName,
+          ),
+          Divider(height: 1, color: Colors.grey.shade100, indent: 64, endIndent: 20),
+          _buildSummaryRow(
+            icon: CupertinoIcons.location_fill,
+            label: 'محطة الركوب',
+            value: state.selectedStation?.nameAr ?? '-',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryRow({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppTheme.primaryColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, size: 20, color: AppTheme.primaryColor),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: AppTheme.textTheme.bodySmall?.copyWith(
+                    color: AppTheme.textSecondary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: AppTheme.textTheme.bodyLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -6,7 +6,7 @@ part of 'booking_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$bookingRepositoryHash() => r'665eef1adabaecdb9a5a1798f4298917e894b90f';
+String _$bookingRepositoryHash() => r'3cca7ae606ca7009304f239b540afc65fb798db8';
 
 /// See also [bookingRepository].
 @ProviderFor(bookingRepository)
@@ -60,12 +60,12 @@ final upcomingBookingProvider =
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef UpcomingBookingRef = AutoDisposeFutureProviderRef<BookingEntity?>;
-String _$bookingStateHash() => r'a0df8a590073154399e459dc581ac96af02ff3e9';
+String _$bookingStateHash() => r'f4066079648ce902ed9c9c37e2aef1a266788d65';
 
 /// See also [BookingState].
 @ProviderFor(BookingState)
 final bookingStateProvider =
-    AutoDisposeNotifierProvider<BookingState, BookingStateModel>.internal(
+    NotifierProvider<BookingState, BookingStateModel>.internal(
       BookingState.new,
       name: r'bookingStateProvider',
       debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
@@ -75,6 +75,6 @@ final bookingStateProvider =
       allTransitiveDependencies: null,
     );
 
-typedef _$BookingState = AutoDisposeNotifier<BookingStateModel>;
+typedef _$BookingState = Notifier<BookingStateModel>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

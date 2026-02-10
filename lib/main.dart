@@ -8,7 +8,6 @@ import 'core/widgets/auth_wrapper.dart';
 import 'core/services/logger_service.dart';
 import 'dart:async';
 import 'package:intl/date_symbol_data_local.dart';
-
 void main() {
   runZonedGuarded(
     () async {
@@ -17,11 +16,14 @@ void main() {
       await initializeDateFormatting('ar', null);
 
       try {
+        LoggerService.info('STARTING INITIALIZATION');
         // Load environment variables
+        LoggerService.info('Loading .env...');
         await dotenv.load(fileName: '.env');
         LoggerService.info('Environment variables loaded successfully');
 
         // Initialize Supabase
+        LoggerService.info('Initializing Supabase...');
         await SupabaseConfig.initialize();
         LoggerService.info('Supabase initialized successfully');
       } catch (error, stack) {

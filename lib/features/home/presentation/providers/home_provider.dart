@@ -59,7 +59,22 @@ Future<List<StationEntity>> stations(
 }
 
 @riverpod
-Future<List<RouteEntity>> routes(Ref ref, String universityId) async {
+Future<List<RouteEntity>> routes(Ref ref, String? universityId) async {
+  if (universityId == null) {
+    // Return a default route for station-based trips for now
+    return [
+      RouteEntity(
+        id: '00000000-0000-0000-0000-000000000010',
+        universityId: 'station-to-station',
+        routeNameAr: 'من موقف لموقف',
+        routeNameEn: 'Station to Station',
+        routeCode: 'SS001',
+        stationsOrder: const [],
+        isActive: true,
+      ),
+    ];
+  }
+
   final repository = ref.watch(homeRepositoryProvider);
   final result = await repository.getRoutes(universityId);
   
@@ -71,7 +86,7 @@ Future<List<RouteEntity>> routes(Ref ref, String universityId) async {
   if (routes.isEmpty) {
     return [
       RouteEntity(
-        id: 'fake-route-id',
+        id: '00000000-0000-0000-0000-000000000001',
         universityId: universityId,
         routeNameAr: 'خط افتراضي',
         routeNameEn: 'Default Route',
@@ -99,7 +114,7 @@ Future<List<ScheduleEntity>> schedules(Ref ref, String routeId) async {
   if (schedules.isEmpty) {
     return [
       ScheduleEntity(
-        id: 'fake-7-00',
+        id: '00000000-0000-0000-0000-000000000007',
         routeId: routeId,
         direction: RouteDirection.toUniversity,
         departureTime: '07:00',
@@ -109,7 +124,7 @@ Future<List<ScheduleEntity>> schedules(Ref ref, String routeId) async {
         isActive: true,
       ),
       ScheduleEntity(
-        id: 'fake-7-30',
+        id: '00000000-0000-0000-0000-000000000008',
         routeId: routeId,
         direction: RouteDirection.toUniversity,
         departureTime: '07:30',
@@ -119,7 +134,7 @@ Future<List<ScheduleEntity>> schedules(Ref ref, String routeId) async {
         isActive: true,
       ),
       ScheduleEntity(
-        id: 'fake-8-00',
+        id: '00000000-0000-0000-0000-000000000009',
         routeId: routeId,
         direction: RouteDirection.toUniversity,
         departureTime: '08:00',
@@ -130,7 +145,7 @@ Future<List<ScheduleEntity>> schedules(Ref ref, String routeId) async {
       ),
       // Return schedules
       ScheduleEntity(
-        id: 'fake-15-00',
+        id: '00000000-0000-0000-0000-000000000015',
         routeId: routeId,
         direction: RouteDirection.fromUniversity,
         departureTime: '15:00',
@@ -140,7 +155,7 @@ Future<List<ScheduleEntity>> schedules(Ref ref, String routeId) async {
         isActive: true,
       ),
       ScheduleEntity(
-        id: 'fake-16-00',
+        id: '00000000-0000-0000-0000-000000000016',
         routeId: routeId,
         direction: RouteDirection.fromUniversity,
         departureTime: '16:00',

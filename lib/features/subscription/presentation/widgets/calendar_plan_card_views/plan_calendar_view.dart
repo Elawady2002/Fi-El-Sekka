@@ -54,7 +54,7 @@ class _PlanCalendarViewState extends State<PlanCalendarView> {
                     color: Colors.grey.shade100,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(CupertinoIcons.chevron_back, size: 20),
+                  child: const Icon(CupertinoIcons.chevron_right, size: 20),
                 ),
               ),
               const SizedBox(width: 16),
@@ -120,7 +120,7 @@ class _PlanCalendarViewState extends State<PlanCalendarView> {
                       }
                     : null,
                 icon: Icon(
-                  CupertinoIcons.chevron_back,
+                  CupertinoIcons.chevron_right,
                   color: canGoPrevious ? Colors.white : Colors.grey,
                 ),
               ),

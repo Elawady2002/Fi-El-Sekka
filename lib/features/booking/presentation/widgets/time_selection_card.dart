@@ -70,7 +70,7 @@ class TimeSelectionCard extends StatelessWidget {
               ),
             ),
             Icon(
-              CupertinoIcons.chevron_down,
+              CupertinoIcons.chevron_left,
               color: AppTheme.textTertiary,
               size: 20,
             ),

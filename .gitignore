@@ -1,6 +1,8 @@
 # Miscellaneous
-*.class
+*.c# Log files
 *.log
+build_log*.txt
+old_home_page.dart
 *.pyc
 *.swp
 .DS_Store

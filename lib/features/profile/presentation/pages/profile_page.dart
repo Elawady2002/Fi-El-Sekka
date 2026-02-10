@@ -11,7 +11,7 @@ import 'saved_places_page.dart';
 import 'wallet_page.dart';
 import 'payment_methods_page.dart';
 import 'ride_history_page.dart';
-import 'statistics_page.dart';
+
 import 'help_center_page.dart';
 import '../../../subscription/presentation/pages/my_subscription_page.dart';
 
@@ -27,7 +27,7 @@ class ProfilePage extends ConsumerWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(CupertinoIcons.back, color: Colors.black),
+          icon: const Icon(CupertinoIcons.chevron_right, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -133,15 +133,7 @@ class ProfilePage extends ConsumerWidget {
                   CupertinoPageRoute(builder: (_) => const RideHistoryPage()),
                 ),
               ),
-              _MenuItem(
-                icon: CupertinoIcons.chart_bar,
-                title: 'إحصائياتي',
-                subtitle: 'عدد الرحلات، التوفير',
-                onTap: () => Navigator.push(
-                  context,
-                  CupertinoPageRoute(builder: (_) => const StatisticsPage()),
-                ),
-              ),
+
             ]),
             const SizedBox(height: 24),
 

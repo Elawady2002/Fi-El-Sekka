@@ -628,7 +628,7 @@ class _FullScreenBookingViewState extends ConsumerState<FullScreenBookingView>
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(
-                    CupertinoIcons.chevron_back,
+                    CupertinoIcons.chevron_right,
                     color: Colors.white,
                     size: 24,
                   ),
