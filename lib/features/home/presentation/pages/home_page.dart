@@ -718,15 +718,11 @@ class _LocationSelectionDrawerState
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
         child: Row(
           children: [
-            if (!isAr) ...[
-              _buildSelectionIcon(isSelected, isLoading, icon),
-              const SizedBox(width: 16),
-            ],
+            _buildSelectionIcon(isSelected, isLoading, icon),
+            const SizedBox(width: 16),
             Expanded(
               child: Column(
-                crossAxisAlignment: isAr
-                    ? CrossAxisAlignment.end
-                    : CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     title,
@@ -749,10 +745,6 @@ class _LocationSelectionDrawerState
                 ],
               ),
             ),
-            if (isAr) ...[
-              const SizedBox(width: 16),
-              _buildSelectionIcon(isSelected, isLoading, icon),
-            ],
             const SizedBox(width: 12),
             Icon(
               isAr ? CupertinoIcons.chevron_left : CupertinoIcons.chevron_right,

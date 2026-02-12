@@ -709,6 +709,18 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'عودة'**
   String get returnText;
+
+  /// No description provided for @selectDestination.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختار وجهتك'**
+  String get selectDestination;
+
+  /// No description provided for @now.
+  ///
+  /// In ar, this message translates to:
+  /// **'الآن'**
+  String get now;
 }
 
 class _AppLocalizationsDelegate

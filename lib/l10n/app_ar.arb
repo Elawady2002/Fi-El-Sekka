@@ -123,5 +123,7 @@
   "day": "يوم",
   "selectStation": "اختر المحطة",
   "departure": "ذهاب",
-  "returnText": "عودة"
+  "returnText": "عودة",
+  "selectDestination": "اختار وجهتك",
+  "now": "الآن"
 }

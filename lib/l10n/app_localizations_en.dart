@@ -319,4 +319,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get returnText => 'Return';
+
+  @override
+  String get selectDestination => 'Select Destination';
+
+  @override
+  String get now => 'Now';
 }

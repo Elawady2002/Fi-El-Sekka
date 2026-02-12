@@ -123,5 +123,7 @@
   "day": "Day",
   "selectStation": "Select Station",
   "departure": "Departure",
-  "returnText": "Return"
+  "returnText": "Return",
+  "selectDestination": "Select Destination",
+  "now": "Now"
 }

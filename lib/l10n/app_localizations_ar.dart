@@ -318,4 +318,10 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get returnText => 'عودة';
+
+  @override
+  String get selectDestination => 'اختار وجهتك';
+
+  @override
+  String get now => 'الآن';
 }

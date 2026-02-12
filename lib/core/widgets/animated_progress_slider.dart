@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:my_app/l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
 
 class AnimatedProgressSlider extends StatefulWidget {
@@ -48,6 +49,9 @@ class _AnimatedProgressSliderState extends State<AnimatedProgressSlider>
     const Color activeColor = Color(0xFFB2FF59); // Bright Green
     const Color inactiveColor = Color(0xFF424242); // Dark Grey
 
+    final l10n = AppLocalizations.of(context)!;
+    final isRtlValue = Directionality.of(context) == TextDirection.rtl;
+
     return Material(
       color: Colors.transparent,
       child: Container(
@@ -76,12 +80,11 @@ class _AnimatedProgressSliderState extends State<AnimatedProgressSlider>
                 ),
                 const SizedBox(width: 10),
                 Text(
-                  'اختار وجهتك',
+                  l10n.selectDestination,
                   style: AppTheme.textTheme.titleMedium?.copyWith(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
-                    fontFamily: 'SF Pro Display', // Ensure nice font
                   ),
                 ),
                 const Spacer(),
@@ -95,7 +98,7 @@ class _AnimatedProgressSliderState extends State<AnimatedProgressSlider>
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    'الآن',
+                    l10n.now,
                     style: AppTheme.textTheme.labelSmall?.copyWith(
                       color: Colors.black,
                       fontWeight: FontWeight.w900,
@@ -120,13 +123,12 @@ class _AnimatedProgressSliderState extends State<AnimatedProgressSlider>
                     stepWidth;
 
                 return SizedBox(
-                  height: 60, // Increased height to prevent clipping
+                  height: 60,
                   child: Stack(
-                    alignment: Alignment.topRight, // RTL Alignment
                     children: [
                       // Background Track
                       Positioned(
-                        top: 12, // Adjusted for new height
+                        top: 12,
                         left: padding,
                         right: padding,
                         child: Container(
@@ -139,12 +141,12 @@ class _AnimatedProgressSliderState extends State<AnimatedProgressSlider>
                       ),
 
                       // Animated Fill Track
-                      Positioned(
-                        top: 12, // Adjusted for new height
-                        right: padding, // Start from right
+                      PositionedDirectional(
+                        top: 12,
+                        start: padding,
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 600),
-                          curve: Curves.easeOutBack, // Bouncier animation
+                          curve: Curves.easeOutBack,
                           height: 6,
                           width: targetFillWidth,
                           decoration: BoxDecoration(
@@ -169,11 +171,9 @@ class _AnimatedProgressSliderState extends State<AnimatedProgressSlider>
                         final double dotSize = 20.0;
                         final double labelWidth = 80.0;
 
-                        return Positioned(
-                          right:
-                              centerPos -
-                              (labelWidth / 2), // Position from right
-                          top: 5, // Adjusted for new height
+                        return PositionedDirectional(
+                          start: centerPos - (labelWidth / 2),
+                          top: 5,
                           child: SizedBox(
                             width: labelWidth,
                             child: Column(
@@ -183,7 +183,6 @@ class _AnimatedProgressSliderState extends State<AnimatedProgressSlider>
                                 Stack(
                                   alignment: Alignment.center,
                                   children: [
-                                    // Pulsing Ring for Active
                                     if (isActive)
                                       AnimatedBuilder(
                                         animation: _pulseAnimation,
@@ -206,7 +205,6 @@ class _AnimatedProgressSliderState extends State<AnimatedProgressSlider>
                                           );
                                         },
                                       ),
-                                    // The Dot Itself
                                     AnimatedContainer(
                                       duration: const Duration(
                                         milliseconds: 400,
@@ -219,8 +217,7 @@ class _AnimatedProgressSliderState extends State<AnimatedProgressSlider>
                                             : inactiveColor,
                                         shape: BoxShape.circle,
                                         border: Border.all(
-                                          color: Colors
-                                              .black, // Border to separate from track
+                                          color: Colors.black,
                                           width: 3,
                                         ),
                                       ),
@@ -240,7 +237,6 @@ class _AnimatedProgressSliderState extends State<AnimatedProgressSlider>
                                   ],
                                 ),
                                 const SizedBox(height: 6),
-                                // Label
                                 AnimatedDefaultTextStyle(
                                   duration: const Duration(milliseconds: 300),
                                   style: AppTheme.textTheme.labelSmall!
@@ -252,7 +248,6 @@ class _AnimatedProgressSliderState extends State<AnimatedProgressSlider>
                                             ? FontWeight.w900
                                             : FontWeight.normal,
                                         fontSize: isActive ? 12 : 11,
-                                        fontFamily: 'SF Pro Display',
                                       ),
                                   child: Text(
                                     widget.labels.length > index
