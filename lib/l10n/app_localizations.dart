@@ -293,26 +293,134 @@ abstract class AppLocalizations {
   /// No description provided for @tripType.
   ///
   /// In ar, this message translates to:
-  /// **'نوع الرحلة'**
+  /// **'اختار رحلتك'**
   String get tripType;
 
   /// No description provided for @departureOnly.
   ///
   /// In ar, this message translates to:
-  /// **'ذهاب فقط'**
+  /// **'إلى الجامعة'**
   String get departureOnly;
 
   /// No description provided for @returnOnly.
   ///
   /// In ar, this message translates to:
-  /// **'عودة فقط'**
+  /// **'من الجامعة'**
   String get returnOnly;
 
   /// No description provided for @roundTrip.
   ///
   /// In ar, this message translates to:
-  /// **'ذهاب وعودة'**
+  /// **'رحلة'**
   String get roundTrip;
+
+  /// No description provided for @addBooking.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة حجز'**
+  String get addBooking;
+
+  /// No description provided for @editBooking.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل الحجز'**
+  String get editBooking;
+
+  /// No description provided for @confirmSchedule.
+  ///
+  /// In ar, this message translates to:
+  /// **'تأكيد الجدول'**
+  String get confirmSchedule;
+
+  /// No description provided for @bookings.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحجوزات'**
+  String get bookings;
+
+  /// No description provided for @noBookingOnThisDay.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يوجد حجز في هذا اليوم'**
+  String get noBookingOnThisDay;
+
+  /// No description provided for @userNotLoggedIn.
+  ///
+  /// In ar, this message translates to:
+  /// **'المستخدم غير مسجل الدخول'**
+  String get userNotLoggedIn;
+
+  /// No description provided for @selectDepartureTimeError.
+  ///
+  /// In ar, this message translates to:
+  /// **'يرجى اختيار ميعاد الذهاب'**
+  String get selectDepartureTimeError;
+
+  /// No description provided for @selectReturnTimeError.
+  ///
+  /// In ar, this message translates to:
+  /// **'يرجى اختيار ميعاد العودة'**
+  String get selectReturnTimeError;
+
+  /// No description provided for @clickToEditTimes.
+  ///
+  /// In ar, this message translates to:
+  /// **'اضغط لتعديل المواعيد'**
+  String get clickToEditTimes;
+
+  /// No description provided for @errorOccurred.
+  ///
+  /// In ar, this message translates to:
+  /// **'حدث خطأ: {error}'**
+  String errorOccurred(String error);
+
+  /// No description provided for @bookYourTrip.
+  ///
+  /// In ar, this message translates to:
+  /// **'احجز رحلتك'**
+  String get bookYourTrip;
+
+  /// No description provided for @pleaseLoginFirst.
+  ///
+  /// In ar, this message translates to:
+  /// **'يرجى تسجيل الدخول أولاً'**
+  String get pleaseLoginFirst;
+
+  /// No description provided for @errorDeductingAmount.
+  ///
+  /// In ar, this message translates to:
+  /// **'حدث خطأ أثناء خصم المبلغ'**
+  String get errorDeductingAmount;
+
+  /// No description provided for @errorCreatingBooking.
+  ///
+  /// In ar, this message translates to:
+  /// **'حدث خطأ أثناء إنشاء الحجز'**
+  String get errorCreatingBooking;
+
+  /// No description provided for @noTripsAvailable.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يوجد رحلات متاحة لهذه الجامعة'**
+  String get noTripsAvailable;
+
+  /// No description provided for @tripTime.
+  ///
+  /// In ar, this message translates to:
+  /// **'موعد الرحلة'**
+  String get tripTime;
+
+  /// No description provided for @selectTripTime.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختار ميعاد الرحلة'**
+  String get selectTripTime;
+
+  /// No description provided for @successfullyBooked.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم الحجز بنجاح - {type}'**
+  String successfullyBooked(String type);
 
   /// No description provided for @priceLabel.
   ///

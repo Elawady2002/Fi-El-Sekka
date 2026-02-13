@@ -14,8 +14,8 @@ class TrackingState extends _$TrackingState {
       _timer?.cancel();
     });
     return TrackingStateModel(
-      busLocation: const LatLng(30.0444, 31.2357),
-      estimatedArrival: "15 mins",
+      busLocation: const LatLng(30.0880, 31.6250), // Near Madinaty
+      estimatedArrival: "5 mins",
     );
   }
 

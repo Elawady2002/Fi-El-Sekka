@@ -105,16 +105,74 @@ class AppLocalizationsAr extends AppLocalizations {
   String get date => 'التاريخ';
 
   @override
-  String get tripType => 'نوع الرحلة';
+  String get tripType => 'اختار رحلتك';
 
   @override
-  String get departureOnly => 'ذهاب فقط';
+  String get departureOnly => 'إلى الجامعة';
 
   @override
-  String get returnOnly => 'عودة فقط';
+  String get returnOnly => 'من الجامعة';
 
   @override
-  String get roundTrip => 'ذهاب وعودة';
+  String get roundTrip => 'رحلة';
+
+  @override
+  String get addBooking => 'إضافة حجز';
+
+  @override
+  String get editBooking => 'تعديل الحجز';
+
+  @override
+  String get confirmSchedule => 'تأكيد الجدول';
+
+  @override
+  String get bookings => 'الحجوزات';
+
+  @override
+  String get noBookingOnThisDay => 'لا يوجد حجز في هذا اليوم';
+
+  @override
+  String get userNotLoggedIn => 'المستخدم غير مسجل الدخول';
+
+  @override
+  String get selectDepartureTimeError => 'يرجى اختيار ميعاد الذهاب';
+
+  @override
+  String get selectReturnTimeError => 'يرجى اختيار ميعاد العودة';
+
+  @override
+  String get clickToEditTimes => 'اضغط لتعديل المواعيد';
+
+  @override
+  String errorOccurred(String error) {
+    return 'حدث خطأ: $error';
+  }
+
+  @override
+  String get bookYourTrip => 'احجز رحلتك';
+
+  @override
+  String get pleaseLoginFirst => 'يرجى تسجيل الدخول أولاً';
+
+  @override
+  String get errorDeductingAmount => 'حدث خطأ أثناء خصم المبلغ';
+
+  @override
+  String get errorCreatingBooking => 'حدث خطأ أثناء إنشاء الحجز';
+
+  @override
+  String get noTripsAvailable => 'لا يوجد رحلات متاحة لهذه الجامعة';
+
+  @override
+  String get tripTime => 'موعد الرحلة';
+
+  @override
+  String get selectTripTime => 'اختار ميعاد الرحلة';
+
+  @override
+  String successfullyBooked(String type) {
+    return 'تم الحجز بنجاح - $type';
+  }
 
   @override
   String priceLabel(String price) {

@@ -32,10 +32,42 @@
   "confirmed": "Confirmed",
   "soon": "Soon",
   "date": "Date",
-  "tripType": "Trip Type",
-  "departureOnly": "Departure only",
-  "returnOnly": "Return only",
-  "roundTrip": "Round trip",
+  "tripType": "Select Trip",
+  "departureOnly": "To University",
+  "returnOnly": "From University",
+  "roundTrip": "Trip",
+  "addBooking": "Add Booking",
+  "editBooking": "Edit Booking",
+  "confirmSchedule": "Confirm Schedule",
+  "bookings": "Bookings",
+  "noBookingOnThisDay": "No booking on this day",
+  "userNotLoggedIn": "User not logged in",
+  "selectDepartureTimeError": "Please select departure time",
+  "selectReturnTimeError": "Please select return time",
+  "clickToEditTimes": "Click to edit times",
+  "errorOccurred": "An error occurred: {error}",
+  "bookYourTrip": "Book Your Trip",
+  "pleaseLoginFirst": "Please login first",
+  "errorDeductingAmount": "Error deducting amount",
+  "errorCreatingBooking": "Error creating booking",
+  "noTripsAvailable": "No trips available for this university",
+  "tripTime": "Trip Time",
+  "selectTripTime": "Select Trip Time",
+  "successfullyBooked": "Successfully booked - {type}",
+  "@successfullyBooked": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "@errorOccurred": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "priceLabel": "Price: {price} EGP",
   "@priceLabel": {
     "placeholders": {

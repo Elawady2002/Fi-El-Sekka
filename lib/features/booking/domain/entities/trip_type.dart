@@ -1,12 +1,11 @@
 enum TripType {
-  departureOnly('ذهاب فقط', 50.0),
-  returnOnly('عودة فقط', 50.0),
-  roundTrip('ذهاب وعودة', 80.0);
+  departureOnly(50.0),
+  returnOnly(50.0),
+  roundTrip(80.0);
 
-  final String displayName;
   final double price;
 
-  const TripType(this.displayName, this.price);
+  const TripType(this.price);
 
   /// Convert enum to database format (snake_case)
   String toDbValue() {
@@ -17,6 +16,20 @@ enum TripType {
         return 'return_only';
       case TripType.roundTrip:
         return 'round_trip';
+    }
+  }
+
+  /// Get TripType from database value
+  static TripType fromDbValue(String value) {
+    switch (value) {
+      case 'departure_only':
+        return TripType.departureOnly;
+      case 'return_only':
+        return TripType.returnOnly;
+      case 'round_trip':
+        return TripType.roundTrip;
+      default:
+        return TripType.departureOnly;
     }
   }
 }

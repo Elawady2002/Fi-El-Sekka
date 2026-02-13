@@ -3,20 +3,21 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-// import 'package:geolocator/geolocator.dart'; // Removed temporarily for iOS build
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../booking/domain/entities/booking_entity.dart';
+import '../../../tracking/presentation/providers/tracking_provider.dart';
 
-class TripMapSheet extends StatefulWidget {
+class TripMapSheet extends ConsumerStatefulWidget {
   final BookingEntity booking;
 
   const TripMapSheet({super.key, required this.booking});
 
   @override
-  State<TripMapSheet> createState() => _TripMapSheetState();
+  ConsumerState<TripMapSheet> createState() => _TripMapSheetState();
 }
 
-class _TripMapSheetState extends State<TripMapSheet> {
+class _TripMapSheetState extends ConsumerState<TripMapSheet> {
   final MapController _mapController = MapController();
   LatLng? _userLocation;
   // Default locations (Madinaty & GUC)
@@ -26,49 +27,19 @@ class _TripMapSheetState extends State<TripMapSheet> {
   void initState() {
     super.initState();
     _getCurrentLocation();
+    // Start live tracking simulation
+    Future.microtask(() {
+      ref.read(trackingStateProvider.notifier).startTracking();
+    });
   }
 
   Future<void> _getCurrentLocation() async {
-    // Temporarily using fixed location to avoid iOS build issues with geolocator_apple
-    // NOTE: Re-enable when geolocator_apple is updated
     setState(() {
       // Fixed location near Madinaty for testing
       _userLocation = const LatLng(30.0920, 31.6380);
     });
 
     _fitBounds();
-
-    /* Original geolocator code - commented out temporarily
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      return;
-    }
-
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        return;
-      }
-    }
-
-    if (permission == LocationPermission.deniedForever) {
-      return;
-    }
-
-    final position = await Geolocator.getCurrentPosition();
-    setState(() {
-      _userLocation = LatLng(position.latitude, position.longitude);
-    });
-
-    // Fit bounds to include all markers
-    if (_userLocation != null) {
-      _fitBounds();
-    }
-    */
   }
 
   void _fitBounds() {
@@ -77,15 +48,15 @@ class _TripMapSheetState extends State<TripMapSheet> {
     final bounds = LatLngBounds.fromPoints([_userLocation!, _stationLocation]);
 
     _mapController.fitCamera(
-      CameraFit.bounds(
-        bounds: bounds,
-        padding: const EdgeInsets.all(80), // Increased padding for better view
-      ),
+      CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(80)),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final trackingState = ref.watch(trackingStateProvider);
+    final busLocation = trackingState.busLocation;
+
     return Container(
       height: MediaQuery.of(context).size.height * 0.85,
       decoration: const BoxDecoration(
@@ -114,21 +85,44 @@ class _TripMapSheetState extends State<TripMapSheet> {
 
           // Header
           Padding(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'مسار الرحلة',
-                  style: AppTheme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'مسار الرحلة',
+                      style: AppTheme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w900,
+                        color: Colors.black,
+                      ),
+                    ),
+                    Text(
+                      'تتبع حافلتك في الوقت الفعلي',
+                      style: TextStyle(
+                        color: Colors.grey.shade500,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
-                IconButton(
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(CupertinoIcons.xmark_circle_fill),
-                  color: Colors.grey.shade400,
-                  iconSize: 30,
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      CupertinoIcons.multiply,
+                      color: Colors.grey.shade600,
+                      size: 20,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -144,31 +138,29 @@ class _TripMapSheetState extends State<TripMapSheet> {
                 mapController: _mapController,
                 options: MapOptions(
                   initialCenter: _stationLocation,
-                  initialZoom: 13,
+                  initialZoom: 15,
                 ),
                 children: [
                   TileLayer(
-                    // Google Maps Tiles
                     urlTemplate:
                         'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
                     userAgentPackageName: 'com.abdallahalawdy.my_app',
                   ),
-                  // Route Path (Google Maps Style - Blue & Solid)
-                  if (_userLocation != null)
-                    PolylineLayer(
-                      polylines: [
-                        Polyline(
-                          points: [_userLocation!, _stationLocation],
-                          strokeWidth: 5.0,
-                          color: const Color(0xFF4285F4), // Google Blue
-                          strokeCap: StrokeCap.round,
-                          strokeJoin: StrokeJoin.round,
-                        ),
-                      ],
-                    ),
+                  // Route Path from Bus to Station
+                  PolylineLayer(
+                    polylines: [
+                      Polyline(
+                        points: [busLocation, _stationLocation],
+                        strokeWidth: 5.0,
+                        color: const Color(0xFF4285F4),
+                        strokeCap: StrokeCap.round,
+                        strokeJoin: StrokeJoin.round,
+                      ),
+                    ],
+                  ),
                   MarkerLayer(
                     markers: [
-                      // Station Marker (Destination Pin)
+                      // Station Marker
                       Marker(
                         point: _stationLocation,
                         width: 60,
@@ -176,18 +168,17 @@ class _TripMapSheetState extends State<TripMapSheet> {
                         alignment: Alignment.topCenter,
                         child: _buildGooglePin(
                           icon: CupertinoIcons.location_solid,
-                          color: const Color(0xFFEA4335), // Google Red
+                          color: const Color(0xFFEA4335),
                           label: 'المحطة',
                         ),
                       ),
-                      // User Marker (Blue Dot with Halo)
-                      if (_userLocation != null)
-                        Marker(
-                          point: _userLocation!,
-                          width: 60,
-                          height: 60,
-                          child: _buildUserLocationDot(),
-                        ),
+                      // Bus/Driver Marker (Live)
+                      Marker(
+                        point: busLocation,
+                        width: 50,
+                        height: 50,
+                        child: _buildBusMarker(),
+                      ),
                     ],
                   ),
                 ],
@@ -195,7 +186,7 @@ class _TripMapSheetState extends State<TripMapSheet> {
             ),
           ),
 
-          // Info Panel
+          // Info Panel with Driver Details
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
@@ -210,6 +201,11 @@ class _TripMapSheetState extends State<TripMapSheet> {
             ),
             child: Column(
               children: [
+                // Driver Profile Section
+                _buildDriverSection(),
+                const SizedBox(height: 24),
+                const Divider(),
+                const SizedBox(height: 24),
                 _buildInfoRow(
                   icon: CupertinoIcons.location_solid,
                   color: Colors.red,
@@ -217,21 +213,154 @@ class _TripMapSheetState extends State<TripMapSheet> {
                   subtitle: 'محطة مدينتي الرئيسية',
                 ),
                 const SizedBox(height: 16),
-                if (_userLocation != null)
-                  _buildInfoRow(
-                    icon: CupertinoIcons.arrow_turn_up_right,
-                    color: AppTheme.primaryColor,
-                    title: 'المسافة للمحطة',
-                    subtitle: _userLocation != null
-                        ? '${_calculateDistance(_userLocation!, _stationLocation).toStringAsFixed(1)} كم تقريباً'
-                        : 'جاري الحساب...',
-                  ),
+                _buildInfoRow(
+                  icon: CupertinoIcons.bus,
+                  color: AppTheme.primaryColor,
+                  title: 'مسافة السائق',
+                  subtitle:
+                      '${_calculateDistance(busLocation, _stationLocation).toStringAsFixed(2)} كم تقريباً - ${trackingState.estimatedArrival}',
+                ),
               ],
             ),
           ),
           SizedBox(height: MediaQuery.of(context).padding.bottom),
         ],
       ),
+    );
+  }
+
+  Widget _buildDriverSection() {
+    return Row(
+      children: [
+        // Driver Avatar with Badge
+        Stack(
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: AppTheme.primaryColor.withValues(alpha: 0.2),
+                  width: 2,
+                ),
+                image: const DecorationImage(
+                  image: NetworkImage('https://i.pravatar.cc/150?u=driver'),
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+            Positioned(
+              right: 0,
+              bottom: 0,
+              child: Container(
+                padding: const EdgeInsets.all(2),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  CupertinoIcons.checkmark_seal_fill,
+                  color: Color(0xFF4285F4),
+                  size: 16,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'أحمد محمد',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFB300).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(
+                          CupertinoIcons.star_fill,
+                          color: Color(0xFFFFB300),
+                          size: 12,
+                        ),
+                        SizedBox(width: 4),
+                        Text(
+                          '4.9',
+                          style: TextStyle(
+                            color: Color(0xFFFFB300),
+                            fontWeight: FontWeight.w800,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'سائق موثق بالكامل',
+                    style: TextStyle(
+                      color: Colors.grey.shade500,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        // Call Button
+        GestureDetector(
+          onTap: () {
+            // Logic for calling
+          },
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppTheme.primaryColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(
+              CupertinoIcons.phone_fill,
+              color: AppTheme.primaryColor,
+              size: 20,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBusMarker() {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.primaryColor,
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white, width: 3),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: const Icon(CupertinoIcons.bus, color: Colors.black, size: 24),
     );
   }
 
@@ -282,38 +411,6 @@ class _TripMapSheetState extends State<TripMapSheet> {
     );
   }
 
-  Widget _buildUserLocationDot() {
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        Container(
-          width: 60,
-          height: 60,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: const Color(0xFF4285F4).withValues(alpha: 0.2),
-          ),
-        ),
-        Container(
-          width: 20,
-          height: 20,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: const Color(0xFF4285F4),
-            border: Border.all(color: Colors.white, width: 3),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.2),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildInfoRow({
     required IconData icon,
     required Color color,
@@ -326,9 +423,9 @@ class _TripMapSheetState extends State<TripMapSheet> {
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: color.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(14),
           ),
-          child: Icon(icon, color: color, size: 24),
+          child: Icon(icon, color: color, size: 22),
         ),
         const SizedBox(width: 16),
         Expanded(
@@ -337,15 +434,19 @@ class _TripMapSheetState extends State<TripMapSheet> {
             children: [
               Text(
                 title,
-                style: AppTheme.textTheme.bodyLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.black87,
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 2),
               Text(
                 subtitle,
-                style: AppTheme.textTheme.bodySmall?.copyWith(
-                  color: AppTheme.textSecondary,
+                style: TextStyle(
+                  color: Colors.grey.shade500,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ],
@@ -355,9 +456,8 @@ class _TripMapSheetState extends State<TripMapSheet> {
     );
   }
 
-  // Manual distance calculation using Haversine formula (in km)
   double _calculateDistance(LatLng point1, LatLng point2) {
-    const double earthRadius = 6371; // Earth's radius in km
+    const double earthRadius = 6371;
 
     final double lat1Rad = point1.latitude * (math.pi / 180);
     final double lat2Rad = point2.latitude * (math.pi / 180);

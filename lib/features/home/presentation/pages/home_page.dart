@@ -20,6 +20,7 @@ import '../../../booking/domain/entities/booking_entity.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../widgets/trip_map_sheet.dart';
 import '../widgets/active_subscription_card.dart';
+import '../widgets/wallet_widget.dart';
 import '../../../subscription/presentation/providers/subscription_provider.dart';
 import '../../../subscription/presentation/widgets/subscription_plans_sheet.dart';
 
@@ -80,51 +81,58 @@ class _HomePageState extends ConsumerState<HomePage> {
                         ),
                       ],
                     ),
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          CupertinoPageRoute(
-                            builder: (context) => const ProfilePage(),
-                          ),
-                        );
-                      },
-                      child: Consumer(
-                        builder: (context, ref, child) {
-                          final user = ref.watch(authProvider).valueOrNull;
-                          return Container(
-                            width: 48,
-                            height: 48,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.05),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                              image: user?.avatarUrl != null
-                                  ? DecorationImage(
-                                      image: NetworkImage(user!.avatarUrl!),
-                                      fit: BoxFit.cover,
-                                    )
-                                  : null,
-                            ),
-                            child: user?.avatarUrl == null
-                                ? const Padding(
-                                    padding: EdgeInsets.all(8.0),
-                                    child: Icon(
-                                      CupertinoIcons.person_fill,
-                                      color: Colors.black,
-                                      size: 24,
+                    Row(
+                      children: [
+                        const WalletWidget(),
+                        const SizedBox(width: 12),
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              CupertinoPageRoute(
+                                builder: (context) => const ProfilePage(),
+                              ),
+                            );
+                          },
+                          child: Consumer(
+                            builder: (context, ref, child) {
+                              final user = ref.watch(authProvider).valueOrNull;
+                              return Container(
+                                width: 48,
+                                height: 48,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color:
+                                          Colors.black.withValues(alpha: 0.05),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 4),
                                     ),
-                                  )
-                                : null,
-                          );
-                        },
-                      ),
+                                  ],
+                                  image: user?.avatarUrl != null
+                                      ? DecorationImage(
+                                          image: NetworkImage(user!.avatarUrl!),
+                                          fit: BoxFit.cover,
+                                        )
+                                      : null,
+                                ),
+                                child: user?.avatarUrl == null
+                                    ? const Padding(
+                                        padding: EdgeInsets.all(8.0),
+                                        child: Icon(
+                                          CupertinoIcons.person_fill,
+                                          color: Colors.black,
+                                          size: 24,
+                                        ),
+                                      )
+                                    : null,
+                              );
+                            },
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),

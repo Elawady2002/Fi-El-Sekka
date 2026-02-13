@@ -32,10 +32,42 @@
   "confirmed": "مؤكد",
   "soon": "قريباً",
   "date": "التاريخ",
-  "tripType": "نوع الرحلة",
-  "departureOnly": "ذهاب فقط",
-  "returnOnly": "عودة فقط",
-  "roundTrip": "ذهاب وعودة",
+  "tripType": "اختار رحلتك",
+  "departureOnly": "إلى الجامعة",
+  "returnOnly": "من الجامعة",
+  "roundTrip": "رحلة",
+  "addBooking": "إضافة حجز",
+  "editBooking": "تعديل الحجز",
+  "confirmSchedule": "تأكيد الجدول",
+  "bookings": "الحجوزات",
+  "noBookingOnThisDay": "لا يوجد حجز في هذا اليوم",
+  "userNotLoggedIn": "المستخدم غير مسجل الدخول",
+  "selectDepartureTimeError": "يرجى اختيار ميعاد الذهاب",
+  "selectReturnTimeError": "يرجى اختيار ميعاد العودة",
+  "clickToEditTimes": "اضغط لتعديل المواعيد",
+  "errorOccurred": "حدث خطأ: {error}",
+  "bookYourTrip": "احجز رحلتك",
+  "pleaseLoginFirst": "يرجى تسجيل الدخول أولاً",
+  "errorDeductingAmount": "حدث خطأ أثناء خصم المبلغ",
+  "errorCreatingBooking": "حدث خطأ أثناء إنشاء الحجز",
+  "noTripsAvailable": "لا يوجد رحلات متاحة لهذه الجامعة",
+  "tripTime": "موعد الرحلة",
+  "selectTripTime": "اختار ميعاد الرحلة",
+  "successfullyBooked": "تم الحجز بنجاح - {type}",
+  "@successfullyBooked": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "@errorOccurred": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "priceLabel": "السعر: {price} ج.م",
   "@priceLabel": {
     "placeholders": {

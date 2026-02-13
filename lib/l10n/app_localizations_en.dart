@@ -106,16 +106,74 @@ class AppLocalizationsEn extends AppLocalizations {
   String get date => 'Date';
 
   @override
-  String get tripType => 'Trip Type';
+  String get tripType => 'Select Trip';
 
   @override
-  String get departureOnly => 'Departure only';
+  String get departureOnly => 'To University';
 
   @override
-  String get returnOnly => 'Return only';
+  String get returnOnly => 'From University';
 
   @override
-  String get roundTrip => 'Round trip';
+  String get roundTrip => 'Trip';
+
+  @override
+  String get addBooking => 'Add Booking';
+
+  @override
+  String get editBooking => 'Edit Booking';
+
+  @override
+  String get confirmSchedule => 'Confirm Schedule';
+
+  @override
+  String get bookings => 'Bookings';
+
+  @override
+  String get noBookingOnThisDay => 'No booking on this day';
+
+  @override
+  String get userNotLoggedIn => 'User not logged in';
+
+  @override
+  String get selectDepartureTimeError => 'Please select departure time';
+
+  @override
+  String get selectReturnTimeError => 'Please select return time';
+
+  @override
+  String get clickToEditTimes => 'Click to edit times';
+
+  @override
+  String errorOccurred(String error) {
+    return 'An error occurred: $error';
+  }
+
+  @override
+  String get bookYourTrip => 'Book Your Trip';
+
+  @override
+  String get pleaseLoginFirst => 'Please login first';
+
+  @override
+  String get errorDeductingAmount => 'Error deducting amount';
+
+  @override
+  String get errorCreatingBooking => 'Error creating booking';
+
+  @override
+  String get noTripsAvailable => 'No trips available for this university';
+
+  @override
+  String get tripTime => 'Trip Time';
+
+  @override
+  String get selectTripTime => 'Select Trip Time';
+
+  @override
+  String successfullyBooked(String type) {
+    return 'Successfully booked - $type';
+  }
 
   @override
   String priceLabel(String price) {

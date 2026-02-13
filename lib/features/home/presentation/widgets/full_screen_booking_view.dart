@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
+import 'package:my_app/l10n/app_localizations.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,6 +12,7 @@ import '../../../booking/presentation/providers/booking_provider.dart';
 import '../../../subscription/domain/entities/subscription_schedule_entity.dart';
 import '../../../subscription/domain/entities/subscription_entity.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../../core/domain/entities/user_entity.dart';
 
 enum FullScreenView { bookingList, timeEditor }
 
@@ -48,6 +51,8 @@ class _FullScreenBookingViewState extends ConsumerState<FullScreenBookingView>
   late Animation<double> _scaleAnimation;
   late Animation<double> _fadeAnimation;
   bool _isLoading = false;
+
+  UserEntity? get user => ref.watch(authProvider).value;
 
   @override
   void initState() {
@@ -101,11 +106,12 @@ class _FullScreenBookingViewState extends ConsumerState<FullScreenBookingView>
   }
 
   Future<void> _saveBooking() async {
-    final user = ref.read(authProvider).value;
-    if (user == null) {
+    final l10n = AppLocalizations.of(context)!;
+    final currentUser = user; // Local variable for type promotion
+    if (currentUser == null) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('المستخدم غير مسجل الدخول')),
+          SnackBar(content: Text(l10n.userNotLoggedIn)),
         );
       }
       return;
@@ -117,15 +123,11 @@ class _FullScreenBookingViewState extends ConsumerState<FullScreenBookingView>
 
     if (_editingTripType == 'departure_only' && _editingDepartureTime == null) {
       isValid = false;
-      validationError = 'يرجى اختيار ميعاد الذهاب';
+      validationError = l10n.selectDepartureTimeError;
     } else if (_editingTripType == 'return_only' &&
         _editingReturnTime == null) {
       isValid = false;
-      validationError = 'يرجى اختيار ميعاد العودة';
-    } else if (_editingTripType == 'round_trip' &&
-        (_editingDepartureTime == null || _editingReturnTime == null)) {
-      isValid = false;
-      validationError = 'يرجى اختيار ميعاد الذهاب والعودة';
+      validationError = l10n.selectReturnTimeError;
     }
 
     if (!isValid) {
@@ -155,7 +157,7 @@ class _FullScreenBookingViewState extends ConsumerState<FullScreenBookingView>
       }
 
       debugPrint('📝 Saving booking...');
-      debugPrint('   User ID: ${user.id}');
+      debugPrint('   User ID: ${currentUser.id}');
       debugPrint('   Booking Date: $bookingDate');
       debugPrint('   Trip Type: $_editingTripType');
       debugPrint(
@@ -172,7 +174,7 @@ class _FullScreenBookingViewState extends ConsumerState<FullScreenBookingView>
         debugPrint('➕ Inserting new booking...');
 
         await supabase.from('bookings').insert({
-          'user_id': user.id,
+          'user_id': currentUser.id,
           'subscription_id': widget.subscription.id,
           // schedule_id is optional - not needed for subscription bookings
           'booking_date': bookingDate,
@@ -223,7 +225,10 @@ class _FullScreenBookingViewState extends ConsumerState<FullScreenBookingView>
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('حدث خطأ: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text(l10n.errorOccurred(e.toString())),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
@@ -251,7 +256,8 @@ class _FullScreenBookingViewState extends ConsumerState<FullScreenBookingView>
                 MainAxisAlignment.center, // Center the month name
             children: [
               Text(
-                DateFormat('MMMM yyyy', 'ar').format(_currentMonth),
+                DateFormat('MMMM yyyy', AppLocalizations.of(context)!.localeName)
+                    .format(_currentMonth),
                 style: AppTheme.textTheme.titleMedium?.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
@@ -264,7 +270,9 @@ class _FullScreenBookingViewState extends ConsumerState<FullScreenBookingView>
         // Weekday Headers
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: ['ح', 'ن', 'ث', 'ر', 'خ', 'ج', 'س']
+          children: (AppLocalizations.of(context)!.localeName == 'ar'
+                  ? ['ح', 'ن', 'ث', 'ر', 'خ', 'ج', 'س']
+                  : ['S', 'M', 'T', 'W', 'T', 'F', 'S'])
               .map(
                 (day) => Expanded(
                   child: Center(
@@ -449,7 +457,7 @@ class _FullScreenBookingViewState extends ConsumerState<FullScreenBookingView>
     // Create a new empty booking for the selected date
     setState(() {
       _selectedBooking = null; // null means creating new
-      _editingTripType = 'round_trip';
+      _editingTripType = 'departure_only';
       _editingDepartureTime = null;
       _editingReturnTime = null;
       _currentView = FullScreenView.timeEditor;
@@ -478,16 +486,19 @@ class _FullScreenBookingViewState extends ConsumerState<FullScreenBookingView>
           await _close();
         }
       },
-      child: Scaffold(
-        backgroundColor: Colors.black,
-        body: FadeTransition(
-          opacity: _fadeAnimation,
-          child: ScaleTransition(
-            scale: _scaleAnimation,
-            child: SafeArea(
-              child: _currentView == FullScreenView.bookingList
-                  ? _buildBookingListView()
-                  : _buildTimeEditorView(),
+      child: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: SystemUiOverlayStyle.light,
+        child: Scaffold(
+          backgroundColor: Colors.black,
+          body: FadeTransition(
+            opacity: _fadeAnimation,
+            child: ScaleTransition(
+              scale: _scaleAnimation,
+              child: SafeArea(
+                child: _currentView == FullScreenView.bookingList
+                    ? _buildBookingListView()
+                    : _buildTimeEditorView(),
+              ),
             ),
           ),
         ),
@@ -522,7 +533,7 @@ class _FullScreenBookingViewState extends ConsumerState<FullScreenBookingView>
                 ),
               ),
               Text(
-                'الحجوزات',
+                AppLocalizations.of(context)!.bookings,
                 style: AppTheme.textTheme.headlineSmall?.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
@@ -569,7 +580,7 @@ class _FullScreenBookingViewState extends ConsumerState<FullScreenBookingView>
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'لا يوجد حجز في هذا اليوم',
+                        AppLocalizations.of(context)!.noBookingOnThisDay,
                         style: AppTheme.textTheme.titleMedium?.copyWith(
                           color: Colors.white70,
                         ),
@@ -635,7 +646,9 @@ class _FullScreenBookingViewState extends ConsumerState<FullScreenBookingView>
               ),
               const SizedBox(width: 16),
               Text(
-                _selectedBooking == null ? 'إضافة حجز' : 'تعديل الحجز',
+                _selectedBooking == null
+                    ? AppLocalizations.of(context)!.addBooking
+                    : AppLocalizations.of(context)!.editBooking,
                 style: AppTheme.textTheme.headlineSmall?.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
@@ -649,7 +662,8 @@ class _FullScreenBookingViewState extends ConsumerState<FullScreenBookingView>
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           child: Text(
-            DateFormat('EEEE d MMMM', 'ar').format(_selectedDate),
+            DateFormat('EEEE d MMMM', AppLocalizations.of(context)!.localeName)
+                .format(_selectedDate),
             style: AppTheme.textTheme.titleLarge?.copyWith(
               color: AppTheme.primaryColor,
               fontWeight: FontWeight.bold,
@@ -657,40 +671,6 @@ class _FullScreenBookingViewState extends ConsumerState<FullScreenBookingView>
           ),
         ),
 
-        // Trip type selector
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'نوع الرحلة',
-                style: AppTheme.textTheme.titleMedium?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildTripTypeButton('ذهاب فقط', 'departure_only'),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildTripTypeButton('عودة فقط', 'return_only'),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildTripTypeButton('ذهاب وعودة', 'round_trip'),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 24),
 
         // Time selection
         Expanded(
@@ -703,13 +683,14 @@ class _FullScreenBookingViewState extends ConsumerState<FullScreenBookingView>
                 if (_editingTripType == 'departure_only' ||
                     _editingTripType == 'round_trip') ...[
                   Text(
-                    'ميعاد الذهاب',
+                    AppLocalizations.of(context)!.departureTime,
                     style: AppTheme.textTheme.titleMedium?.copyWith(
                       color: Colors.white,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 19,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 8),
                   Wrap(
                     spacing: 12,
                     runSpacing: 12,
@@ -721,20 +702,21 @@ class _FullScreenBookingViewState extends ConsumerState<FullScreenBookingView>
                       '8:00 AM',
                     ].map((time) => _buildTimeChip(time, true)).toList(),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
                 ],
 
                 // Return times
                 if (_editingTripType == 'return_only' ||
                     _editingTripType == 'round_trip') ...[
                   Text(
-                    'ميعاد العودة',
+                    AppLocalizations.of(context)!.returnTime,
                     style: AppTheme.textTheme.titleMedium?.copyWith(
                       color: Colors.white,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 19,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 8),
                   Wrap(
                     spacing: 12,
                     runSpacing: 12,
@@ -754,9 +736,9 @@ class _FullScreenBookingViewState extends ConsumerState<FullScreenBookingView>
 
         // Confirm button
         Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
           child: CustomButton(
-            text: 'تأكيد الجدول',
+            text: AppLocalizations.of(context)!.confirmSchedule,
             onPressed: _isLoading ? null : _saveBooking,
             isLoading: _isLoading,
             backgroundColor: AppTheme.primaryColor,
@@ -767,38 +749,9 @@ class _FullScreenBookingViewState extends ConsumerState<FullScreenBookingView>
     );
   }
 
-  Widget _buildTripTypeButton(String label, String type) {
-    final isSelected = _editingTripType == type;
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _editingTripType = type;
-        });
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppTheme.primaryColor
-              : Colors.white.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Text(
-          label,
-          textAlign: TextAlign.center,
-          style: AppTheme.textTheme.bodyMedium?.copyWith(
-            color: isSelected ? Colors.black : Colors.white,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          ),
-        ),
-      ),
-    );
-  }
 
   Widget _buildTimeChip(String time, bool isDeparture) {
-    final currentTime = isDeparture
-        ? _editingDepartureTime
-        : _editingReturnTime;
+    final currentTime = isDeparture ? _editingDepartureTime : _editingReturnTime;
     final isSelected = currentTime == time;
 
     return GestureDetector(
@@ -812,18 +765,25 @@ class _FullScreenBookingViewState extends ConsumerState<FullScreenBookingView>
         });
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
         decoration: BoxDecoration(
           color: isSelected
               ? AppTheme.primaryColor
-              : Colors.white.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(12),
+              : Colors.white.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(14),
+          border: isSelected
+              ? null
+              : Border.all(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  width: 1,
+                ),
         ),
         child: Text(
           time,
           style: AppTheme.textTheme.bodyMedium?.copyWith(
             color: isSelected ? Colors.black : Colors.white,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+            fontSize: 15,
           ),
         ),
       ),
@@ -878,10 +838,10 @@ class _BookingCardItem extends StatelessWidget {
                     const SizedBox(width: 12),
                     Text(
                       booking.tripType == 'round_trip'
-                          ? 'ذهاب وعودة'
+                          ? AppLocalizations.of(context)!.roundTrip
                           : booking.tripType == 'departure_only'
-                          ? 'ذهاب فقط'
-                          : 'عودة فقط',
+                          ? AppLocalizations.of(context)!.departureOnly
+                          : AppLocalizations.of(context)!.returnOnly,
                       style: AppTheme.textTheme.titleLarge?.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -898,7 +858,7 @@ class _BookingCardItem extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'ميعاد الذهاب',
+                              AppLocalizations.of(context)!.departureTime,
                               style: AppTheme.textTheme.bodySmall?.copyWith(
                                 color: Colors.white70,
                               ),
@@ -921,7 +881,7 @@ class _BookingCardItem extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'ميعاد العودة',
+                              AppLocalizations.of(context)!.returnTime,
                               style: AppTheme.textTheme.bodySmall?.copyWith(
                                 color: Colors.white70,
                               ),
@@ -945,7 +905,7 @@ class _BookingCardItem extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     Text(
-                      'اضغط لتعديل المواعيد',
+                      AppLocalizations.of(context)!.clickToEditTimes,
                       style: AppTheme.textTheme.bodySmall?.copyWith(
                         color: AppTheme.primaryColor,
                       ),

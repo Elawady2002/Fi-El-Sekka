@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:my_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
@@ -55,7 +56,7 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                   ),
                   const SizedBox(width: 16),
                   Text(
-                    'احجز رحلتك',
+                    AppLocalizations.of(context)!.bookYourTrip,
                     style: AppTheme.textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -80,7 +81,7 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                   const SizedBox(height: 24),
 
                   // Date Picker
-                  _buildSectionTitle('التاريخ'),
+                  _buildSectionTitle(AppLocalizations.of(context)!.date),
                   const SizedBox(height: 16),
                   BookingDateCard(
                     selectedDate: bookingState.selectedDate,
@@ -114,7 +115,7 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                 ],
               ),
               child: IOSButton(
-                text: 'احجز الآن',
+                text: AppLocalizations.of(context)!.bookNow,
                 onPressed:
                     bookingNotifier.isBookingComplete &&
                         bookingNotifier.isSameDayBookingAllowed
@@ -122,8 +123,10 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                         final user = ref.read(authProvider).value;
                         if (user == null) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('يرجى تسجيل الدخول أولاً'),
+                            SnackBar(
+                              content: Text(
+                                AppLocalizations.of(context)!.pleaseLoginFirst,
+                              ),
                             ),
                           );
                           return;
@@ -149,14 +152,17 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                             .read(walletProvider.notifier)
                             .deductAmount(
                               amount,
-                              'حجز رحلة - ${bookingState.tripType.displayName}',
+                              '${AppLocalizations.of(context)!.bookNow} - ${_getTripTypeLabel(context, bookingState.tripType)}',
                             );
 
                         if (!success) {
                           if (!context.mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('حدث خطأ أثناء خصم المبلغ'),
+                            SnackBar(
+                              content: Text(
+                                AppLocalizations.of(context)!
+                                    .errorDeductingAmount,
+                              ),
                               backgroundColor: Colors.red,
                             ),
                           );
@@ -182,7 +188,7 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                             MaterialPageRoute(
                               builder: (_) => BookingSuccessPage(
                                 amount: amount,
-                                tripType: bookingState.tripType.displayName,
+                                tripType: _getTripTypeLabel(context, bookingState.tripType),
                                 date: bookingState.selectedDate,
                               ),
                             ),
@@ -191,8 +197,11 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                         } else {
                           if (!context.mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('حدث خطأ أثناء إنشاء الحجز'),
+                            SnackBar(
+                              content: Text(
+                                AppLocalizations.of(context)!
+                                    .errorCreatingBooking,
+                              ),
                               backgroundColor: Colors.red,
                             ),
                           );
@@ -225,7 +234,9 @@ class _BookingPageState extends ConsumerState<BookingPage> {
       data: (routes) {
         if (routes.isEmpty) {
           return [
-            const Center(child: Text('لا يوجد رحلات متاحة لهذه الجامعة')),
+            Center(
+              child: Text(AppLocalizations.of(context)!.noTripsAvailable),
+            ),
           ];
         }
 
@@ -245,10 +256,10 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 32),
-                  _buildSectionTitle('موعد الرحلة'),
+                  _buildSectionTitle(AppLocalizations.of(context)!.tripTime),
                   const SizedBox(height: 16),
                   TimeSelectionCard(
-                    title: 'اختار ميعاد الرحلة',
+                    title: AppLocalizations.of(context)!.selectTripTime,
                     selectedTime: selectedSchedule != null
                         ? _formatTime(selectedSchedule.departureTime)
                         : null,
@@ -258,7 +269,7 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                           .map((s) => _formatTime(s.departureTime))
                           .toList();
                       _showTimePicker(
-                        title: 'موعد الرحلة',
+                        title: AppLocalizations.of(context)!.tripTime,
                         items: items,
                         onSelect: (time) {
                           if (time != null) {
@@ -292,7 +303,7 @@ class _BookingPageState extends ConsumerState<BookingPage> {
       final hour = int.parse(parts[0]);
       final minute = int.parse(parts[1]);
       final dt = DateTime(2022, 1, 1, hour, minute);
-      return DateFormat('h:mm a', 'ar').format(dt);
+      return DateFormat('h:mm a', AppLocalizations.of(context)!.localeName).format(dt);
     } catch (e) {
       return time;
     }
@@ -351,7 +362,7 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                   GestureDetector(
                     onTap: () => Navigator.pop(context),
                     child: Text(
-                      'إلغاء',
+                      AppLocalizations.of(context)!.cancel,
                       style: AppTheme.textTheme.bodyLarge?.copyWith(
                         color: const Color(0xFFFF3B30),
                         fontWeight: FontWeight.w600,
@@ -368,7 +379,7 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                   GestureDetector(
                     onTap: () => Navigator.pop(context),
                     child: Text(
-                      'تم',
+                      AppLocalizations.of(context)!.done,
                       style: AppTheme.textTheme.bodyLarge?.copyWith(
                         color: Colors.black,
                         fontWeight: FontWeight.bold,
@@ -445,7 +456,7 @@ class _BookingPageState extends ConsumerState<BookingPage> {
         children: [
           _buildSummaryRow(
             icon: CupertinoIcons.building_2_fill,
-            label: 'المدينة',
+            label: AppLocalizations.of(context)!.city,
             value: state.selectedCity?.nameAr ?? '-',
           ),
           Divider(
@@ -458,7 +469,9 @@ class _BookingPageState extends ConsumerState<BookingPage> {
             icon: state.isToUniversity
                 ? CupertinoIcons.book_fill
                 : CupertinoIcons.pin_fill,
-            label: state.isToUniversity ? 'الجامعة' : 'موقف الوصول',
+            label: state.isToUniversity
+                ? AppLocalizations.of(context)!.university
+                : AppLocalizations.of(context)!.arrivalPoint,
             value: destinationName,
           ),
           Divider(
@@ -469,7 +482,7 @@ class _BookingPageState extends ConsumerState<BookingPage> {
           ),
           _buildSummaryRow(
             icon: CupertinoIcons.location_fill,
-            label: 'محطة الركوب',
+            label: AppLocalizations.of(context)!.pickupStation,
             value: state.selectedStation?.nameAr ?? '-',
           ),
         ],
@@ -521,5 +534,17 @@ class _BookingPageState extends ConsumerState<BookingPage> {
         ],
       ),
     );
+  }
+
+  String _getTripTypeLabel(BuildContext context, TripType type) {
+    final l10n = AppLocalizations.of(context)!;
+    switch (type) {
+      case TripType.departureOnly:
+        return l10n.departureOnly;
+      case TripType.returnOnly:
+        return l10n.returnOnly;
+      case TripType.roundTrip:
+        return l10n.roundTrip;
+    }
   }
 }

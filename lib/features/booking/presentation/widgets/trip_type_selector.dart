@@ -21,7 +21,9 @@ class TripTypeSelector extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
-        children: TripType.values.map((type) {
+        children: TripType.values
+            .where((t) => t != TripType.roundTrip)
+            .map((type) {
           final isSelected = type == selectedType;
           return Expanded(
             child: GestureDetector(
@@ -45,7 +47,7 @@ class TripTypeSelector extends StatelessWidget {
                 child: Column(
                   children: [
                     Text(
-                      type.displayName,
+                      _getTripTypeLabel(context, type),
                       textAlign: TextAlign.center,
                       style: AppTheme.textTheme.bodyMedium?.copyWith(
                         color: isSelected
@@ -58,7 +60,7 @@ class TripTypeSelector extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${type.price.toStringAsFixed(0)} جنيه',
+                      '${type.price.toStringAsFixed(0)} ${AppLocalizations.of(context)!.egp}',
                       style: AppTheme.textTheme.bodySmall?.copyWith(
                         color: isSelected
                             ? AppTheme.primaryDark
@@ -77,5 +79,17 @@ class TripTypeSelector extends StatelessWidget {
         }).toList(),
       ),
     );
+  }
+
+  String _getTripTypeLabel(BuildContext context, TripType type) {
+    final l10n = AppLocalizations.of(context)!;
+    switch (type) {
+      case TripType.departureOnly:
+        return l10n.departureOnly;
+      case TripType.returnOnly:
+        return l10n.returnOnly;
+      case TripType.roundTrip:
+        return l10n.roundTrip;
+    }
   }
 }
