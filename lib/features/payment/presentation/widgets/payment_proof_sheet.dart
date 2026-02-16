@@ -85,7 +85,9 @@ class _PaymentProofSheetState extends State<PaymentProofSheet> {
 
   @override
   Widget build(BuildContext viewContext) {
-    return Container(
+    return Material(
+      type: MaterialType.transparency,
+      child: Container(
       padding: EdgeInsets.only(
         top: 24,
         left: 24,
@@ -268,6 +270,7 @@ class _PaymentProofSheetState extends State<PaymentProofSheet> {
             color: AppTheme.primaryColor,
           ),
         ],
+      ),
       ),
     );
   }

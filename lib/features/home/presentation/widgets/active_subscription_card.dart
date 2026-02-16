@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:my_app/core/utils/digit_converter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:my_app/core/theme/app_theme.dart';
 import 'package:my_app/features/booking/domain/entities/booking_entity.dart';
@@ -460,7 +461,7 @@ class _ActiveSubscriptionCardState extends ConsumerState<ActiveSubscriptionCard>
   String _formatDateSafe(BuildContext context, DateTime date) {
     try {
       final locale = ref.read(localeProvider).languageCode;
-      return DateFormat('d MMMM', locale).format(date);
+      return DateFormat('d MMMM', 'ar_EG').format(date).w;
     } catch (e) {
       // Fallback if locale data is missing
       return "${date.day}/${date.month}";

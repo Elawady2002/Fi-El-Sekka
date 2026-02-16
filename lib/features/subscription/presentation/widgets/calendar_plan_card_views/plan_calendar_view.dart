@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:my_app/core/utils/digit_converter.dart';
 import '../../../../../core/theme/app_theme.dart';
 
 class PlanCalendarView extends StatefulWidget {
@@ -123,7 +124,7 @@ class _PlanCalendarViewState extends State<PlanCalendarView> {
                 ),
               ),
               Text(
-                DateFormat('MMMM yyyy', 'ar').format(_currentMonth),
+                DateFormat('MMMM yyyy', 'ar_EG').format(_currentMonth).w,
                 style: AppTheme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: Colors.white,

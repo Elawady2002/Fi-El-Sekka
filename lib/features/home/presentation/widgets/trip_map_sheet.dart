@@ -2,13 +2,13 @@ import 'dart:math' as math;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:latlong2/latlong.dart' hide Path;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../booking/domain/entities/booking_entity.dart';
 import '../../../tracking/presentation/providers/tracking_provider.dart';
-import 'package:my_app/l10n/app_localizations.dart';
-import '../../../booking/presentation/widgets/transfer_ticket_sheet.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
+import '../pages/full_screen_map_page.dart';
 
 class TripMapSheet extends ConsumerStatefulWidget {
   final BookingEntity booking;
@@ -19,11 +19,14 @@ class TripMapSheet extends ConsumerStatefulWidget {
   ConsumerState<TripMapSheet> createState() => _TripMapSheetState();
 }
 
-class _TripMapSheetState extends ConsumerState<TripMapSheet> {
+class _TripMapSheetState extends ConsumerState<TripMapSheet> with SingleTickerProviderStateMixin {
   final MapController _mapController = MapController();
+  late AnimationController _pulseController;
   LatLng? _userLocation;
   // Default locations (Madinaty & GUC)
   final LatLng _stationLocation = const LatLng(30.0910, 31.6370); // Madinaty
+
+  bool _isMapExpanded = false; // State to toggle map visibility
 
   @override
   void initState() {
@@ -33,6 +36,17 @@ class _TripMapSheetState extends ConsumerState<TripMapSheet> {
     Future.microtask(() {
       ref.read(trackingStateProvider.notifier).startTracking();
     });
+
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    super.dispose();
   }
 
   Future<void> _getCurrentLocation() async {
@@ -58,11 +72,15 @@ class _TripMapSheetState extends ConsumerState<TripMapSheet> {
   Widget build(BuildContext context) {
     final trackingState = ref.watch(trackingStateProvider);
     final busLocation = trackingState.busLocation;
+    final user = ref.watch(authProvider).valueOrNull;
+    final avatarUrl = user?.avatarUrl;
 
-    return Container(
+    return Material(
+      type: MaterialType.transparency,
+      child: Container(
       height: MediaQuery.of(context).size.height * 0.85,
       decoration: const BoxDecoration(
-        color: Colors.white,
+        color: Colors.white, // Restored to white
         borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
         boxShadow: [
           BoxShadow(
@@ -98,13 +116,13 @@ class _TripMapSheetState extends ConsumerState<TripMapSheet> {
                       'مسار الرحلة',
                       style: AppTheme.textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w900,
-                        color: Colors.black,
+                        color: Colors.black, // Restored to black
                       ),
                     ),
                     Text(
                       'تتبع حافلتك في الوقت الفعلي',
                       style: TextStyle(
-                        color: Colors.grey.shade500,
+                        color: Colors.grey.shade500, // Restored to grey
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
                       ),
@@ -121,7 +139,7 @@ class _TripMapSheetState extends ConsumerState<TripMapSheet> {
                     ),
                     child: Icon(
                       CupertinoIcons.multiply,
-                      color: Colors.grey.shade600,
+                      color: Colors.grey.shade600, // Restored to grey
                       size: 20,
                     ),
                   ),
@@ -130,74 +148,22 @@ class _TripMapSheetState extends ConsumerState<TripMapSheet> {
             ),
           ),
 
-          // Map
-          Expanded(
-            child: ClipRRect(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(0),
-              ),
-              child: FlutterMap(
-                mapController: _mapController,
-                options: MapOptions(
-                  initialCenter: _stationLocation,
-                  initialZoom: 15,
-                ),
-                children: [
-                  TileLayer(
-                    urlTemplate:
-                        'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
-                    userAgentPackageName: 'com.abdallahalawdy.my_app',
-                  ),
-                  // Route Path from Bus to Station
-                  PolylineLayer(
-                    polylines: [
-                      Polyline(
-                        points: [busLocation, _stationLocation],
-                        strokeWidth: 5.0,
-                        color: const Color(0xFF4285F4),
-                        strokeCap: StrokeCap.round,
-                        strokeJoin: StrokeJoin.round,
-                      ),
-                    ],
-                  ),
-                  MarkerLayer(
-                    markers: [
-                      // Station Marker
-                      Marker(
-                        point: _stationLocation,
-                        width: 60,
-                        height: 60,
-                        alignment: Alignment.topCenter,
-                        child: _buildGooglePin(
-                          icon: CupertinoIcons.location_solid,
-                          color: const Color(0xFFEA4335),
-                          label: 'المحطة',
-                        ),
-                      ),
-                      // Bus/Driver Marker (Live)
-                      Marker(
-                        point: busLocation,
-                        width: 50,
-                        height: 50,
-                        child: _buildBusMarker(),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
+          const SizedBox(height: 24),
+          _buildRouteTimeline(avatarUrl),
+          const SizedBox(height: 12), // Reduced gap
 
-          // Info Panel with Driver Details
+          // Info Panel with Driver Details - Now a floating card mirroring the Route Card
           Container(
+            margin: const EdgeInsets.symmetric(horizontal: 24), // Match Route Card margins
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
               color: Colors.white,
+              borderRadius: BorderRadius.circular(24), // Match Route Card corners (all around)
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 20,
-                  offset: const Offset(0, -5),
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 15,
+                  offset: const Offset(0, 8),
                 ),
               ],
             ),
@@ -206,27 +172,15 @@ class _TripMapSheetState extends ConsumerState<TripMapSheet> {
                 // Driver Profile Section
                 _buildDriverSection(),
                 const SizedBox(height: 24),
-                const Divider(),
+                const Divider(color: AppTheme.dividerColor),
                 const SizedBox(height: 24),
-                _buildInfoRow(
-                  icon: CupertinoIcons.location_solid,
-                  color: Colors.red,
-                  title: 'نقطة التجمع',
-                  subtitle: 'محطة مدينتي الرئيسية',
-                ),
-                const SizedBox(height: 16),
-                _buildInfoRow(
-                  icon: CupertinoIcons.bus,
-                  color: AppTheme.primaryColor,
-                  title: 'مسافة السائق',
-                  subtitle:
-                      '${_calculateDistance(busLocation, _stationLocation).toStringAsFixed(2)} كم تقريباً - ${trackingState.estimatedArrival}',
-                ),
+                _buildVehicleGallery(),
               ],
             ),
           ),
           SizedBox(height: MediaQuery.of(context).padding.bottom),
         ],
+      ),
       ),
     );
   }
@@ -243,7 +197,7 @@ class _TripMapSheetState extends ConsumerState<TripMapSheet> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: AppTheme.primaryColor.withValues(alpha: 0.2),
+                  color: AppTheme.primaryColor.withOpacity(0.2),
                   width: 2,
                 ),
                 image: const DecorationImage(
@@ -327,29 +281,6 @@ class _TripMapSheetState extends ConsumerState<TripMapSheet> {
           ),
         ),
         const SizedBox(width: 8),
-        // Transfer Button
-        GestureDetector(
-          onTap: () {
-            showModalBottomSheet(
-              context: context,
-              isScrollControlled: true,
-              backgroundColor: Colors.transparent,
-              builder: (context) => TransferTicketSheet(booking: widget.booking),
-            );
-          },
-          child: Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: const Icon(
-              CupertinoIcons.arrow_right_arrow_left,
-              color: AppTheme.primaryColor,
-              size: 20,
-            ),
-          ),
-        ),
       ],
     );
   }
@@ -419,45 +350,387 @@ class _TripMapSheetState extends ConsumerState<TripMapSheet> {
     );
   }
 
-  Widget _buildInfoRow({
-    required IconData icon,
-    required Color color,
-    required String title,
-    required String subtitle,
-  }) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Icon(icon, color: color, size: 22),
+
+
+  Widget _buildRouteTimeline(String? avatarUrl) {
+    return AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+        margin: const EdgeInsets.symmetric(horizontal: 24),
+        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1E1E1E),
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
+            ),
+          ],
         ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.black87,
-                ),
+        child: Column(
+          children: [
+            // Top Section - Toggle Expansion
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  _isMapExpanded = !_isMapExpanded;
+                });
+              },
+              behavior: HitTestBehavior.opaque,
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildPathPoint(
+                        label: 'موقف الركوب',
+                        value: 'الرحاب كلوب',
+                        isFirst: true,
+                      ),
+                      _buildPathPoint(
+                        label: 'الجامعة',
+                        value: 'الجامعة الألمانية (GUC)',
+                        isLast: true,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  // Visual Path Line with Arrow
+                  Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Container(
+                        height: 2,
+                        margin: const EdgeInsets.symmetric(horizontal: 24),
+                        color: Colors.white24,
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          _buildAnimatedDot(isFirst: true),
+                          _buildDirectionArrow(),
+                          _buildAnimatedDot(isLast: true),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
               ),
-              const SizedBox(height: 2),
-              Text(
-                subtitle,
-                style: TextStyle(
-                  color: Colors.grey.shade500,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
+            ),
+            
+            // Collapsible Section (Divider + Map Kit)
+            AnimatedSize(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+              alignment: Alignment.topCenter,
+              child: _isMapExpanded
+                  ? Column(
+                      children: [
+                        const SizedBox(height: 24),
+                        // Dashed Divider
+                        Row(
+                          children: List.generate(
+                            30,
+                            (i) => Expanded(
+                              child: Container(
+                                height: 1,
+                                margin: const EdgeInsets.symmetric(horizontal: 1.5),
+                                color: i.isEven
+                                    ? Colors.white.withValues(alpha: 0.12)
+                                    : Colors.transparent,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        
+                        // Map Kit Visualization
+                        _buildMapKit(avatarUrl),
+                      ],
+                    )
+                  : const SizedBox.shrink(),
+            ),
+          ],
+        ),
+      );
+  }
+
+  Widget _buildMapKit(String? avatarUrl) {
+    final trackingState = ref.watch(trackingStateProvider);
+    final busLocation = trackingState.busLocation;
+
+    return Container(
+      height: 150,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E1E1E), 
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          // The Map
+          Hero(
+            tag: 'trip-map',
+            child: AbsorbPointer(
+              child: FlutterMap(
+              options: MapOptions(
+                initialCenter: busLocation,
+                initialZoom: 15,
+                interactionOptions: const InteractionOptions(flags: InteractiveFlag.none),
               ),
-            ],
+              children: [
+                ColorFiltered(
+                  colorFilter: const ColorFilter.matrix([
+                    -1.0, 0.0, 0.0, 0.0, 255.0,
+                    0.0, -1.0, 0.0, 0.0, 255.0,
+                    0.0, 0.0, -1.0, 0.0, 255.0,
+                    0.0, 0.0, 0.0, 1.0, 0.0,
+                  ]),
+                  child: TileLayer(
+                    urlTemplate: 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
+                    userAgentPackageName: 'com.abdallahalawdy.fi_el_sekka',
+                  ),
+                ),
+                PolylineLayer(
+                  polylines: [
+                    Polyline(
+                      points: [busLocation, _stationLocation],
+                      strokeWidth: 4.0,
+                      color: const Color(0xFF007AFF), // Pure Blue
+                      strokeCap: StrokeCap.round,
+                    ),
+                  ],
+                ),
+                MarkerLayer(
+                  markers: [
+                    Marker(
+                      point: _stationLocation,
+                      width: 40,
+                      height: 40,
+                      child: const Icon(
+                        CupertinoIcons.location_solid,
+                        color: Colors.red,
+                        size: 30,
+                      ),
+                    ),
+                    Marker(
+                      point: busLocation,
+                      width: 50,
+                      height: 50,
+                      child: PulsingLiveMarker(
+                        controller: _pulseController,
+                        imageUrl: avatarUrl,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            ),
+          ),
+          // Top-most GestureDetector to catch the tap instantly
+          Positioned.fill(
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () {
+                  Navigator.of(context, rootNavigator: true).push(
+                    PageRouteBuilder(
+                      transitionDuration: const Duration(milliseconds: 400),
+                      reverseTransitionDuration: const Duration(milliseconds: 400),
+                      pageBuilder: (context, animation, secondaryAnimation) {
+                        return FullScreenMapPage(
+                          startLocation: _userLocation ?? const LatLng(30.0920, 31.6380),
+                          endLocation: _stationLocation,
+                          currentBusLocation: busLocation,
+                          avatarUrl: avatarUrl,
+                        );
+                      },
+                      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                        final curveAnimation = CurvedAnimation(
+                          parent: animation,
+                          curve: Curves.fastLinearToSlowEaseIn,
+                        );
+                        return FadeTransition(
+                          opacity: curveAnimation,
+                          child: ScaleTransition(
+                            scale: Tween<double>(begin: 0.95, end: 1.0).animate(curveAnimation),
+                            child: child,
+                          ),
+                        );
+                      },
+                    ),
+                  );
+                },
+                splashColor: Colors.white10,
+                highlightColor: Colors.white.withValues(alpha: 0.05),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+
+  Widget _buildPathPoint({
+    required String label,
+    required String value,
+    bool isFirst = false,
+    bool isLast = false,
+    bool isLadies = false,
+  }) {
+    final Color labelColor = isLadies
+        ? Colors.white.withValues(alpha: 0.7)
+        : Colors.white.withValues(alpha: 0.5);
+
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: isFirst
+            ? CrossAxisAlignment.start
+            : isLast
+                ? CrossAxisAlignment.end
+                : CrossAxisAlignment.center,
+        children: [
+          Text(
+            label,
+            style: AppTheme.textTheme.bodySmall?.copyWith(
+              color: labelColor,
+              fontSize: 10,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            textAlign: isFirst
+                ? TextAlign.start
+                : isLast
+                    ? TextAlign.end
+                    : TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTheme.textTheme.bodyMedium?.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAnimatedDot({
+    bool isFirst = false,
+    bool isLast = false,
+    bool isLadies = false,
+  }) {
+    final Color dotColor = isLadies ? Colors.white : AppTheme.primaryColor;
+
+    return Container(
+      width: 12,
+      height: 12,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: isFirst || isLast ? dotColor : (isLadies ? Colors.transparent : Colors.black),
+        border: Border.all(
+          color: dotColor,
+          width: 2,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDirectionArrow({bool isLadies = false}) {
+    final Color bgColor = isLadies
+        ? Colors.white.withValues(alpha: 0.2)
+        : Colors.black;
+    final Color borderColor = isLadies
+        ? Colors.white.withValues(alpha: 0.5)
+        : AppTheme.primaryColor.withValues(alpha: 0.5);
+    final Color arrowColor = isLadies
+        ? Colors.white
+        : AppTheme.primaryColor;
+
+    return Container(
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: bgColor,
+          border: Border.all(
+            color: borderColor,
+            width: 1,
+          ),
+        ),
+        child: Icon(
+          CupertinoIcons.arrow_left, // Arabic is RTL, so arrow points left
+          color: arrowColor,
+          size: 14,
+        ),
+    );
+  }
+
+  Widget _buildVehicleGallery() {
+    // Placeholder images for vehicle
+    final vehicleImages = [
+      'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957', // Bus
+      'https://images.unsplash.com/photo-1570125909232-eb263c188f7e', // Bus Interior
+      'https://images.unsplash.com/photo-1494515843206-f3117d3f51b7', // Bus Detail
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(CupertinoIcons.info_circle_fill, size: 20, color: Colors.black87),
+            const SizedBox(width: 8),
+            Text(
+              'صور الحافلة',
+              style: AppTheme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          height: 120,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: vehicleImages.length,
+            separatorBuilder: (context, index) => const SizedBox(width: 12),
+            itemBuilder: (context, index) {
+              return Container(
+                width: 160,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  color: Colors.grey.shade100,
+                  border: Border.all(color: Colors.grey.shade200),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: Image.network(
+                  vehicleImages[index],
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Center(
+                      child: Icon(
+                        CupertinoIcons.photo,
+                        color: Colors.grey.shade400,
+                        size: 32,
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
           ),
         ),
       ],
@@ -485,3 +758,5 @@ class _TripMapSheetState extends ConsumerState<TripMapSheet> {
     return earthRadius * c;
   }
 }
+
+

@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:my_app/core/utils/digit_converter.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/custom_button.dart';
 import '../../domain/entities/subscription_entity.dart';
@@ -21,7 +22,12 @@ class _ActiveSubscriptionViewState
     extends ConsumerState<ActiveSubscriptionView> {
   @override
   Widget build(BuildContext context) {
-    final dateFormat = DateFormat('d MMM yyyy', 'ar');
+    final dateFormat = DateFormat('d MMM yyyy', 'ar_EG');
+    // Note: dateFormat is a variable here, so I need to check where it is used.
+    // Line 24: final dateFormat = DateFormat('d MMM yyyy', 'ar_EG');
+    // Line 74 (approx): dateFormat.format(widget.subscription.startDate)
+    // I should check usage first or just wrap usage.
+    // Wait, let me check usage of dateFormat.
     final planName =
         widget.subscription.planType == SubscriptionPlanType.monthly
         ? 'باقة الشهر'
@@ -107,14 +113,14 @@ class _ActiveSubscriptionViewState
               children: [
                 _buildDetailRow(
                   'تاريخ البدء',
-                  dateFormat.format(widget.subscription.startDate),
+                  dateFormat.format(widget.subscription.startDate).w,
                 ),
                 const SizedBox(height: 16),
                 Divider(color: Colors.grey.withValues(alpha: 0.2)),
                 const SizedBox(height: 16),
                 _buildDetailRow(
                   'تاريخ الانتهاء',
-                  dateFormat.format(widget.subscription.endDate),
+                  dateFormat.format(widget.subscription.endDate).w,
                 ),
                 const SizedBox(height: 16),
                 Divider(color: Colors.grey.withValues(alpha: 0.2)),

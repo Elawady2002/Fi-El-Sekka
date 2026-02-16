@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_theme.dart';
+import 'package:my_app/core/utils/digit_converter.dart';
 
 class DigitalTicket extends StatelessWidget {
   final String title;
@@ -284,7 +285,7 @@ class DigitalTicket extends StatelessWidget {
   }
 
   String _formatDate(DateTime date) {
-    return DateFormat('EEEE، d MMMM yyyy', 'ar').format(date);
+    return DateFormat('EEEE، d MMMM yyyy', 'ar_EG').format(date).w;
   }
 }
 

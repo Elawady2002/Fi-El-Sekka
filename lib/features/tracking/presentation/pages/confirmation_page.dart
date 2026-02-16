@@ -7,6 +7,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/ticket_card.dart';
 import '../../../home/presentation/pages/home_page.dart';
 import '../../../booking/presentation/providers/booking_provider.dart';
+import 'package:my_app/core/utils/digit_converter.dart';
 
 class ConfirmationPage extends ConsumerStatefulWidget {
   const ConfirmationPage({super.key});
@@ -167,8 +168,8 @@ class _ConfirmationPageState extends ConsumerState<ConfirmationPage>
                                       Text(
                                         DateFormat(
                                           'd MMM',
-                                          'ar',
-                                        ).format(bookingState.selectedDate),
+                                          'ar_EG',
+                                        ).format(bookingState.selectedDate).w,
                                         style: AppTheme.textTheme.titleMedium
                                             ?.copyWith(
                                               fontWeight: FontWeight.bold,

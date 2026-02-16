@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/insufficient_balance_dialog.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
-import '../../../payment/presentation/pages/payment_page.dart';
 import '../../../profile/presentation/providers/wallet_provider.dart';
 import '../../../profile/presentation/widgets/digital_ticket.dart';
 import '../../domain/entities/subscription_entity.dart';

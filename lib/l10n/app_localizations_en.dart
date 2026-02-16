@@ -391,7 +391,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get individualSeat => 'Individual Seat';
 
   @override
-  String get fullCar => 'Full Car';
+  String get fullCar => 'Full Microbus';
+
+  @override
+  String get seats => 'Seats';
 
   @override
   String get passengerCount => 'Passenger Count';
@@ -404,26 +407,4 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get splitCars => 'Split Cars';
-
-  @override
-  String get transferTicket => 'Transfer Ticket';
-
-  @override
-  String get transferToFriend => 'Transfer to Friend';
-
-  @override
-  String get phoneNumber => 'Phone Number';
-
-  @override
-  String get inviteFriend => 'Invite Friend';
-
-  @override
-  String get inviteFriendDesc =>
-      'If your friend isn\'t registered, send them an invite link';
-
-  @override
-  String get transferNow => 'Transfer Now';
-
-  @override
-  String get shareInviteLink => 'Share Invite Link';
 }

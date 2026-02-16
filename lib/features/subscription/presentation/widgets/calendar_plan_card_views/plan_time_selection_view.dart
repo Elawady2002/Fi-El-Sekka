@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:my_app/core/utils/digit_converter.dart';
 import '../../../../../core/theme/app_theme.dart';
 import '../../../../../core/widgets/custom_button.dart';
 import '../../../domain/entities/subscription_entity.dart';
@@ -97,8 +98,8 @@ class _PlanTimeSelectionViewState extends State<PlanTimeSelectionView> {
                     Text(
                       DateFormat(
                         'EEEE، d MMMM',
-                        'ar',
-                      ).format(widget.selectedDate),
+                        'ar_EG',
+                      ).format(widget.selectedDate).w,
                       style: AppTheme.textTheme.bodySmall?.copyWith(
                         color: Colors.white70,
                       ),

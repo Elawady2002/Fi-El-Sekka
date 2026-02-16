@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:my_app/core/utils/digit_converter.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../domain/entities/booking_entity.dart';
 
@@ -103,7 +104,7 @@ class BookingSuccessPage extends StatelessWidget {
                         _buildDetailColumn('نوع الرحلة', tripType),
                         _buildDetailColumn(
                           'التاريخ',
-                          DateFormat('d MMMM', 'ar').format(date),
+                          DateFormat('d MMMM', 'ar_EG').format(date).w,
                         ),
                       ],
                     ),

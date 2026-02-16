@@ -7,6 +7,7 @@ class TimeSelectionCard extends StatelessWidget {
   final String? selectedTime;
   final IconData icon;
   final VoidCallback onTap;
+  final bool isLadies;
 
   const TimeSelectionCard({
     super.key,
@@ -14,38 +15,60 @@ class TimeSelectionCard extends StatelessWidget {
     required this.selectedTime,
     required this.icon,
     required this.onTap,
+    this.isLadies = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final isSelected = selectedTime != null;
+
+    final Color iconColor = isLadies
+        ? Colors.white
+        : (isSelected ? AppTheme.primaryColor : Colors.white.withValues(alpha: 0.3));
+    final Color iconBg = isLadies
+        ? Colors.white.withValues(alpha: 0.15)
+        : (isSelected
+            ? AppTheme.primaryColor.withValues(alpha: 0.15)
+            : Colors.white.withValues(alpha: 0.06));
+    final Color subtitleColor = isLadies
+        ? Colors.white.withValues(alpha: 0.7)
+        : Colors.white.withValues(alpha: 0.4);
+    final Color timeColor = isLadies
+        ? Colors.white
+        : (isSelected ? Colors.white : Colors.white.withValues(alpha: 0.3));
+    final Color chevronColor = isLadies
+        ? Colors.white.withValues(alpha: 0.5)
+        : Colors.white.withValues(alpha: 0.2);
+    final Color borderColor = isLadies
+        ? Colors.white.withValues(alpha: 0.25)
+        : AppTheme.primaryColor.withValues(alpha: 0.4);
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white, // Use explicit white if needed
+          color: Colors.white.withValues(alpha: isLadies ? 0.1 : 0.04),
           borderRadius: BorderRadius.circular(20),
-          boxShadow: AppTheme.cardShadow,
           border: isSelected
-              ? Border.all(color: AppTheme.primaryColor, width: 1.5)
+              ? Border.all(color: borderColor, width: 1)
               : null,
         ),
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: isSelected ? AppTheme.primaryColor : Colors.grey.shade50,
+                color: iconBg,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
                 icon,
-                color: isSelected ? Colors.black : AppTheme.textTertiary,
-                size: 24,
+                color: iconColor,
+                size: 22,
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -53,17 +76,18 @@ class TimeSelectionCard extends StatelessWidget {
                   Text(
                     title,
                     style: AppTheme.textTheme.bodySmall?.copyWith(
-                      color: AppTheme.textSecondary,
+                      color: subtitleColor,
+                      fontSize: 12,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 3),
                   Text(
                     selectedTime ?? 'اختار الميعاد',
                     style: AppTheme.textTheme.titleMedium?.copyWith(
                       fontWeight: isSelected
                           ? FontWeight.bold
                           : FontWeight.normal,
-                      color: isSelected ? Colors.black : AppTheme.textTertiary,
+                      color: timeColor,
                     ),
                   ),
                 ],
@@ -71,8 +95,8 @@ class TimeSelectionCard extends StatelessWidget {
             ),
             Icon(
               CupertinoIcons.chevron_left,
-              color: AppTheme.textTertiary,
-              size: 20,
+              color: chevronColor,
+              size: 18,
             ),
           ],
         ),

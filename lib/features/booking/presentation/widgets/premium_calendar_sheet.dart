@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:my_app/core/utils/digit_converter.dart';
 import '../../../../core/theme/app_theme.dart';
 
 /// A premium, custom calendar bottom sheet that matches the app's design language.
@@ -139,7 +140,9 @@ class _PremiumCalendarSheetState extends State<PremiumCalendarSheet> {
       'ج',
     ]; // Arabic weekday abbreviations (Sat-Fri)
 
-    return Container(
+    return Material(
+      type: MaterialType.transparency,
+      child: Container(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
       decoration: const BoxDecoration(
         color: Colors.white,
@@ -173,7 +176,7 @@ class _PremiumCalendarSheetState extends State<PremiumCalendarSheet> {
                 ),
                 // Month and Year
                 Text(
-                  DateFormat('MMMM yyyy', 'ar').format(_displayedMonth),
+                  DateFormat('MMMM yyyy', 'ar_EG').format(_displayedMonth).w,
                   style: AppTheme.textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: Colors.black,
@@ -363,6 +366,7 @@ class _PremiumCalendarSheetState extends State<PremiumCalendarSheet> {
           ),
           const SizedBox(height: 16),
         ],
+      ),
       ),
     );
   }

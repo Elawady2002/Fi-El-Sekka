@@ -69,6 +69,7 @@ class BookingState extends _$BookingState {
       selectionType: BookingSelectionType.seat,
       passengerCount: 1,
       splitPreference: true,
+      isLadiesOnly: false,
     );
   }
 
@@ -82,6 +83,10 @@ class BookingState extends _$BookingState {
 
   void setSplitPreference(bool value) {
     state = state.copyWith(splitPreference: value);
+  }
+
+  void setIsLadiesOnly(bool value) {
+    state = state.copyWith(isLadiesOnly: value);
   }
 
   void setIsToUniversity(bool value) {
@@ -270,6 +275,7 @@ class BookingStateModel {
   final BookingSelectionType selectionType;
   final int passengerCount;
   final bool splitPreference;
+  final bool isLadiesOnly;
 
   BookingStateModel({
     required this.tripType,
@@ -287,6 +293,7 @@ class BookingStateModel {
     this.selectionType = BookingSelectionType.seat,
     this.passengerCount = 1,
     this.splitPreference = true,
+    this.isLadiesOnly = false,
   });
 
   BookingStateModel copyWith({
@@ -305,6 +312,7 @@ class BookingStateModel {
     BookingSelectionType? selectionType,
     int? passengerCount,
     bool? splitPreference,
+    bool? isLadiesOnly,
   }) {
     return BookingStateModel(
       tripType: tripType ?? this.tripType,
@@ -326,6 +334,7 @@ class BookingStateModel {
       selectionType: selectionType ?? this.selectionType,
       passengerCount: passengerCount ?? this.passengerCount,
       splitPreference: splitPreference ?? this.splitPreference,
+      isLadiesOnly: isLadiesOnly ?? this.isLadiesOnly,
     );
   }
 }

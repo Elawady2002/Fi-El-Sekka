@@ -102,7 +102,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get soon => 'قريباً';
 
   @override
-  String get date => 'التاريخ';
+  String get date => 'امتى؟';
 
   @override
   String get tripType => 'اختار رحلتك';
@@ -164,7 +164,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get noTripsAvailable => 'لا يوجد رحلات متاحة لهذه الجامعة';
 
   @override
-  String get tripTime => 'موعد الرحلة';
+  String get tripTime => 'الرحلة الساعة كام؟';
 
   @override
   String get selectTripTime => 'اختار ميعاد الرحلة';
@@ -384,44 +384,26 @@ class AppLocalizationsAr extends AppLocalizations {
   String get now => 'الآن';
 
   @override
-  String get bookingType => 'نوع الحجز';
+  String get bookingType => 'عايز تحجز ازاي؟';
 
   @override
-  String get individualSeat => 'مقعد فردي';
+  String get individualSeat => 'كرسي';
 
   @override
-  String get fullCar => 'سيارة كاملة';
+  String get fullCar => 'المكروباص كله';
 
   @override
-  String get passengerCount => 'عدد الركاب';
+  String get seats => 'كراسي';
 
   @override
-  String get preferences => 'التفضيلات';
+  String get passengerCount => 'انتو كام واحد؟';
 
   @override
-  String get sameCar => 'في نفس السيارة';
+  String get preferences => 'عايزهم ازاي';
 
   @override
-  String get splitCars => 'سيارات مختلفة';
+  String get sameCar => 'في نفس العربية';
 
   @override
-  String get transferTicket => 'تحويل التذكرة';
-
-  @override
-  String get transferToFriend => 'تحويل إلى صديق';
-
-  @override
-  String get phoneNumber => 'رقم الهاتف';
-
-  @override
-  String get inviteFriend => 'دعوة صديق';
-
-  @override
-  String get inviteFriendDesc => 'لو صاحبك مش مسجل لسه، ابعتله لينك الدعوة';
-
-  @override
-  String get transferNow => 'تحويل الآن';
-
-  @override
-  String get shareInviteLink => 'مشاركة رابط الدعوة';
+  String get splitCars => 'عربيات مختلفة';
 }

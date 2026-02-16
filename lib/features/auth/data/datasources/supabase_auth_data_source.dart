@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../../core/config/supabase_config.dart';
 import '../../../../core/services/logger_service.dart';
 import '../../../../core/domain/entities/user_entity.dart';
 import '../models/user_model.dart';

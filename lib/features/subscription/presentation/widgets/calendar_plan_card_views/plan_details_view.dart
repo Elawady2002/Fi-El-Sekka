@@ -2,7 +2,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../../../../core/theme/app_theme.dart';
 import '../../../../../core/widgets/custom_button.dart';
-import '../../../domain/entities/subscription_entity.dart';
 
 class PlanDetailsView extends StatelessWidget {
   final String title;

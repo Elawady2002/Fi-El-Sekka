@@ -287,7 +287,7 @@ abstract class AppLocalizations {
   /// No description provided for @date.
   ///
   /// In ar, this message translates to:
-  /// **'التاريخ'**
+  /// **'امتى؟'**
   String get date;
 
   /// No description provided for @tripType.
@@ -407,7 +407,7 @@ abstract class AppLocalizations {
   /// No description provided for @tripTime.
   ///
   /// In ar, this message translates to:
-  /// **'موعد الرحلة'**
+  /// **'الرحلة الساعة كام؟'**
   String get tripTime;
 
   /// No description provided for @selectTripTime.
@@ -833,86 +833,50 @@ abstract class AppLocalizations {
   /// No description provided for @bookingType.
   ///
   /// In ar, this message translates to:
-  /// **'نوع الحجز'**
+  /// **'عايز تحجز ازاي؟'**
   String get bookingType;
 
   /// No description provided for @individualSeat.
   ///
   /// In ar, this message translates to:
-  /// **'مقعد فردي'**
+  /// **'كرسي'**
   String get individualSeat;
 
   /// No description provided for @fullCar.
   ///
   /// In ar, this message translates to:
-  /// **'سيارة كاملة'**
+  /// **'المكروباص كله'**
   String get fullCar;
+
+  /// No description provided for @seats.
+  ///
+  /// In ar, this message translates to:
+  /// **'كراسي'**
+  String get seats;
 
   /// No description provided for @passengerCount.
   ///
   /// In ar, this message translates to:
-  /// **'عدد الركاب'**
+  /// **'انتو كام واحد؟'**
   String get passengerCount;
 
   /// No description provided for @preferences.
   ///
   /// In ar, this message translates to:
-  /// **'التفضيلات'**
+  /// **'عايزهم ازاي'**
   String get preferences;
 
   /// No description provided for @sameCar.
   ///
   /// In ar, this message translates to:
-  /// **'في نفس السيارة'**
+  /// **'في نفس العربية'**
   String get sameCar;
 
   /// No description provided for @splitCars.
   ///
   /// In ar, this message translates to:
-  /// **'سيارات مختلفة'**
+  /// **'عربيات مختلفة'**
   String get splitCars;
-
-  /// No description provided for @transferTicket.
-  ///
-  /// In ar, this message translates to:
-  /// **'تحويل التذكرة'**
-  String get transferTicket;
-
-  /// No description provided for @transferToFriend.
-  ///
-  /// In ar, this message translates to:
-  /// **'تحويل إلى صديق'**
-  String get transferToFriend;
-
-  /// No description provided for @phoneNumber.
-  ///
-  /// In ar, this message translates to:
-  /// **'رقم الهاتف'**
-  String get phoneNumber;
-
-  /// No description provided for @inviteFriend.
-  ///
-  /// In ar, this message translates to:
-  /// **'دعوة صديق'**
-  String get inviteFriend;
-
-  /// No description provided for @inviteFriendDesc.
-  ///
-  /// In ar, this message translates to:
-  /// **'لو صاحبك مش مسجل لسه، ابعتله لينك الدعوة'**
-  String get inviteFriendDesc;
-
-  /// No description provided for @transferNow.
-  ///
-  /// In ar, this message translates to:
-  /// **'تحويل الآن'**
-  String get transferNow;
-
-  /// No description provided for @shareInviteLink.
-  ///
-  /// In ar, this message translates to:
-  /// **'مشاركة رابط الدعوة'**
-  String get shareInviteLink;
 }
 
 class _AppLocalizationsDelegate

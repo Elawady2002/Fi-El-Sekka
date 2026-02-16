@@ -13,7 +13,9 @@ class TransactionDetailsSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return Material(
+      type: MaterialType.transparency,
+      child: Container(
       padding: const EdgeInsets.all(24),
       decoration: const BoxDecoration(
         color: Colors.white,
@@ -98,6 +100,7 @@ class TransactionDetailsSheet extends StatelessWidget {
             SizedBox(height: MediaQuery.of(context).padding.bottom),
           ],
         ),
+      ),
       ),
     );
   }

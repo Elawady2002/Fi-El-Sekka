@@ -2,16 +2,19 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_theme.dart';
+import 'package:my_app/core/utils/digit_converter.dart';
 import 'premium_calendar_sheet.dart';
 
 class BookingDateCard extends StatelessWidget {
   final DateTime selectedDate;
   final ValueChanged<DateTime> onDateSelected;
+  final bool isLadies;
 
   const BookingDateCard({
     super.key,
     required this.selectedDate,
     required this.onDateSelected,
+    this.isLadies = false,
   });
 
   void _showDatePicker(BuildContext context) async {
@@ -39,30 +42,43 @@ class BookingDateCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final Color iconColor = isLadies ? Colors.white : AppTheme.primaryColor;
+    final Color iconBg = isLadies
+        ? Colors.white.withValues(alpha: 0.15)
+        : AppTheme.primaryColor.withValues(alpha: 0.15);
+    final Color subtitleColor = isLadies
+        ? Colors.white.withValues(alpha: 0.7)
+        : Colors.white.withValues(alpha: 0.4);
+    final Color yearBg = isLadies
+        ? Colors.white.withValues(alpha: 0.15)
+        : Colors.white.withValues(alpha: 0.06);
+    final Color yearText = isLadies
+        ? Colors.white.withValues(alpha: 0.8)
+        : Colors.white.withValues(alpha: 0.5);
+
     return GestureDetector(
       onTap: () => _showDatePicker(context),
       child: Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Colors.white.withValues(alpha: isLadies ? 0.1 : 0.04),
           borderRadius: BorderRadius.circular(20),
-          boxShadow: AppTheme.cardShadow,
         ),
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                color: iconBg,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(
+              child: Icon(
                 CupertinoIcons.calendar,
-                color: Colors.black,
-                size: 24,
+                color: iconColor,
+                size: 22,
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -70,30 +86,33 @@ class BookingDateCard extends StatelessWidget {
                   Text(
                     'تاريخ الرحلة',
                     style: AppTheme.textTheme.bodySmall?.copyWith(
-                      color: AppTheme.textSecondary,
+                      color: subtitleColor,
+                      fontSize: 12,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 3),
                   Text(
-                    DateFormat('EEEE، d MMMM', 'ar').format(selectedDate),
+                    DateFormat('EEEE، d MMMM', 'ar_EG').format(selectedDate).w,
                     style: AppTheme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
                   ),
                 ],
               ),
             ),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(20),
+                color: yearBg,
+                borderRadius: BorderRadius.circular(16),
               ),
               child: Text(
-                DateFormat('yyyy', 'ar').format(selectedDate),
+                DateFormat('yyyy', 'ar_EG').format(selectedDate).w,
                 style: AppTheme.textTheme.bodySmall?.copyWith(
-                  color: AppTheme.textSecondary,
+                  color: yearText,
                   fontWeight: FontWeight.bold,
+                  fontSize: 12,
                 ),
               ),
             ),

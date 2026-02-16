@@ -5,6 +5,7 @@ import 'dart:math' as math;
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/ticket_card.dart';
 import '../../../home/presentation/pages/home_page.dart';
+import 'package:my_app/core/utils/digit_converter.dart';
 
 class SubscriptionConfirmationPage extends StatefulWidget {
   final String planName;
@@ -223,8 +224,8 @@ class _SubscriptionConfirmationPageState
                                       Text(
                                         DateFormat(
                                           'd MMM yyyy',
-                                          'ar',
-                                        ).format(widget.startDate),
+                                          'ar_EG',
+                                        ).format(widget.startDate).w,
                                         style: AppTheme.textTheme.titleMedium
                                             ?.copyWith(
                                               fontWeight: FontWeight.bold,
@@ -246,8 +247,8 @@ class _SubscriptionConfirmationPageState
                                       Text(
                                         DateFormat(
                                           'd MMM yyyy',
-                                          'ar',
-                                        ).format(widget.endDate),
+                                          'ar_EG',
+                                        ).format(widget.endDate).w,
                                         style: AppTheme.textTheme.titleMedium
                                             ?.copyWith(
                                               fontWeight: FontWeight.bold,

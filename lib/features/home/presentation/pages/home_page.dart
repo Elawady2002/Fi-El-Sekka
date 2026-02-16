@@ -245,8 +245,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                           );
                           return upcomingBookingAsync.when(
                             data: (booking) {
-                              if (booking == null)
+                              if (booking == null) {
                                 return const SizedBox.shrink();
+                              }
                               return Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [

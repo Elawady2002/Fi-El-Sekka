@@ -3,22 +3,22 @@ import 'package:flutter/material.dart';
 import 'package:my_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:my_app/core/utils/digit_converter.dart';
+
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/ios_components.dart';
 import '../../../../core/widgets/insufficient_balance_dialog.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../profile/presentation/providers/wallet_provider.dart';
-import '../../../profile/presentation/widgets/digital_ticket.dart';
 import '../../domain/entities/trip_type.dart';
 import '../providers/booking_provider.dart';
-import '../../../payment/presentation/pages/payment_page.dart';
-import '../widgets/student_packages_button.dart';
-import '../../domain/entities/schedule_entity.dart';
+// import '../widgets/student_packages_button.dart';
 import 'booking_success_page.dart';
 import '../widgets/booking_date_card.dart';
 import '../widgets/time_selection_card.dart';
 import '../../../home/presentation/providers/home_provider.dart';
+import '../../domain/entities/booking_entity.dart';
 
 class BookingPage extends ConsumerStatefulWidget {
   const BookingPage({super.key});
@@ -70,31 +70,14 @@ class _BookingPageState extends ConsumerState<BookingPage> {
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 children: [
-                  // Student Packages Button
-                  const StudentPackagesButton(),
-                  const SizedBox(height: 24),
+                  // // Student Packages Button
+                  // const StudentPackagesButton(),
+                  // const SizedBox(height: 24),
 
                   // Trip Type Selector
 
-                  // Trip Detail Summary
-                  _buildTripSummaryCard(bookingState),
-                  const SizedBox(height: 24),
-
-                  // Date Picker
-                  _buildSectionTitle(AppLocalizations.of(context)!.date),
-                  const SizedBox(height: 16),
-                  BookingDateCard(
-                    selectedDate: bookingState.selectedDate,
-                    onDateSelected: bookingNotifier.selectDate,
-                  ),
-
-                  // Schedule Selection
-                  ..._buildScheduleSections(
-                    context,
-                    ref,
-                    bookingState,
-                    bookingNotifier,
-                  ),
+                  // Unified Booking Card (all options in one container)
+                  _buildUnifiedBookingCard(bookingState, bookingNotifier, ref),
 
                   const SizedBox(height: 100),
                 ],
@@ -221,12 +204,12 @@ class _BookingPageState extends ConsumerState<BookingPage> {
     );
   }
 
-  List<Widget> _buildScheduleSections(
-    BuildContext context,
-    WidgetRef ref,
+  List<Widget> _buildInlineScheduleSection(
     BookingStateModel state,
     BookingState bookingNotifier,
-  ) {
+    WidgetRef ref, {
+    bool isLadies = false,
+  }) {
     final universityId = state.selectedUniversity?.id;
     final routesAsync = ref.watch(routesProvider(universityId));
 
@@ -234,13 +217,20 @@ class _BookingPageState extends ConsumerState<BookingPage> {
       data: (routes) {
         if (routes.isEmpty) {
           return [
-            Center(
-              child: Text(AppLocalizations.of(context)!.noTripsAvailable),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+              child: Center(
+                child: Text(
+                  AppLocalizations.of(context)!.noTripsAvailable,
+                  style: AppTheme.textTheme.bodySmall?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.4),
+                  ),
+                ),
+              ),
             ),
           ];
         }
 
-        // For now, we take the first route. Ideally, we match by station or let user select.
         final route = routes.first;
         final schedulesAsync = ref.watch(schedulesProvider(route.id));
 
@@ -252,46 +242,65 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                   state.selectedDepartureSchedule ??
                   state.selectedReturnSchedule;
 
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 32),
-                  _buildSectionTitle(AppLocalizations.of(context)!.tripTime),
-                  const SizedBox(height: 16),
-                  TimeSelectionCard(
-                    title: AppLocalizations.of(context)!.selectTripTime,
-                    selectedTime: selectedSchedule != null
-                        ? _formatTime(selectedSchedule.departureTime)
-                        : null,
-                    icon: CupertinoIcons.clock,
-                    onTap: () {
-                      final items = allSchedules
-                          .map((s) => _formatTime(s.departureTime))
-                          .toList();
-                      _showTimePicker(
-                        title: AppLocalizations.of(context)!.tripTime,
-                        items: items,
-                        onSelect: (time) {
-                          if (time != null) {
-                            final schedule = allSchedules.firstWhere(
-                              (s) => _formatTime(s.departureTime) == time,
-                            );
-                            bookingNotifier.selectDepartureSchedule(schedule);
-                          }
-                        },
-                      );
-                    },
-                  ),
-                ],
+              return Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildInlineLabel(AppLocalizations.of(context)!.tripTime, isLadies: isLadies),
+                    const SizedBox(height: 12),
+                    TimeSelectionCard(
+                      title: AppLocalizations.of(context)!.selectTripTime,
+                      isLadies: isLadies,
+                      selectedTime: selectedSchedule != null
+                          ? _formatTime(selectedSchedule.departureTime)
+                          : null,
+                      icon: CupertinoIcons.clock,
+                      onTap: () {
+                        final items = allSchedules
+                            .map((s) => _formatTime(s.departureTime))
+                            .toList();
+                        _showTimePicker(
+                          title: AppLocalizations.of(context)!.tripTime,
+                          items: items,
+                          onSelect: (time) {
+                            if (time != null) {
+                              final schedule = allSchedules.firstWhere(
+                                (s) => _formatTime(s.departureTime) == time,
+                              );
+                              bookingNotifier.selectDepartureSchedule(schedule);
+                            }
+                          },
+                        );
+                      },
+                    ),
+                  ],
+                ),
               );
             },
-            loading: () => const Center(child: CupertinoActivityIndicator()),
-            error: (err, _) => Center(child: Text('Error: $err')),
+            loading: () => const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Center(child: CupertinoActivityIndicator()),
+            ),
+            error: (err, _) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Center(child: Text('Error: $err')),
+            ),
           ),
         ];
       },
-      loading: () => [const Center(child: CupertinoActivityIndicator())],
-      error: (err, _) => [Center(child: Text('Error: $err'))],
+      loading: () => [
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 16),
+          child: Center(child: CupertinoActivityIndicator()),
+        ),
+      ],
+      error: (err, _) => [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Center(child: Text('Error: $err')),
+        ),
+      ],
     );
   }
 
@@ -303,21 +312,13 @@ class _BookingPageState extends ConsumerState<BookingPage> {
       final hour = int.parse(parts[0]);
       final minute = int.parse(parts[1]);
       final dt = DateTime(2022, 1, 1, hour, minute);
-      return DateFormat('h:mm a', AppLocalizations.of(context)!.localeName).format(dt);
+      return DateFormat('h:mm a', 'ar_EG').format(dt).w;
     } catch (e) {
       return time;
     }
   }
 
-  Widget _buildSectionTitle(String title) {
-    return Text(
-      title,
-      style: AppTheme.textTheme.titleLarge?.copyWith(
-        fontWeight: FontWeight.bold,
-        fontSize: 20,
-      ),
-    );
-  }
+
 
   void _showTimePicker({
     required String title,
@@ -434,107 +435,166 @@ class _BookingPageState extends ConsumerState<BookingPage> {
     );
   }
 
-  Widget _buildTripSummaryCard(BookingStateModel state) {
+
+
+  Widget _buildHorizontalTicketPath(BookingStateModel state, {bool isLadies = false}) {
     String destinationName = state.isToUniversity
         ? (state.selectedUniversity?.nameAr ?? 'الجامعة')
         : (state.selectedArrivalStation?.nameAr ?? 'موقف الوصول');
 
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
+    final Color lineColor = isLadies
+        ? Colors.white.withValues(alpha: 0.3)
+        : Colors.white24;
+
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _buildPathPoint(
+              label: AppLocalizations.of(context)!.pickupStation,
+              value: state.selectedStation?.nameAr ?? '-',
+              isFirst: true,
+              isLadies: isLadies,
+            ),
+            _buildPathPoint(
+              label: state.isToUniversity
+                  ? AppLocalizations.of(context)!.university
+                  : AppLocalizations.of(context)!.arrivalPoint,
+              value: destinationName,
+              isLast: true,
+              isLadies: isLadies,
+            ),
+          ],
+        ),
+        const SizedBox(height: 28),
+        // Visual Path Line with Arrow
+        Stack(
+          alignment: Alignment.center,
+          children: [
+            Container(
+              height: 2,
+              margin: const EdgeInsets.symmetric(horizontal: 24),
+              color: lineColor,
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _buildAnimatedDot(isFirst: true, isLadies: isLadies),
+                _buildDirectionArrow(isLadies: isLadies),
+                _buildAnimatedDot(isLast: true, isLadies: isLadies),
+              ],
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDirectionArrow({bool isLadies = false}) {
+    final Color bgColor = isLadies
+        ? Colors.white.withValues(alpha: 0.2)
+        : Colors.black;
+    final Color borderColor = isLadies
+        ? Colors.white.withValues(alpha: 0.5)
+        : AppTheme.primaryColor.withValues(alpha: 0.5);
+    final Color arrowColor = isLadies
+        ? Colors.white
+        : AppTheme.primaryColor;
+
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: const Duration(seconds: 2),
+      curve: Curves.linear,
+      builder: (context, value, child) {
+        return Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: bgColor,
+            border: Border.all(
+              color: borderColor,
+              width: 1,
+            ),
           ),
-        ],
-      ),
+          child: Icon(
+            CupertinoIcons.arrow_left, // Arabic is RTL, so arrow points left
+            color: arrowColor,
+            size: 14,
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildPathPoint({
+    required String label,
+    required String value,
+    bool isFirst = false,
+    bool isLast = false,
+    bool isLadies = false,
+  }) {
+    final Color labelColor = isLadies
+        ? Colors.white.withValues(alpha: 0.7)
+        : Colors.white.withValues(alpha: 0.5);
+
+    return Expanded(
       child: Column(
+        crossAxisAlignment: isFirst
+            ? CrossAxisAlignment.start
+            : isLast
+                ? CrossAxisAlignment.end
+                : CrossAxisAlignment.center,
         children: [
-          _buildSummaryRow(
-            icon: CupertinoIcons.building_2_fill,
-            label: AppLocalizations.of(context)!.city,
-            value: state.selectedCity?.nameAr ?? '-',
+          Text(
+            label,
+            style: AppTheme.textTheme.bodySmall?.copyWith(
+              color: labelColor,
+              fontSize: 10,
+            ),
           ),
-          Divider(
-            height: 1,
-            color: Colors.grey.shade100,
-            indent: 64,
-            endIndent: 20,
-          ),
-          _buildSummaryRow(
-            icon: state.isToUniversity
-                ? CupertinoIcons.book_fill
-                : CupertinoIcons.pin_fill,
-            label: state.isToUniversity
-                ? AppLocalizations.of(context)!.university
-                : AppLocalizations.of(context)!.arrivalPoint,
-            value: destinationName,
-          ),
-          Divider(
-            height: 1,
-            color: Colors.grey.shade100,
-            indent: 64,
-            endIndent: 20,
-          ),
-          _buildSummaryRow(
-            icon: CupertinoIcons.location_fill,
-            label: AppLocalizations.of(context)!.pickupStation,
-            value: state.selectedStation?.nameAr ?? '-',
+          const SizedBox(height: 4),
+          Text(
+            value,
+            textAlign: isFirst
+                ? TextAlign.start
+                : isLast
+                    ? TextAlign.end
+                    : TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTheme.textTheme.bodyMedium?.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSummaryRow({
-    required IconData icon,
-    required String label,
-    required String value,
+  Widget _buildAnimatedDot({
+    bool isFirst = false,
+    bool isLast = false,
+    bool isLadies = false,
   }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, size: 20, color: AppTheme.primaryColor),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: AppTheme.textTheme.bodySmall?.copyWith(
-                    color: AppTheme.textSecondary,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  value,
-                  style: AppTheme.textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+    final Color dotColor = isLadies ? Colors.white : AppTheme.primaryColor;
+
+    return Container(
+      width: 12,
+      height: 12,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: isFirst || isLast ? dotColor : (isLadies ? Colors.transparent : Colors.black),
+        border: Border.all(
+          color: dotColor,
+          width: 2,
+        ),
       ),
     );
   }
+
 
   String _getTripTypeLabel(BuildContext context, TripType type) {
     final l10n = AppLocalizations.of(context)!;
@@ -546,5 +606,452 @@ class _BookingPageState extends ConsumerState<BookingPage> {
       case TripType.roundTrip:
         return l10n.roundTrip;
     }
+  }
+
+
+  // ═══════════════════════════════════════════════════════════════════
+  //  UNIFIED BOOKING CARD — All options in one cohesive container
+  // ═══════════════════════════════════════════════════════════════════
+  Widget _buildUnifiedBookingCard(BookingStateModel state, BookingState notifier, WidgetRef ref) {
+    bool isLadies = state.isLadiesOnly;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(28),
+      child: Stack(
+        children: [
+          // ── Dark Base (invisible content just for sizing) ──
+          Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFF161616),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+            ),
+            child: Opacity(
+              opacity: 0,
+              child: _buildUnifiedCardContent(state, notifier, ref),
+            ),
+          ),
+
+          // ── Full-Card Pink Circular Reveal ──
+          Positioned.directional(
+            textDirection: Directionality.of(context),
+            end: 46 - 1000,
+            bottom: 35 - 1000,
+            width: 2000,
+            height: 2000,
+            child: Center(
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 700),
+                curve: Curves.easeOutExpo,
+                width: isLadies ? 2000 : 0,
+                height: isLadies ? 2000 : 0,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFF2D55),
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+          ),
+
+          // ── Visible Content (rendered only ONCE) ──
+          _buildUnifiedCardContent(state, notifier, ref),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUnifiedCardContent(BookingStateModel state, BookingState notifier, WidgetRef ref) {
+    final bool isLadies = state.isLadiesOnly;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ── Section 0: Trip Summary (direction + price) ──
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHorizontalTicketPath(state, isLadies: isLadies),
+              const SizedBox(height: 20),
+              // Dashed divider
+              Row(
+                children: List.generate(
+                  30,
+                  (i) => Expanded(
+                    child: Container(
+                      height: 1,
+                      margin: const EdgeInsets.symmetric(horizontal: 1.5),
+                      color: i.isEven
+                          ? Colors.white.withValues(alpha: isLadies ? 0.25 : 0.12)
+                          : Colors.transparent,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Seat/car info + price
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        state.selectionType == BookingSelectionType.seat
+                            ? CupertinoIcons.person_2_fill
+                            : CupertinoIcons.bus,
+                        color: isLadies ? Colors.white : AppTheme.primaryColor,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        state.selectionType == BookingSelectionType.seat
+                            ? '${AppLocalizations.of(context)!.seats}: ${state.passengerCount}'
+                            : AppLocalizations.of(context)!.fullCar,
+                        style: AppTheme.textTheme.bodyMedium?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Text(
+                    '${(state.tripType.price * state.passengerCount).toStringAsFixed(0)} EGP',
+                    style: AppTheme.textTheme.titleLarge?.copyWith(
+                      color: isLadies ? Colors.white : AppTheme.primaryColor,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+
+        _buildThinDivider(isLadies: isLadies),
+
+        // ── Section 1: Booking Type ──
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildInlineLabel(AppLocalizations.of(context)!.bookingType, isLadies: isLadies),
+              const SizedBox(height: 12),
+              _buildInlineSegmentedSelector(
+                isLadies: isLadies,
+                options: [
+                  {
+                    'title': AppLocalizations.of(context)!.individualSeat,
+                    'icon': CupertinoIcons.person_fill,
+                    'value': BookingSelectionType.seat,
+                  },
+                  {
+                    'title': AppLocalizations.of(context)!.fullCar,
+                    'icon': CupertinoIcons.bus,
+                    'value': BookingSelectionType.fullCar,
+                  },
+                ],
+                currentValue: state.selectionType,
+                onChanged: (val) {
+                  if (val == BookingSelectionType.fullCar) {
+                    notifier.setSelectionType(BookingSelectionType.fullCar);
+                    notifier.setPassengerCount(14);
+                  } else {
+                    notifier.setSelectionType(BookingSelectionType.seat);
+                    notifier.setPassengerCount(1);
+                  }
+                },
+              ),
+            ],
+          ),
+        ),
+
+        if (state.selectionType == BookingSelectionType.seat) ...[
+          _buildThinDivider(isLadies: isLadies),
+
+          // ── Section 2: Passenger Count ──
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildInlineLabel(AppLocalizations.of(context)!.passengerCount, isLadies: isLadies),
+                const SizedBox(height: 12),
+                _buildInlinePassengerCounter(state, notifier, isLadies: isLadies),
+              ],
+            ),
+          ),
+
+          // ── Section 3: Distribution (only if >1 passenger) ──
+          if (state.passengerCount > 1) ...[
+            _buildThinDivider(isLadies: isLadies),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildInlineLabel('عايزين تركبو ازاي؟', isLadies: isLadies),
+                  const SizedBox(height: 12),
+                  _buildInlineSegmentedSelector(
+                    isLadies: isLadies,
+                    options: [
+                      {'title': 'هتركبو مع بعض', 'value': true},
+                      {'title': 'مش هتفرق المهم نركب', 'value': false},
+                    ],
+                    currentValue: state.splitPreference,
+                    onChanged: (val) => notifier.setSplitPreference(val as bool),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+
+        _buildThinDivider(isLadies: isLadies),
+
+        // ── Date ──
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildInlineLabel(AppLocalizations.of(context)!.date, isLadies: isLadies),
+              const SizedBox(height: 12),
+              BookingDateCard(
+                selectedDate: state.selectedDate,
+                onDateSelected: notifier.selectDate,
+                isLadies: isLadies,
+              ),
+            ],
+          ),
+        ),
+
+        _buildThinDivider(isLadies: isLadies),
+
+        // ── Trip Schedule ──
+        ..._buildInlineScheduleSection(state, notifier, ref, isLadies: isLadies),
+
+        _buildThinDivider(isLadies: isLadies),
+
+        // ── Ladies Only (always last) ──
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: Row(
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 500),
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: state.isLadiesOnly
+                      ? Colors.white.withValues(alpha: 0.15)
+                      : Colors.white.withValues(alpha: 0.05),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  CupertinoIcons.person_2_fill,
+                  color: state.isLadiesOnly ? Colors.white : Colors.white.withValues(alpha: 0.2),
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Text(
+                  'عربية ستات بس',
+                  style: AppTheme.textTheme.bodyMedium?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              CupertinoSwitch(
+                activeTrackColor: const Color(0xFF9E003A),
+                thumbColor: Colors.white,
+                value: state.isLadiesOnly,
+                onChanged: notifier.setIsLadiesOnly,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ─── Inline Label (small, dim, inside the card) ───
+  Widget _buildInlineLabel(String text, {bool isLadies = false}) {
+    return Text(
+      text,
+      style: AppTheme.textTheme.bodySmall?.copyWith(
+        color: isLadies
+            ? Colors.white.withValues(alpha: 0.75)
+            : Colors.white.withValues(alpha: 0.4),
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+        letterSpacing: 0.5,
+      ),
+    );
+  }
+
+  // ─── Thin Divider (ultra-subtle separator) ───
+  Widget _buildThinDivider({bool isLadies = false}) {
+    return Container(
+      height: 0.5,
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      color: isLadies
+          ? Colors.white.withValues(alpha: 0.2)
+          : Colors.white.withValues(alpha: 0.06),
+    );
+  }
+
+  // ─── Inline Segmented Selector (no outer container) ───
+  Widget _buildInlineSegmentedSelector({
+    required List<Map<String, dynamic>> options,
+    required dynamic currentValue,
+    required Function(dynamic) onChanged,
+    bool isLadies = false,
+  }) {
+    final Color selectedBg = isLadies ? Colors.white : AppTheme.primaryColor;
+    final Color selectedText = isLadies ? const Color(0xFFFF2D55) : Colors.black;
+    final Color unselectedText = isLadies
+        ? Colors.white.withValues(alpha: 0.85)
+        : Colors.white.withValues(alpha: 0.7);
+    final Color unselectedIcon = isLadies
+        ? Colors.white.withValues(alpha: 0.6)
+        : Colors.white.withValues(alpha: 0.35);
+
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: isLadies ? 0.1 : 0.04),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        children: options.map((opt) {
+          bool isSelected = opt['value'] == currentValue;
+          return Expanded(
+            child: GestureDetector(
+              onTap: () => onChanged(opt['value']),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: isSelected ? selectedBg : Colors.transparent,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: selectedBg.withValues(alpha: 0.25),
+                            blurRadius: 10,
+                            offset: const Offset(0, 3),
+                          )
+                        ]
+                      : [],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (opt['icon'] != null) ...[
+                      Icon(
+                        opt['icon'] as IconData,
+                        color: isSelected ? selectedText : unselectedIcon,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 6),
+                    ],
+                    Flexible(
+                      child: Text(
+                        opt['title'] as String,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTheme.textTheme.bodyMedium?.copyWith(
+                          color: isSelected ? selectedText : unselectedText,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  // ─── Inline Passenger Counter (compact, no outer box) ───
+  Widget _buildInlinePassengerCounter(BookingStateModel state, BookingState notifier, {bool isLadies = false}) {
+    final Color accentColor = isLadies ? Colors.white : AppTheme.primaryColor;
+    final Color dimText = isLadies
+        ? Colors.white.withValues(alpha: 0.7)
+        : Colors.white.withValues(alpha: 0.4);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: isLadies ? 0.1 : 0.04),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          GestureDetector(
+            onTap: state.passengerCount > 1
+                ? () => notifier.setPassengerCount(state.passengerCount - 1)
+                : null,
+            child: Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: isLadies ? 0.15 : 0.06),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                CupertinoIcons.minus,
+                color: state.passengerCount > 1 
+                    ? Colors.white 
+                    : Colors.white.withValues(alpha: 0.2),
+                size: 20,
+              ),
+            ),
+          ),
+          Column(
+            children: [
+              Text(
+                '${state.passengerCount}',
+                style: AppTheme.textTheme.headlineSmall?.copyWith(
+                  color: accentColor,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                AppLocalizations.of(context)!.seats,
+                style: AppTheme.textTheme.bodySmall?.copyWith(
+                  color: dimText,
+                  fontSize: 11,
+                ),
+              ),
+            ],
+          ),
+          GestureDetector(
+            onTap: state.passengerCount < 14
+                ? () => notifier.setPassengerCount(state.passengerCount + 1)
+                : null,
+            child: Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: isLadies ? 0.15 : 0.06),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                CupertinoIcons.add,
+                color: state.passengerCount < 14 
+                    ? Colors.white 
+                    : Colors.white.withValues(alpha: 0.2),
+                size: 20,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

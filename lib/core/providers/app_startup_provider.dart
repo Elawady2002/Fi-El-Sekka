@@ -11,6 +11,7 @@ final appStartupProvider = FutureProvider<void>((ref) async {
 
   // 1. Initialize date formatting
   await initializeDateFormatting('ar', null);
+  await initializeDateFormatting('ar_EG', null);
   await initializeDateFormatting('en', null);
   LoggerService.info('Date formatting initialized');
 
