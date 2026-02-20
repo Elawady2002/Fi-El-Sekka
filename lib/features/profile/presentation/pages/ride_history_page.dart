@@ -486,13 +486,14 @@ class _RideHistoryPageState extends ConsumerState<RideHistoryPage>
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
               child: Row(
                 children: [
-                  _buildTripDetailRow(
-                    icon: CupertinoIcons.time,
-                    title: AppLocalizations.of(context)!.departureTime,
-                    value: booking.departureTime ?? '7:00 AM',
-                  ),
+                  if (booking.tripType != 'university_request' || booking.departureTime != null)
+                    _buildTripDetailRow(
+                      icon: CupertinoIcons.time,
+                      title: AppLocalizations.of(context)!.departureTime,
+                      value: booking.departureTime ?? '7:00 AM',
+                    ),
                   const Spacer(),
-                  if (booking.tripType == 'round_trip')
+                  if (booking.tripType == 'round_trip' || (booking.tripType == 'university_request' && booking.returnTime != null))
                     _buildTripDetailRow(
                       icon: CupertinoIcons.arrow_2_squarepath,
                       title: AppLocalizations.of(context)!.returnTime,
@@ -698,6 +699,8 @@ class _RideHistoryPageState extends ConsumerState<RideHistoryPage>
         return l10n.returnText;
       case 'round_trip':
         return l10n.roundTrip;
+      case 'university_request':
+        return 'طلب خط جامعة';
       default:
         return tripType;
     }

@@ -23,6 +23,23 @@ abstract class BookingDataSource {
     bool isLadies = false,
   });
 
+  /// Create a pending university request booking
+  Future<BookingModel> createUniversityRequest({
+    required String userId,
+    required DateTime bookingDate,
+    required String universityId,
+    required bool isCustomUniversity,
+    String? customUniversityName,
+    String? pickupStationId,
+    String? departureTime,
+    String? returnTime,
+    required double totalPrice,
+    BookingSelectionType selectionType = BookingSelectionType.seat,
+    int passengerCount = 1,
+    bool splitPreference = true,
+    bool isLadies = false,
+  });
+
   /// Create a booking from a subscription
   Future<BookingModel> createSubscriptionBooking({
     required String userId,
@@ -124,6 +141,66 @@ class BookingDataSourceImpl implements BookingDataSource {
     } catch (e) {
       AppLogger.error('❌ Unexpected error creating booking: $e');
       throw Exception('Unexpected error during booking creation: $e');
+    }
+  }
+
+  @override
+  Future<BookingModel> createUniversityRequest({
+    required String userId,
+    required DateTime bookingDate,
+    required String universityId,
+    required bool isCustomUniversity,
+    String? customUniversityName,
+    String? pickupStationId,
+    String? departureTime,
+    String? returnTime,
+    required double totalPrice,
+    BookingSelectionType selectionType = BookingSelectionType.seat,
+    int passengerCount = 1,
+    bool splitPreference = true,
+    bool isLadies = false,
+  }) async {
+    try {
+      final now = DateTime.now();
+      
+      // If it is a custom university, in a real scenario you would probably insert
+      // the university first, here we pass the name in the payload somehow, or 
+      // rely on a specific handling. For now, we will add it to a potential 
+      // `custom_university_name` metadata field or just rely on the ID.
+      
+      final response = await _client
+          .from('bookings')
+          .insert({
+            'user_id': userId,
+            'booking_date': bookingDate.toIso8601String(),
+            'trip_type': 'university_request',
+            'university_id': universityId,
+            'is_university_request': true,
+            'pickup_station_id': pickupStationId,
+            'departure_time': departureTime,
+            'return_time': returnTime,
+            'status': 'pending',
+            'payment_status': 'unpaid',
+            'selection_type': selectionType.toJson(),
+            'passenger_count': passengerCount,
+            'split_preference': splitPreference,
+            'total_price': totalPrice,
+            'is_ladies': isLadies,
+            'created_at': now.toIso8601String(),
+            'updated_at': now.toIso8601String(),
+          })
+          .select()
+          .single();
+
+      return BookingModel.fromJson(response);
+    } on PostgrestException catch (e) {
+      AppLogger.error('❌ Database error creating university request:');
+      AppLogger.error('   Code: ${e.code}');
+      AppLogger.error('   Message: ${e.message}');
+      throw Exception('Database error: ${e.message}');
+    } catch (e) {
+      AppLogger.error('❌ Unexpected error creating university request: $e');
+      throw Exception('Unexpected error during university request creation: $e');
     }
   }
 

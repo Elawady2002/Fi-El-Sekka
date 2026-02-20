@@ -12,6 +12,44 @@ class BookingRepositoryImpl implements BookingRepository {
   BookingRepositoryImpl(this._dataSource, this._getUserId);
 
   @override
+  Future<Either<Failure, BookingEntity>> createUniversityRequest({
+    required DateTime bookingDate,
+    required String universityId,
+    required bool isCustomUniversity,
+    String? customUniversityName,
+    String? pickupStationId,
+    String? departureTime,
+    String? returnTime,
+    required double totalPrice,
+    BookingSelectionType selectionType = BookingSelectionType.seat,
+    int passengerCount = 1,
+    bool splitPreference = true,
+    bool isLadies = false,
+  }) async {
+    try {
+      final userId = _getUserId();
+      final booking = await _dataSource.createUniversityRequest(
+        userId: userId,
+        bookingDate: bookingDate,
+        universityId: universityId,
+        isCustomUniversity: isCustomUniversity,
+        customUniversityName: customUniversityName,
+        pickupStationId: pickupStationId,
+        departureTime: departureTime,
+        returnTime: returnTime,
+        selectionType: selectionType,
+        passengerCount: passengerCount,
+        splitPreference: splitPreference,
+        totalPrice: totalPrice,
+        isLadies: isLadies,
+      );
+      return Right(booking);
+    } catch (e) {
+      return Left(_handleError(e));
+    }
+  }
+
+  @override
   Future<Either<Failure, BookingEntity>> createBooking({
     required String scheduleId,
     required DateTime bookingDate,

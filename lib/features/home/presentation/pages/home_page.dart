@@ -24,6 +24,8 @@ import '../widgets/wallet_widget.dart';
 import '../../../subscription/presentation/providers/subscription_provider.dart';
 import '../../../subscription/presentation/widgets/subscription_plans_sheet.dart';
 import '../widgets/empty_bookings_widget.dart';
+import '../../../../core/widgets/dashed_rect.dart';
+import '../../../../core/widgets/custom_input.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -106,8 +108,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                                   shape: BoxShape.circle,
                                   boxShadow: [
                                     BoxShadow(
-                                      color:
-                                          Colors.black.withValues(alpha: 0.05),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.05,
+                                      ),
                                       blurRadius: 10,
                                       offset: const Offset(0, 4),
                                     ),
@@ -164,8 +167,12 @@ class _HomePageState extends ConsumerState<HomePage> {
                       // Check for active subscription first
                       Consumer(
                         builder: (context, ref, child) {
-                          final activeSubAsync = ref.watch(activeSubscriptionProvider);
-                          final userBookingsAsync = ref.watch(userBookingsProvider);
+                          final activeSubAsync = ref.watch(
+                            activeSubscriptionProvider,
+                          );
+                          final userBookingsAsync = ref.watch(
+                            userBookingsProvider,
+                          );
 
                           return userBookingsAsync.when(
                             data: (bookings) {
@@ -173,33 +180,52 @@ class _HomePageState extends ConsumerState<HomePage> {
                               final upcomingBookings = bookings.where((b) {
                                 return !b.isCancelled &&
                                     !b.isCompleted &&
-                                    (b.bookingDate.isAfter(now.subtract(const Duration(days: 1))) ||
+                                    (b.bookingDate.isAfter(
+                                          now.subtract(const Duration(days: 1)),
+                                        ) ||
                                         b.bookingDate.day == now.day);
                               }).toList();
-                              
+
                               // Sort by date ascending, pick nearest
-                              upcomingBookings.sort((a, b) => a.bookingDate.compareTo(b.bookingDate));
-                              final nearestBooking = upcomingBookings.firstOrNull;
+                              upcomingBookings.sort(
+                                (a, b) =>
+                                    a.bookingDate.compareTo(b.bookingDate),
+                              );
+                              final nearestBooking =
+                                  upcomingBookings.firstOrNull;
 
                               return activeSubAsync.when(
                                 data: (subscription) {
-                                  if (nearestBooking == null && subscription == null) {
+                                  if (nearestBooking == null &&
+                                      subscription == null) {
                                     return Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
-                                        _buildSectionTitle(context, ref, l10n.nextTrip),
+                                        _buildSectionTitle(
+                                          context,
+                                          ref,
+                                          l10n.nextTrip,
+                                        ),
                                         const SizedBox(height: 16),
                                         const EmptyBookingsWidget(),
                                       ],
                                     );
                                   }
 
-                                  String sectionTitle = nearestBooking != null ? l10n.nextTrip : l10n.activeSubscription;
+                                  String sectionTitle = nearestBooking != null
+                                      ? l10n.nextTrip
+                                      : l10n.activeSubscription;
 
                                   return Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
-                                      _buildSectionTitle(context, ref, sectionTitle),
+                                      _buildSectionTitle(
+                                        context,
+                                        ref,
+                                        sectionTitle,
+                                      ),
                                       const SizedBox(height: 16),
                                       Stack(
                                         clipBehavior: Clip.none,
@@ -207,7 +233,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                                           // Bottom layer: Title and Route Info (paints behind)
                                           if (nearestBooking != null)
                                             Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
                                               children: [
                                                 // Spacer to reserve height for physical alignment
                                                 const SizedBox(height: 240),
@@ -218,31 +245,38 @@ class _HomePageState extends ConsumerState<HomePage> {
                                                   l10n.tripRoute,
                                                 ),
                                                 const SizedBox(height: 12),
-                                                _buildRouteInfoCard(nearestBooking),
+                                                _buildRouteInfoCard(
+                                                  nearestBooking,
+                                                ),
                                               ],
                                             ),
                                           // Top layer: The Card (paints on top of everything)
                                           UnifiedTripCard(
                                             booking: nearestBooking,
-                                            subscription: nearestBooking == null ? subscription : null,
+                                            subscription: nearestBooking == null
+                                                ? subscription
+                                                : null,
                                           ),
                                         ],
                                       ),
                                     ],
                                   );
                                 },
-                                loading: () => const Center(child: CircularProgressIndicator()),
+                                loading: () => const Center(
+                                  child: CircularProgressIndicator(),
+                                ),
                                 error: (e, s) => const SizedBox.shrink(),
                               );
                             },
-                            loading: () => const Center(child: CircularProgressIndicator()),
+                            loading: () => const Center(
+                              child: CircularProgressIndicator(),
+                            ),
                             error: (e, s) => const SizedBox.shrink(),
                           );
                         },
                       ),
 
                       // Route Info - Removed as per new design
-
                     ],
                   ),
                 ),
@@ -299,17 +333,18 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-
-
-
   Widget _buildRouteInfoCard(BookingEntity booking) {
     final l10n = AppLocalizations.of(context)!;
     final stations = ref.watch(allStationsProvider).valueOrNull ?? [];
     final universities = ref.watch(allUniversitiesProvider).valueOrNull ?? [];
     final lang = ref.watch(localeProvider).languageCode;
 
-    final pickupStation = stations.where((s) => s.id == booking.pickupStationId).firstOrNull;
-    final dropoffStation = stations.where((s) => s.id == booking.dropoffStationId).firstOrNull;
+    final pickupStation = stations
+        .where((s) => s.id == booking.pickupStationId)
+        .firstOrNull;
+    final dropoffStation = stations
+        .where((s) => s.id == booking.dropoffStationId)
+        .firstOrNull;
 
     final universityName = universities.isNotEmpty
         ? universities.first.getLocalizedName(lang)
@@ -327,7 +362,8 @@ class _HomePageState extends ConsumerState<HomePage> {
       }
     } else if (booking.tripType == 'return_only') {
       routeFrom = universityName;
-      routeTo = dropoffStation?.getLocalizedName(lang) ??
+      routeTo =
+          dropoffStation?.getLocalizedName(lang) ??
           pickupStation?.getLocalizedName(lang) ??
           l10n.madinaty;
     } else {
@@ -460,7 +496,7 @@ class _LocationSelectionDrawerState
   UniversityEntity? selectedUniversity;
   StationEntity? selectedPickupStation;
   StationEntity? selectedArrivalStation;
-  bool isToUniversity = true;
+  bool isToUniversity = false;
 
   Widget _buildSelectionItem(
     BuildContext context,
@@ -552,116 +588,214 @@ class _LocationSelectionDrawerState
     required List<T> items,
     required String Function(T) labelBuilder,
     required ValueChanged<T> onSelected,
+    bool showAddOption = false,
+    String? addOptionLabel,
+    ValueChanged<String>? onAddSubmit,
   }) {
-    int selectedIndex = 0;
     final l10n = AppLocalizations.of(context)!;
+    final isAr = ref.watch(localeProvider).languageCode == 'ar';
+    bool isAdding = false;
+    final addController = TextEditingController();
 
-    showCupertinoModalPopup(
+    showModalBottomSheet(
       context: context,
-      builder: (_) => Container(
-        height: 340,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 20,
-              offset: Offset(0, -5),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => StatefulBuilder(
+        builder: (BuildContext context, StateSetter setModalState) {
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
             ),
-          ],
-        ),
-        child: Column(
-          children: [
-            const SizedBox(height: 12),
-            Container(
-              width: 40,
-              height: 5,
-              decoration: BoxDecoration(
-                color: Colors.grey.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(10),
+            child: Container(
+              height: MediaQuery.of(context).size.height * 0.6,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
               ),
-            ),
-            const SizedBox(height: 20),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: Column(
                 children: [
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Text(
-                      l10n.cancel,
-                      style: AppTheme.textTheme.bodyLarge?.copyWith(
-                        color: const Color(0xFFFF3B30),
-                        fontWeight: FontWeight.w600,
+                  const SizedBox(height: 12),
+                  Container(
+                    width: 40,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          title,
+                          style: AppTheme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () => Navigator.pop(context),
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              CupertinoIcons.clear,
+                              size: 18,
+                              color: Colors.black54,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child: ListView.separated(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 8,
                       ),
+                      itemCount: items.length + (showAddOption ? 1 : 0),
+                      separatorBuilder: (context, index) =>
+                          Divider(height: 1, color: Colors.grey.shade100),
+                      itemBuilder: (context, index) {
+                        if (showAddOption && index == items.length) {
+                          if (isAdding) {
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: CustomInput(
+                                      controller: addController,
+                                      hintText: addOptionLabel ?? 'الاسم',
+                                      prefixIcon: CupertinoIcons.add,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  GestureDetector(
+                                    onTap: () {
+                                      final val = addController.text.trim();
+                                      if (val.isNotEmpty &&
+                                          onAddSubmit != null) {
+                                        Navigator.pop(context);
+                                        onAddSubmit(val);
+                                      }
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: const BoxDecoration(
+                                        color: AppTheme.primaryColor,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        CupertinoIcons.checkmark_alt,
+                                        color: Colors.white,
+                                        size: 24,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+                          return GestureDetector(
+                            onTap: () {
+                              setModalState(() {
+                                isAdding = true;
+                              });
+                            },
+                            behavior: HitTestBehavior.opaque,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: DashedRect(
+                                color: AppTheme.textTertiary.withValues(
+                                  alpha: 0.5,
+                                ),
+                                strokeWidth: 1.5,
+                                gap: 6.0,
+                                dashWidth: 6.0,
+                                radius: 12.0,
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        CupertinoIcons.add,
+                                        size: 20,
+                                        color: AppTheme.textSecondary,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        addOptionLabel ?? 'إضافة',
+                                        style: AppTheme.textTheme.titleMedium
+                                            ?.copyWith(
+                                              color: AppTheme.textSecondary,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        }
+
+                        final item = items[index];
+                        return GestureDetector(
+                          onTap: () {
+                            onSelected(item);
+                            Navigator.pop(context);
+                          },
+                          behavior: HitTestBehavior.opaque,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    labelBuilder(item),
+                                    style: AppTheme.textTheme.titleMedium
+                                        ?.copyWith(
+                                          color: Colors.black87,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                  ),
+                                ),
+                                Icon(
+                                  isAr
+                                      ? CupertinoIcons.chevron_left
+                                      : CupertinoIcons.chevron_right,
+                                  color: Colors.grey.shade400,
+                                  size: 18,
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   ),
-                  Text(
-                    title,
-                    style: AppTheme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () {
-                      onSelected(items[selectedIndex]);
-                      Navigator.pop(context);
-                    },
-                    child: Text(
-                      l10n.done,
-                      style: AppTheme.textTheme.bodyLarge?.copyWith(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
+                  SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
                 ],
               ),
             ),
-            const SizedBox(height: 20),
-            Expanded(
-              child: CupertinoPicker.builder(
-                itemExtent: 48,
-                magnification: 1.1,
-                useMagnifier: true,
-                backgroundColor: Colors.transparent,
-                selectionOverlay: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.withValues(alpha: 0.05),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                scrollController: FixedExtentScrollController(
-                  initialItem: selectedIndex,
-                ),
-                onSelectedItemChanged: (int index) => selectedIndex = index,
-                childCount: items.length,
-                itemBuilder: (context, index) => GestureDetector(
-                  onTap: () {
-                    onSelected(items[index]);
-                    Navigator.pop(context);
-                  },
-                  child: Center(
-                    child: Text(
-                      labelBuilder(items[index]),
-                      style: AppTheme.textTheme.titleMedium?.copyWith(
-                        color: Colors.black,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -927,6 +1061,25 @@ class _LocationSelectionDrawerState
                                   onSelected: (uni) {
                                     setState(() {
                                       selectedUniversity = uni;
+                                      selectedPickupStation = null;
+                                    });
+                                  },
+                                  showAddOption: true,
+                                  addOptionLabel: 'إضافة جامعة غير موجودة',
+                                  onAddSubmit: (String val) {
+                                    setState(() {
+                                      selectedUniversity = UniversityEntity(
+                                        id: 'custom_${DateTime.now().millisecondsSinceEpoch}',
+                                        nameAr: val,
+                                        nameEn: val,
+                                        cityId: selectedCity?.id ?? '',
+                                        isActive: true,
+                                        location: const Location(
+                                          latitude: 0,
+                                          longitude: 0,
+                                          address: '',
+                                        ),
+                                      );
                                       selectedPickupStation = null;
                                     });
                                   },

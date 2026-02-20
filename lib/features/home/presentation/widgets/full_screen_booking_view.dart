@@ -15,6 +15,7 @@ import '../../../subscription/domain/entities/subscription_entity.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../booking/domain/entities/booking_entity.dart';
 import '../../../../core/domain/entities/user_entity.dart';
+import '../../../../core/widgets/unified_calendar.dart';
 
 enum FullScreenView { bookingList, timeEditor }
 
@@ -64,7 +65,6 @@ class _FullScreenBookingViewState extends ConsumerState<FullScreenBookingView>
     super.initState();
     _selectedDate = widget.initialDate;
     _currentMonth = DateTime(widget.initialDate.year, widget.initialDate.month);
-    _dateScrollController = ScrollController();
 
     // Setup animations
     _animationController = AnimationController(
@@ -251,7 +251,6 @@ class _FullScreenBookingViewState extends ConsumerState<FullScreenBookingView>
 
   @override
   void dispose() {
-    _dateScrollController.dispose();
     _animationController.dispose();
     super.dispose();
   }
@@ -261,204 +260,60 @@ class _FullScreenBookingViewState extends ConsumerState<FullScreenBookingView>
   }
 
   Widget _buildCalendarGrid() {
-    return Column(
-      children: [
-        // Month Header (No arrows)
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-          child: Row(
-            mainAxisAlignment:
-                MainAxisAlignment.center, // Center the month name
-            children: [
-              Text(
-                DateFormat('MMMM yyyy', 'ar_EG')
-                    .format(_currentMonth).w,
-                style: AppTheme.textTheme.titleMedium?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-        ),
+    List<CalendarEvent> events = [];
+    
+    // Add events for schedules
+    widget.schedules.forEach((dateString, schedule) {
+      try {
+        events.add(CalendarEvent(
+          date: DateTime.parse(dateString),
+          color: AppTheme.primaryColor,
+          isHighlight: true,
+          payload: schedule,
+        ));
+      } catch (e) {
+        debugPrint('Invalid date string in schedules: $dateString');
+      }
+    });
 
-        // Weekday Headers
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: (AppLocalizations.of(context)!.localeName == 'ar'
-                  ? ['ح', 'ن', 'ث', 'ر', 'خ', 'ج', 'س']
-                  : ['S', 'M', 'T', 'W', 'T', 'F', 'S'])
-              .map(
-                (day) => Expanded(
-                  child: Center(
-                    child: Text(
-                      day,
-                      style: AppTheme.textTheme.bodySmall?.copyWith(
-                        color: Colors.white60,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-              )
-              .toList(),
-        ).animate().fadeIn(),
-        const SizedBox(height: 16),
+    // Add outline for start and end date
+    events.add(CalendarEvent(
+      date: widget.subscription.startDate,
+      color: AppTheme.primaryColor,
+      isOutline: true,
+      isHighlight: false,
+    ));
 
-        // Horizontal Calendar PageView
-        Expanded(
-          child: PageView.builder(
-            controller: PageController(
-              initialPage:
-                  12 * 100, // Start in middle to allow going back/forward
-            ),
-            onPageChanged: (index) {
-              // Calculate difference from initial page
-              final difference = index - (12 * 100);
-              setState(() {
-                _currentMonth = DateTime(
-                  widget.initialDate.year,
-                  widget.initialDate.month + difference,
-                );
-              });
-            },
-            itemBuilder: (context, index) {
-              final monthOffset = index - (12 * 100);
-              final monthDate = DateTime(
-                widget.initialDate.year,
-                widget.initialDate.month + monthOffset,
-              );
+    events.add(CalendarEvent(
+      date: widget.subscription.endDate,
+      color: AppTheme.primaryColor,
+      isOutline: true,
+      isHighlight: false,
+    ));
 
-              final daysInMonth = DateUtils.getDaysInMonth(
-                monthDate.year,
-                monthDate.month,
-              );
-              final firstDayOfMonth = DateTime(
-                monthDate.year,
-                monthDate.month,
-                1,
-              );
-              final offset = firstDayOfMonth.weekday % 7;
-
-              return GridView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                physics:
-                    const NeverScrollableScrollPhysics(), // Disable vertical scroll
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 7,
-                  mainAxisSpacing: 8,
-                  crossAxisSpacing: 8,
-                  childAspectRatio: 0.75,
-                ),
-                itemCount: offset + daysInMonth,
-                itemBuilder: (context, index) {
-                  if (index < offset) return const SizedBox();
-
-                  final day = index - offset + 1;
-                  final date = DateTime(monthDate.year, monthDate.month, day);
-                  final dateKey = date.toIso8601String().split('T')[0];
-
-                  final isToday = _isSameDay(date, DateTime.now());
-                  final isWeekend = date.weekday == DateTime.friday;
-
-                  // Check if date is within subscription range
-                  final isWithinSubscription =
-                      !date.isBefore(widget.subscription.startDate) &&
-                      !date.isAfter(widget.subscription.endDate);
-
-                  final isAvailable =
-                      date.isAfter(
-                        DateTime.now().subtract(const Duration(days: 1)),
-                      ) &&
-                      !isWeekend &&
-                      isWithinSubscription;
-
-                  final hasSchedule = widget.schedules.containsKey(dateKey);
-                  final isSelected = _isSameDay(date, _selectedDate);
-
-                  final isStartDate = _isSameDay(
-                    date,
-                    widget.subscription.startDate,
-                  );
-                  final isEndDate = _isSameDay(
-                    date,
-                    widget.subscription.endDate,
-                  );
-
-                  // Determine styles based on state
-                  Color? backgroundColor;
-                  BoxBorder? border;
-                  Color textColor = Colors.white;
-                  FontWeight fontWeight = FontWeight.normal;
-
-                  if (isSelected) {
-                    backgroundColor = AppTheme.primaryColor;
-                    textColor = Colors.black;
-                    fontWeight = FontWeight.bold;
-                  } else if (hasSchedule) {
-                    backgroundColor = AppTheme.primaryColor;
-                    textColor = Colors.black;
-                    fontWeight = FontWeight.bold;
-                  } else if (isStartDate || isEndDate) {
-                    backgroundColor = Colors.transparent;
-                    border = Border.all(color: AppTheme.primaryColor, width: 2);
-                    textColor = AppTheme.primaryColor;
-                    fontWeight = FontWeight.bold;
-                  } else {
-                    backgroundColor = Colors.transparent;
-                    textColor = isAvailable ? Colors.white : Colors.white24;
-                  }
-
-                  return GestureDetector(
-                    onTap: isAvailable
-                        ? () {
-                            setState(() {
-                              _selectedDate = date;
-                            });
-                            widget.onDateSelected(date);
-                          }
-                        : null,
-                    child: Column(
-                      children: [
-                        Expanded(
-                          child: Container(
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                              color: backgroundColor,
-                              borderRadius: BorderRadius.circular(12),
-                              border: border,
-                            ),
-                            alignment: Alignment.center,
-                            child: Text(
-                              '$day',
-                              style: AppTheme.textTheme.bodyMedium?.copyWith(
-                                fontWeight: fontWeight,
-                                color: textColor,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        // Today Indicator (Red Dot)
-                        Container(
-                          width: 4,
-                          height: 4,
-                          decoration: BoxDecoration(
-                            color: isToday
-                                ? const Color(0xFFFF3B30)
-                                : Colors.transparent,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              );
-            },
-          ),
-        ),
-      ],
+    return UnifiedCalendarWidget(
+      mode: UnifiedCalendarMode.eventView,
+      initialDate: _selectedDate,
+      events: events,
+      accentColor: AppTheme.primaryColor,
+      transparentBackground: true,
+      showHeaderCenterAligned: true,
+      onDateSelected: (date) {
+        setState(() {
+          _selectedDate = date;
+        });
+        widget.onDateSelected(date);
+      },
+      selectableDayPredicate: (date) {
+        final isWeekend = date.weekday == DateTime.friday;
+        final isWithinSubscription =
+            !date.isBefore(widget.subscription.startDate) &&
+            !date.isAfter(widget.subscription.endDate);
+        
+        return date.isAfter(DateTime.now().subtract(const Duration(days: 1))) &&
+               !isWeekend &&
+               isWithinSubscription;
+      },
     );
   }
 

@@ -11,6 +11,22 @@ abstract class BookingRepository {
     required DateTime date,
   });
 
+  /// Create a pending university request booking
+  Future<Either<Failure, BookingEntity>> createUniversityRequest({
+    required DateTime bookingDate,
+    required String universityId,
+    required bool isCustomUniversity,
+    String? customUniversityName,
+    String? pickupStationId,
+    String? departureTime,
+    String? returnTime,
+    required double totalPrice,
+    BookingSelectionType selectionType = BookingSelectionType.seat,
+    int passengerCount = 1,
+    bool splitPreference = true,
+    bool isLadies = false,
+  });
+
   /// Create a new booking
   Future<Either<Failure, BookingEntity>> createBooking({
     required String scheduleId,

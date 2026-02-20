@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:my_app/core/utils/digit_converter.dart';
 
-
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/ios_components.dart';
 import '../../../../core/widgets/insufficient_balance_dialog.dart';
@@ -98,7 +97,9 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                 ],
               ),
               child: IOSButton(
-                text: AppLocalizations.of(context)!.bookNow,
+                text: bookingState.isToUniversity
+                    ? 'اطلب خط الجامعة'
+                    : AppLocalizations.of(context)!.bookNow,
                 onPressed:
                     bookingNotifier.isBookingComplete &&
                         bookingNotifier.isSameDayBookingAllowed
@@ -118,7 +119,41 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                         final amount = bookingState.tripType.price;
                         final walletState = ref.read(walletProvider);
 
-                        // Check wallet balance
+                        // If it's a university request, we don't deduct money immediately
+                        if (bookingState.isToUniversity) {
+                          final repository = ref.read(
+                            bookingRepositoryProvider,
+                          );
+                          final errorMessage = await bookingNotifier
+                              .createUniversityRequestBooking(repository);
+
+                          if (errorMessage == null) {
+                            if (!context.mounted) return;
+                            // Navigate to Success Page for Pending Request
+                            Navigator.pushAndRemoveUntil(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => BookingSuccessPage(
+                                  amount: 0,
+                                  tripType: 'طلب خط جامعة (قيد المراجعة)',
+                                  date: bookingState.selectedDate,
+                                ),
+                              ),
+                              (route) => route.isFirst,
+                            );
+                          } else {
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(errorMessage),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                          return;
+                        }
+
+                        // Standard booking flow (Mawkaf)
                         if (walletState.balance < amount) {
                           showDialog(
                             context: context,
@@ -143,8 +178,9 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(
-                                AppLocalizations.of(context)!
-                                    .errorDeductingAmount,
+                                AppLocalizations.of(
+                                  context,
+                                )!.errorDeductingAmount,
                               ),
                               backgroundColor: Colors.red,
                             ),
@@ -154,8 +190,7 @@ class _BookingPageState extends ConsumerState<BookingPage> {
 
                         // Create booking
                         final repository = ref.read(bookingRepositoryProvider);
-                        final errorMessage = await ref
-                            .read(bookingStateProvider.notifier)
+                        final errorMessage = await bookingNotifier
                             .createBooking(
                               repository,
                               paymentProofImage: null,
@@ -171,7 +206,10 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                             MaterialPageRoute(
                               builder: (_) => BookingSuccessPage(
                                 amount: amount,
-                                tripType: _getTripTypeLabel(context, bookingState.tripType),
+                                tripType: _getTripTypeLabel(
+                                  context,
+                                  bookingState.tripType,
+                                ),
                                 date: bookingState.selectedDate,
                               ),
                             ),
@@ -182,8 +220,9 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(
-                                AppLocalizations.of(context)!
-                                    .errorCreatingBooking,
+                                AppLocalizations.of(
+                                  context,
+                                )!.errorCreatingBooking,
                               ),
                               backgroundColor: Colors.red,
                             ),
@@ -247,7 +286,10 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildInlineLabel(AppLocalizations.of(context)!.tripTime, isLadies: isLadies),
+                    _buildInlineLabel(
+                      AppLocalizations.of(context)!.tripTime,
+                      isLadies: isLadies,
+                    ),
                     const SizedBox(height: 12),
                     TimeSelectionCard(
                       title: AppLocalizations.of(context)!.selectTripTime,
@@ -312,15 +354,14 @@ class _BookingPageState extends ConsumerState<BookingPage> {
       final hour = int.parse(parts[0]);
       final minute = int.parse(parts[1]);
       final dt = DateTime(2022, 1, 1, hour, minute);
-      return DateFormat('h:mm a', 'ar_EG').format(dt).w
-          .replaceAll('صباحاً', 'ص')
-          .replaceAll('مساءً', 'م');
+      return DateFormat(
+        'h:mm a',
+        'ar_EG',
+      ).format(dt).w.replaceAll('صباحاً', 'ص').replaceAll('مساءً', 'م');
     } catch (e) {
       return time;
     }
   }
-
-
 
   void _showTimePicker({
     required String title,
@@ -437,9 +478,30 @@ class _BookingPageState extends ConsumerState<BookingPage> {
     );
   }
 
+  void _showGenericTimePicker({
+    required String title,
+    required void Function(String?) onSelect,
+  }) {
+    // Generate times like 07:00 AM, 07:30 AM, ..., 11:30 PM
+    final List<String> times = [];
+    for (int hour = 6; hour <= 23; hour++) {
+      for (int minute in [0, 30]) {
+        final dt = DateTime(2022, 1, 1, hour, minute);
+        final formatted = DateFormat(
+          'h:mm a',
+          'ar_EG',
+        ).format(dt).replaceAll('صباحاً', 'ص').replaceAll('مساءً', 'م');
+        times.add(formatted);
+      }
+    }
 
+    _showTimePicker(title: title, items: times, onSelect: onSelect);
+  }
 
-  Widget _buildHorizontalTicketPath(BookingStateModel state, {bool isLadies = false}) {
+  Widget _buildHorizontalTicketPath(
+    BookingStateModel state, {
+    bool isLadies = false,
+  }) {
     String destinationName = state.isToUniversity
         ? (state.selectedUniversity?.nameAr ?? 'الجامعة')
         : (state.selectedArrivalStation?.nameAr ?? 'موقف الوصول');
@@ -500,9 +562,7 @@ class _BookingPageState extends ConsumerState<BookingPage> {
     final Color borderColor = isLadies
         ? Colors.white.withValues(alpha: 0.5)
         : AppTheme.primaryColor.withValues(alpha: 0.5);
-    final Color arrowColor = isLadies
-        ? Colors.white
-        : AppTheme.primaryColor;
+    final Color arrowColor = isLadies ? Colors.white : AppTheme.primaryColor;
 
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
@@ -514,10 +574,7 @@ class _BookingPageState extends ConsumerState<BookingPage> {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: bgColor,
-            border: Border.all(
-              color: borderColor,
-              width: 1,
-            ),
+            border: Border.all(color: borderColor, width: 1),
           ),
           child: Icon(
             CupertinoIcons.arrow_left, // Arabic is RTL, so arrow points left
@@ -545,8 +602,8 @@ class _BookingPageState extends ConsumerState<BookingPage> {
         crossAxisAlignment: isFirst
             ? CrossAxisAlignment.start
             : isLast
-                ? CrossAxisAlignment.end
-                : CrossAxisAlignment.center,
+            ? CrossAxisAlignment.end
+            : CrossAxisAlignment.center,
         children: [
           Text(
             label,
@@ -561,8 +618,8 @@ class _BookingPageState extends ConsumerState<BookingPage> {
             textAlign: isFirst
                 ? TextAlign.start
                 : isLast
-                    ? TextAlign.end
-                    : TextAlign.center,
+                ? TextAlign.end
+                : TextAlign.center,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: AppTheme.textTheme.bodyMedium?.copyWith(
@@ -588,15 +645,13 @@ class _BookingPageState extends ConsumerState<BookingPage> {
       height: 12,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: isFirst || isLast ? dotColor : (isLadies ? Colors.transparent : Colors.black),
-        border: Border.all(
-          color: dotColor,
-          width: 2,
-        ),
+        color: isFirst || isLast
+            ? dotColor
+            : (isLadies ? Colors.transparent : Colors.black),
+        border: Border.all(color: dotColor, width: 2),
       ),
     );
   }
-
 
   String _getTripTypeLabel(BuildContext context, TripType type) {
     final l10n = AppLocalizations.of(context)!;
@@ -610,11 +665,14 @@ class _BookingPageState extends ConsumerState<BookingPage> {
     }
   }
 
-
   // ═══════════════════════════════════════════════════════════════════
   //  UNIFIED BOOKING CARD — All options in one cohesive container
   // ═══════════════════════════════════════════════════════════════════
-  Widget _buildUnifiedBookingCard(BookingStateModel state, BookingState notifier, WidgetRef ref) {
+  Widget _buildUnifiedBookingCard(
+    BookingStateModel state,
+    BookingState notifier,
+    WidgetRef ref,
+  ) {
     bool isLadies = state.isLadiesOnly;
     return ClipRRect(
       borderRadius: BorderRadius.circular(28),
@@ -660,7 +718,11 @@ class _BookingPageState extends ConsumerState<BookingPage> {
     );
   }
 
-  Widget _buildUnifiedCardContent(BookingStateModel state, BookingState notifier, WidgetRef ref) {
+  Widget _buildUnifiedCardContent(
+    BookingStateModel state,
+    BookingState notifier,
+    WidgetRef ref,
+  ) {
     final bool isLadies = state.isLadiesOnly;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -683,7 +745,9 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                       height: 1,
                       margin: const EdgeInsets.symmetric(horizontal: 1.5),
                       color: i.isEven
-                          ? Colors.white.withValues(alpha: isLadies ? 0.25 : 0.12)
+                          ? Colors.white.withValues(
+                              alpha: isLadies ? 0.25 : 0.12,
+                            )
                           : Colors.transparent,
                     ),
                   ),
@@ -736,7 +800,10 @@ class _BookingPageState extends ConsumerState<BookingPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildInlineLabel(AppLocalizations.of(context)!.bookingType, isLadies: isLadies),
+              _buildInlineLabel(
+                AppLocalizations.of(context)!.bookingType,
+                isLadies: isLadies,
+              ),
               const SizedBox(height: 12),
               _buildInlineSegmentedSelector(
                 isLadies: isLadies,
@@ -776,9 +843,16 @@ class _BookingPageState extends ConsumerState<BookingPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildInlineLabel(AppLocalizations.of(context)!.passengerCount, isLadies: isLadies),
+                _buildInlineLabel(
+                  AppLocalizations.of(context)!.passengerCount,
+                  isLadies: isLadies,
+                ),
                 const SizedBox(height: 12),
-                _buildInlinePassengerCounter(state, notifier, isLadies: isLadies),
+                _buildInlinePassengerCounter(
+                  state,
+                  notifier,
+                  isLadies: isLadies,
+                ),
               ],
             ),
           ),
@@ -800,7 +874,8 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                       {'title': 'مش هتفرق المهم نركب', 'value': false},
                     ],
                     currentValue: state.splitPreference,
-                    onChanged: (val) => notifier.setSplitPreference(val as bool),
+                    onChanged: (val) =>
+                        notifier.setSplitPreference(val as bool),
                   ),
                 ],
               ),
@@ -816,7 +891,10 @@ class _BookingPageState extends ConsumerState<BookingPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildInlineLabel(AppLocalizations.of(context)!.date, isLadies: isLadies),
+              _buildInlineLabel(
+                AppLocalizations.of(context)!.date,
+                isLadies: isLadies,
+              ),
               const SizedBox(height: 12),
               BookingDateCard(
                 selectedDate: state.selectedDate,
@@ -830,9 +908,117 @@ class _BookingPageState extends ConsumerState<BookingPage> {
         _buildThinDivider(isLadies: isLadies),
 
         // ── Trip Schedule ──
-        ..._buildInlineScheduleSection(state, notifier, ref, isLadies: isLadies),
+        if (!state.isToUniversity) ...[
+          ..._buildInlineScheduleSection(
+            state,
+            notifier,
+            ref,
+            isLadies: isLadies,
+          ),
+          _buildThinDivider(isLadies: isLadies),
+        ] else ...[
+          // For Universities: Trip Direction (Going / Returning / Both)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildInlineLabel('اتجاه الرحلة', isLadies: isLadies),
+                const SizedBox(height: 12),
+                _buildInlineSegmentedSelector(
+                  isLadies: isLadies,
+                  options: [
+                    {
+                      'title': 'ذهاب',
+                      'icon': CupertinoIcons.arrow_right,
+                      'value': TripType.departureOnly,
+                    },
+                    {
+                      'title': 'عودة',
+                      'icon': CupertinoIcons.arrow_left,
+                      'value': TripType.returnOnly,
+                    },
+                    {
+                      'title': 'ذهاب وعودة',
+                      'icon': CupertinoIcons.arrow_right_arrow_left,
+                      'value': TripType.roundTrip,
+                    },
+                  ],
+                  currentValue: state.tripType,
+                  onChanged: (val) {
+                    notifier.selectTripType(val as TripType);
+                    // Clear times when changing direction
+                    if (val == TripType.departureOnly)
+                      notifier.selectReturnTime(null);
+                    if (val == TripType.returnOnly)
+                      notifier.selectDepartureTime(null);
+                  },
+                ),
+              ],
+            ),
+          ),
 
-        _buildThinDivider(isLadies: isLadies),
+          _buildThinDivider(isLadies: isLadies),
+
+          // Generic Time Picker(s) based on Direction
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (state.tripType == TripType.departureOnly ||
+                    state.tripType == TripType.roundTrip) ...[
+                  _buildInlineLabel('معاد الذهاب', isLadies: isLadies),
+                  const SizedBox(height: 12),
+                  TimeSelectionCard(
+                    title: 'اختر معاد الذهاب',
+                    isLadies: isLadies,
+                    selectedTime: state.selectedDepartureTime != null
+                        ? _formatTime(state.selectedDepartureTime!)
+                        : null,
+                    icon: CupertinoIcons.clock,
+                    onTap: () {
+                      _showGenericTimePicker(
+                        title: 'معاد الذهاب',
+                        onSelect: (time) {
+                          if (time != null) {
+                            notifier.selectDepartureTime(time);
+                          }
+                        },
+                      );
+                    },
+                  ),
+                ],
+                if (state.tripType == TripType.roundTrip)
+                  const SizedBox(height: 24),
+                if (state.tripType == TripType.returnOnly ||
+                    state.tripType == TripType.roundTrip) ...[
+                  _buildInlineLabel('معاد العودة', isLadies: isLadies),
+                  const SizedBox(height: 12),
+                  TimeSelectionCard(
+                    title: 'اختر معاد العودة',
+                    isLadies: isLadies,
+                    selectedTime: state.selectedReturnTime != null
+                        ? _formatTime(state.selectedReturnTime!)
+                        : null,
+                    icon: CupertinoIcons.clock_fill,
+                    onTap: () {
+                      _showGenericTimePicker(
+                        title: 'معاد العودة',
+                        onSelect: (time) {
+                          if (time != null) {
+                            notifier.selectReturnTime(time);
+                          }
+                        },
+                      );
+                    },
+                  ),
+                ],
+              ],
+            ),
+          ),
+          _buildThinDivider(isLadies: isLadies),
+        ],
 
         // ── Ladies Only (always last) ──
         Padding(
@@ -850,7 +1036,9 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                 ),
                 child: Icon(
                   CupertinoIcons.person_2_fill,
-                  color: state.isLadiesOnly ? Colors.white : Colors.white.withValues(alpha: 0.2),
+                  color: state.isLadiesOnly
+                      ? Colors.white
+                      : Colors.white.withValues(alpha: 0.2),
                   size: 20,
                 ),
               ),
@@ -911,7 +1099,9 @@ class _BookingPageState extends ConsumerState<BookingPage> {
     bool isLadies = false,
   }) {
     final Color selectedBg = isLadies ? Colors.white : AppTheme.primaryColor;
-    final Color selectedText = isLadies ? const Color(0xFFFF2D55) : Colors.black;
+    final Color selectedText = isLadies
+        ? const Color(0xFFFF2D55)
+        : Colors.black;
     final Color unselectedText = isLadies
         ? Colors.white.withValues(alpha: 0.85)
         : Colors.white.withValues(alpha: 0.7);
@@ -943,7 +1133,7 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                             color: selectedBg.withValues(alpha: 0.25),
                             blurRadius: 10,
                             offset: const Offset(0, 3),
-                          )
+                          ),
                         ]
                       : [],
                 ),
@@ -981,7 +1171,11 @@ class _BookingPageState extends ConsumerState<BookingPage> {
   }
 
   // ─── Inline Passenger Counter (compact, no outer box) ───
-  Widget _buildInlinePassengerCounter(BookingStateModel state, BookingState notifier, {bool isLadies = false}) {
+  Widget _buildInlinePassengerCounter(
+    BookingStateModel state,
+    BookingState notifier, {
+    bool isLadies = false,
+  }) {
     final Color accentColor = isLadies ? Colors.white : AppTheme.primaryColor;
     final Color dimText = isLadies
         ? Colors.white.withValues(alpha: 0.7)
@@ -1008,8 +1202,8 @@ class _BookingPageState extends ConsumerState<BookingPage> {
               ),
               child: Icon(
                 CupertinoIcons.minus,
-                color: state.passengerCount > 1 
-                    ? Colors.white 
+                color: state.passengerCount > 1
+                    ? Colors.white
                     : Colors.white.withValues(alpha: 0.2),
                 size: 20,
               ),
@@ -1045,8 +1239,8 @@ class _BookingPageState extends ConsumerState<BookingPage> {
               ),
               child: Icon(
                 CupertinoIcons.add,
-                color: state.passengerCount < 14 
-                    ? Colors.white 
+                color: state.passengerCount < 14
+                    ? Colors.white
                     : Colors.white.withValues(alpha: 0.2),
                 size: 20,
               ),

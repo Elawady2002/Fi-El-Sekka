@@ -60,6 +60,8 @@ class BookingEntity extends Equatable {
   final String tripType; // 'departure_only', 'return_only', 'round_trip'
   final String? pickupStationId;
   final String? dropoffStationId;
+  final String? universityId; // Added for university bookings
+  final bool isUniversityRequest; // True if this is a pending request for a university line
   final String? departureTime; // e.g., 'AM 7:00'
   final String? returnTime; // e.g., 'PM 3:00'
   final String? paymentProofImage;
@@ -83,6 +85,8 @@ class BookingEntity extends Equatable {
     required this.tripType,
     this.pickupStationId,
     this.dropoffStationId,
+    this.universityId,
+    this.isUniversityRequest = false,
     this.departureTime,
     this.returnTime,
     this.paymentProofImage,
@@ -108,6 +112,8 @@ class BookingEntity extends Equatable {
     tripType,
     pickupStationId,
     dropoffStationId,
+    universityId,
+    isUniversityRequest,
     departureTime,
     returnTime,
     paymentProofImage,

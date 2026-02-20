@@ -61,7 +61,7 @@ class BookingState extends _$BookingState {
 
     return BookingStateModel(
       tripType: TripType.departureOnly, // Default to single trip
-      isToUniversity: true, // Default to university trip
+      isToUniversity: false, // Default to Mawkaf trip
       selectedPlanIndex: 1, // Default to Monthly
       selectedDate: initialDate,
       selectedDepartureTime: null,
@@ -222,6 +222,42 @@ class BookingState extends _$BookingState {
       );
     } catch (e) {
       return 'حدث خطأ أثناء الحجز: $e';
+    }
+  }
+
+  Future<String?> createUniversityRequestBooking(
+    BookingRepository repository,
+  ) async {
+    // Basic validation: must have selected a university (even if custom) and pickup station
+    if (state.selectedUniversity == null || state.selectedStation == null) {
+      return 'يرجى اختيار الجامعة ومحطة الركوب أولاً';
+    }
+
+    try {
+      final university = state.selectedUniversity!;
+      final isCustom = university.id.startsWith('custom_');
+      
+      final result = await repository.createUniversityRequest(
+        bookingDate: state.selectedDate,
+        universityId: university.id,
+        isCustomUniversity: isCustom,
+        customUniversityName: isCustom ? university.nameAr : null,
+        pickupStationId: state.selectedStation?.id,
+        departureTime: state.selectedDepartureTime,
+        returnTime: state.selectedReturnTime,
+        selectionType: state.selectionType,
+        passengerCount: state.passengerCount,
+        splitPreference: state.splitPreference,
+        totalPrice: 0, // Pending requests don't require immediate payment or we calculate later
+        isLadies: state.isLadiesOnly,
+      );
+
+      return result.fold(
+        (failure) => failure.message,
+        (_) => null, // Success
+      );
+    } catch (e) {
+      return 'حدث خطأ أثناء إرسال طلب الجامعة: $e';
     }
   }
 
