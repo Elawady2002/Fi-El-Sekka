@@ -153,9 +153,10 @@ class QRDetailsSheet extends ConsumerWidget {
                         borderRadius: BorderRadius.circular(32),
                       ),
                       child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           const SizedBox(height: 32),
-                          // Badge (Centered)
+                          // Badge
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                             decoration: BoxDecoration(
@@ -172,7 +173,6 @@ class QRDetailsSheet extends ConsumerWidget {
                             ),
                           ),
                           const SizedBox(height: 20),
-                          // ID (Centered)
                           Text(
                             shortId,
                             style: GoogleFonts.cairo(
@@ -183,7 +183,7 @@ class QRDetailsSheet extends ConsumerWidget {
                             ),
                           ),
                           const SizedBox(height: 24),
-                          // QR Code (Centered)
+                          // QR Code
                           Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
@@ -201,14 +201,14 @@ class QRDetailsSheet extends ConsumerWidget {
                           const SizedBox(height: 32),
                           _buildDashedDivider(),
                           const SizedBox(height: 24),
-                          // Detail Grid (Strict Right Alignment)
+                          // Detail Grid
                           Padding(
-                            padding: const EdgeInsets.only(right: 24, left: 24),
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
                             child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
+                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     _buildDetailItem(
                                       CupertinoIcons.clock,
@@ -285,10 +285,10 @@ class QRDetailsSheet extends ConsumerWidget {
     return SizedBox(
       width: isFullWidth ? double.infinity : null,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(icon, color: Colors.white.withValues(alpha: 0.3), size: 16),
@@ -306,7 +306,7 @@ class QRDetailsSheet extends ConsumerWidget {
           const SizedBox(height: 4),
           Text(
             value,
-            textAlign: TextAlign.right,
+            textAlign: TextAlign.center,
             style: GoogleFonts.cairo(
               color: color ?? Colors.black,
               fontWeight: FontWeight.bold,
