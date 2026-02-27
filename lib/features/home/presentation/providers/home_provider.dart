@@ -10,6 +10,8 @@ import '../../../booking/domain/entities/boarding_station_entity.dart';
 import '../../../booking/domain/entities/arrival_station_entity.dart';
 import '../../../booking/domain/entities/route_entity.dart';
 import '../../../booking/domain/entities/schedule_entity.dart';
+import '../../../booking/domain/entities/university_boarding_point_entity.dart';
+import '../../../booking/domain/entities/university_arrival_point_entity.dart';
 
 part 'home_provider.g.dart';
 
@@ -60,10 +62,10 @@ Future<List<BoardingStationEntity>> boardingStations(
 @riverpod
 Future<List<ArrivalStationEntity>> arrivalStations(
   Ref ref,
-  String boardingStationId,
+  String pickupStationId,
 ) async {
   final repository = ref.watch(homeRepositoryProvider);
-  final result = await repository.getArrivalStations(boardingStationId);
+  final result = await repository.getArrivalStations(pickupStationId);
   return result.fold(
     (failure) => throw Exception(failure.message),
     (stations) => stations,
@@ -245,5 +247,31 @@ Future<List<UniversityEntity>> allUniversities(Ref ref) async {
   return result.fold(
     (failure) => throw Exception(failure.message),
     (universities) => universities,
+  );
+}
+
+@riverpod
+Future<List<UniversityBoardingPointEntity>> universityBoardingPoints(
+  Ref ref,
+  String cityId,
+) async {
+  final repository = ref.watch(homeRepositoryProvider);
+  final result = await repository.getUniversityBoardingPoints(cityId);
+  return result.fold(
+    (failure) => throw Exception(failure.message),
+    (points) => points,
+  );
+}
+
+@riverpod
+Future<List<UniversityArrivalPointEntity>> universityArrivalPoints(
+  Ref ref,
+  String universityId,
+) async {
+  final repository = ref.watch(homeRepositoryProvider);
+  final result = await repository.getUniversityArrivalPoints(universityId);
+  return result.fold(
+    (failure) => throw Exception(failure.message),
+    (points) => points,
   );
 }

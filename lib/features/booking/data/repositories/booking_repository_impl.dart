@@ -15,9 +15,12 @@ class BookingRepositoryImpl implements BookingRepository {
   Future<Either<Failure, BookingEntity>> createUniversityRequest({
     required DateTime bookingDate,
     required String universityId,
+    String? cityId,
+    String? routeId,
+    String? uniBoardingPointId,
+    String? uniArrivalPointId,
     required bool isCustomUniversity,
     String? customUniversityName,
-    String? pickupStationId,
     String? departureTime,
     String? returnTime,
     required double totalPrice,
@@ -30,11 +33,14 @@ class BookingRepositoryImpl implements BookingRepository {
       final userId = _getUserId();
       final booking = await _dataSource.createUniversityRequest(
         userId: userId,
+        cityId: cityId,
         bookingDate: bookingDate,
         universityId: universityId,
+        routeId: routeId,
+        uniBoardingPointId: uniBoardingPointId,
+        uniArrivalPointId: uniArrivalPointId,
         isCustomUniversity: isCustomUniversity,
         customUniversityName: customUniversityName,
-        pickupStationId: pickupStationId,
         departureTime: departureTime,
         returnTime: returnTime,
         selectionType: selectionType,
@@ -51,6 +57,7 @@ class BookingRepositoryImpl implements BookingRepository {
 
   @override
   Future<Either<Failure, BookingEntity>> createBooking({
+    String? cityId,
     String? scheduleId,
     required DateTime bookingDate,
     required String tripType,
@@ -70,6 +77,7 @@ class BookingRepositoryImpl implements BookingRepository {
       final userId = _getUserId();
       final booking = await _dataSource.createBooking(
         userId: userId,
+        cityId: cityId,
         scheduleId: scheduleId,
         bookingDate: bookingDate,
         tripType: tripType,
@@ -126,6 +134,7 @@ class BookingRepositoryImpl implements BookingRepository {
   @override
   Future<Either<Failure, BookingEntity>> updateBooking({
     required String bookingId,
+    String? cityId,
     required DateTime bookingDate,
     required String tripType,
     String? pickupStationId,
@@ -141,6 +150,7 @@ class BookingRepositoryImpl implements BookingRepository {
     try {
       final booking = await _dataSource.updateBooking(
         bookingId: bookingId,
+        cityId: cityId,
         bookingDate: bookingDate,
         tripType: tripType,
         pickupStationId: pickupStationId,

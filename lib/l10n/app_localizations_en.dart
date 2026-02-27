@@ -419,4 +419,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get splitCars => 'Split Cars';
+
+  @override
+  String get paymentSuccessful => 'Payment Successful';
+
+  @override
+  String get requestSentSuccessfully => 'Request Sent Successfully';
 }

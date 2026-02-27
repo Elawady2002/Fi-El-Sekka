@@ -326,7 +326,7 @@ class _BoardingStationsProviderElement
   String get cityId => (origin as BoardingStationsProvider).cityId;
 }
 
-String _$arrivalStationsHash() => r'4ed03506357543a496f39ce8987a1a8823517aac';
+String _$arrivalStationsHash() => r'239e3c4c408d8ccc70be709bab684cd23b11670b';
 
 /// See also [arrivalStations].
 @ProviderFor(arrivalStations)
@@ -339,15 +339,15 @@ class ArrivalStationsFamily
   const ArrivalStationsFamily();
 
   /// See also [arrivalStations].
-  ArrivalStationsProvider call(String boardingStationId) {
-    return ArrivalStationsProvider(boardingStationId);
+  ArrivalStationsProvider call(String pickupStationId) {
+    return ArrivalStationsProvider(pickupStationId);
   }
 
   @override
   ArrivalStationsProvider getProviderOverride(
     covariant ArrivalStationsProvider provider,
   ) {
-    return call(provider.boardingStationId);
+    return call(provider.pickupStationId);
   }
 
   static const Iterable<ProviderOrFamily>? _dependencies = null;
@@ -369,9 +369,9 @@ class ArrivalStationsFamily
 class ArrivalStationsProvider
     extends AutoDisposeFutureProvider<List<ArrivalStationEntity>> {
   /// See also [arrivalStations].
-  ArrivalStationsProvider(String boardingStationId)
+  ArrivalStationsProvider(String pickupStationId)
     : this._internal(
-        (ref) => arrivalStations(ref as ArrivalStationsRef, boardingStationId),
+        (ref) => arrivalStations(ref as ArrivalStationsRef, pickupStationId),
         from: arrivalStationsProvider,
         name: r'arrivalStationsProvider',
         debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
@@ -380,7 +380,7 @@ class ArrivalStationsProvider
         dependencies: ArrivalStationsFamily._dependencies,
         allTransitiveDependencies:
             ArrivalStationsFamily._allTransitiveDependencies,
-        boardingStationId: boardingStationId,
+        pickupStationId: pickupStationId,
       );
 
   ArrivalStationsProvider._internal(
@@ -390,10 +390,10 @@ class ArrivalStationsProvider
     required super.allTransitiveDependencies,
     required super.debugGetCreateSourceHash,
     required super.from,
-    required this.boardingStationId,
+    required this.pickupStationId,
   }) : super.internal();
 
-  final String boardingStationId;
+  final String pickupStationId;
 
   @override
   Override overrideWith(
@@ -409,7 +409,7 @@ class ArrivalStationsProvider
         dependencies: null,
         allTransitiveDependencies: null,
         debugGetCreateSourceHash: null,
-        boardingStationId: boardingStationId,
+        pickupStationId: pickupStationId,
       ),
     );
   }
@@ -422,13 +422,13 @@ class ArrivalStationsProvider
   @override
   bool operator ==(Object other) {
     return other is ArrivalStationsProvider &&
-        other.boardingStationId == boardingStationId;
+        other.pickupStationId == pickupStationId;
   }
 
   @override
   int get hashCode {
     var hash = _SystemHash.combine(0, runtimeType.hashCode);
-    hash = _SystemHash.combine(hash, boardingStationId.hashCode);
+    hash = _SystemHash.combine(hash, pickupStationId.hashCode);
 
     return _SystemHash.finish(hash);
   }
@@ -438,8 +438,8 @@ class ArrivalStationsProvider
 // ignore: unused_element
 mixin ArrivalStationsRef
     on AutoDisposeFutureProviderRef<List<ArrivalStationEntity>> {
-  /// The parameter `boardingStationId` of this provider.
-  String get boardingStationId;
+  /// The parameter `pickupStationId` of this provider.
+  String get pickupStationId;
 }
 
 class _ArrivalStationsProviderElement
@@ -448,8 +448,8 @@ class _ArrivalStationsProviderElement
   _ArrivalStationsProviderElement(super.provider);
 
   @override
-  String get boardingStationId =>
-      (origin as ArrivalStationsProvider).boardingStationId;
+  String get pickupStationId =>
+      (origin as ArrivalStationsProvider).pickupStationId;
 }
 
 String _$routesHash() => r'4225e3185e23df4cbfae621444990fbc5e3dfbeb';
@@ -746,5 +746,270 @@ final allUniversitiesProvider =
 // ignore: unused_element
 typedef AllUniversitiesRef =
     AutoDisposeFutureProviderRef<List<UniversityEntity>>;
+String _$universityBoardingPointsHash() =>
+    r'3ae368dee4927261ef1e93e7bf55bdde06fc8f5e';
+
+/// See also [universityBoardingPoints].
+@ProviderFor(universityBoardingPoints)
+const universityBoardingPointsProvider = UniversityBoardingPointsFamily();
+
+/// See also [universityBoardingPoints].
+class UniversityBoardingPointsFamily
+    extends Family<AsyncValue<List<UniversityBoardingPointEntity>>> {
+  /// See also [universityBoardingPoints].
+  const UniversityBoardingPointsFamily();
+
+  /// See also [universityBoardingPoints].
+  UniversityBoardingPointsProvider call(String cityId) {
+    return UniversityBoardingPointsProvider(cityId);
+  }
+
+  @override
+  UniversityBoardingPointsProvider getProviderOverride(
+    covariant UniversityBoardingPointsProvider provider,
+  ) {
+    return call(provider.cityId);
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'universityBoardingPointsProvider';
+}
+
+/// See also [universityBoardingPoints].
+class UniversityBoardingPointsProvider
+    extends AutoDisposeFutureProvider<List<UniversityBoardingPointEntity>> {
+  /// See also [universityBoardingPoints].
+  UniversityBoardingPointsProvider(String cityId)
+    : this._internal(
+        (ref) => universityBoardingPoints(
+          ref as UniversityBoardingPointsRef,
+          cityId,
+        ),
+        from: universityBoardingPointsProvider,
+        name: r'universityBoardingPointsProvider',
+        debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+            ? null
+            : _$universityBoardingPointsHash,
+        dependencies: UniversityBoardingPointsFamily._dependencies,
+        allTransitiveDependencies:
+            UniversityBoardingPointsFamily._allTransitiveDependencies,
+        cityId: cityId,
+      );
+
+  UniversityBoardingPointsProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.cityId,
+  }) : super.internal();
+
+  final String cityId;
+
+  @override
+  Override overrideWith(
+    FutureOr<List<UniversityBoardingPointEntity>> Function(
+      UniversityBoardingPointsRef provider,
+    )
+    create,
+  ) {
+    return ProviderOverride(
+      origin: this,
+      override: UniversityBoardingPointsProvider._internal(
+        (ref) => create(ref as UniversityBoardingPointsRef),
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        cityId: cityId,
+      ),
+    );
+  }
+
+  @override
+  AutoDisposeFutureProviderElement<List<UniversityBoardingPointEntity>>
+  createElement() {
+    return _UniversityBoardingPointsProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is UniversityBoardingPointsProvider && other.cityId == cityId;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, cityId.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+mixin UniversityBoardingPointsRef
+    on AutoDisposeFutureProviderRef<List<UniversityBoardingPointEntity>> {
+  /// The parameter `cityId` of this provider.
+  String get cityId;
+}
+
+class _UniversityBoardingPointsProviderElement
+    extends
+        AutoDisposeFutureProviderElement<List<UniversityBoardingPointEntity>>
+    with UniversityBoardingPointsRef {
+  _UniversityBoardingPointsProviderElement(super.provider);
+
+  @override
+  String get cityId => (origin as UniversityBoardingPointsProvider).cityId;
+}
+
+String _$universityArrivalPointsHash() =>
+    r'90e71f61ab0dda58f31768ece37c85a9ce39e823';
+
+/// See also [universityArrivalPoints].
+@ProviderFor(universityArrivalPoints)
+const universityArrivalPointsProvider = UniversityArrivalPointsFamily();
+
+/// See also [universityArrivalPoints].
+class UniversityArrivalPointsFamily
+    extends Family<AsyncValue<List<UniversityArrivalPointEntity>>> {
+  /// See also [universityArrivalPoints].
+  const UniversityArrivalPointsFamily();
+
+  /// See also [universityArrivalPoints].
+  UniversityArrivalPointsProvider call(String universityId) {
+    return UniversityArrivalPointsProvider(universityId);
+  }
+
+  @override
+  UniversityArrivalPointsProvider getProviderOverride(
+    covariant UniversityArrivalPointsProvider provider,
+  ) {
+    return call(provider.universityId);
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'universityArrivalPointsProvider';
+}
+
+/// See also [universityArrivalPoints].
+class UniversityArrivalPointsProvider
+    extends AutoDisposeFutureProvider<List<UniversityArrivalPointEntity>> {
+  /// See also [universityArrivalPoints].
+  UniversityArrivalPointsProvider(String universityId)
+    : this._internal(
+        (ref) => universityArrivalPoints(
+          ref as UniversityArrivalPointsRef,
+          universityId,
+        ),
+        from: universityArrivalPointsProvider,
+        name: r'universityArrivalPointsProvider',
+        debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+            ? null
+            : _$universityArrivalPointsHash,
+        dependencies: UniversityArrivalPointsFamily._dependencies,
+        allTransitiveDependencies:
+            UniversityArrivalPointsFamily._allTransitiveDependencies,
+        universityId: universityId,
+      );
+
+  UniversityArrivalPointsProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.universityId,
+  }) : super.internal();
+
+  final String universityId;
+
+  @override
+  Override overrideWith(
+    FutureOr<List<UniversityArrivalPointEntity>> Function(
+      UniversityArrivalPointsRef provider,
+    )
+    create,
+  ) {
+    return ProviderOverride(
+      origin: this,
+      override: UniversityArrivalPointsProvider._internal(
+        (ref) => create(ref as UniversityArrivalPointsRef),
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        universityId: universityId,
+      ),
+    );
+  }
+
+  @override
+  AutoDisposeFutureProviderElement<List<UniversityArrivalPointEntity>>
+  createElement() {
+    return _UniversityArrivalPointsProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is UniversityArrivalPointsProvider &&
+        other.universityId == universityId;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, universityId.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+mixin UniversityArrivalPointsRef
+    on AutoDisposeFutureProviderRef<List<UniversityArrivalPointEntity>> {
+  /// The parameter `universityId` of this provider.
+  String get universityId;
+}
+
+class _UniversityArrivalPointsProviderElement
+    extends AutoDisposeFutureProviderElement<List<UniversityArrivalPointEntity>>
+    with UniversityArrivalPointsRef {
+  _UniversityArrivalPointsProviderElement(super.provider);
+
+  @override
+  String get universityId =>
+      (origin as UniversityArrivalPointsProvider).universityId;
+}
+
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

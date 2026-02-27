@@ -7,6 +7,7 @@ import '../models/booking_model.dart';
 abstract class BookingDataSource {
   Future<BookingModel> createBooking({
     required String userId,
+    String? cityId,
     String? scheduleId,
     required DateTime bookingDate,
     required String tripType,
@@ -26,11 +27,14 @@ abstract class BookingDataSource {
   /// Create a pending university request booking
   Future<BookingModel> createUniversityRequest({
     required String userId,
+    String? cityId,
     required DateTime bookingDate,
     required String universityId,
+    String? routeId,
+    String? uniBoardingPointId,
+    String? uniArrivalPointId,
     required bool isCustomUniversity,
     String? customUniversityName,
-    String? pickupStationId,
     String? departureTime,
     String? returnTime,
     required double totalPrice,
@@ -61,6 +65,7 @@ abstract class BookingDataSource {
 
   Future<BookingModel> updateBooking({
     required String bookingId,
+    String? cityId,
     required DateTime bookingDate,
     required String tripType,
     String? pickupStationId,
@@ -87,6 +92,7 @@ class BookingDataSourceImpl implements BookingDataSource {
   @override
   Future<BookingModel> createBooking({
     required String userId,
+    String? cityId,
     String? scheduleId,
     required DateTime bookingDate,
     required String tripType,
@@ -106,14 +112,12 @@ class BookingDataSourceImpl implements BookingDataSource {
       final now = DateTime.now();
 
       AppLogger.info('📝 Database insert for user $userId (Trip: $tripType)');
-      AppLogger.info('   Pickup ID: $pickupStationId');
-      AppLogger.info('   Arrival ID: $dropoffStationId');
-      AppLogger.info('   Schedule ID: $scheduleId');
 
       final response = await _client
           .from('bookings')
           .insert({
             'user_id': userId,
+            'city_id': cityId,
             'schedule_id': scheduleId,
             'booking_date': bookingDate.toIso8601String(),
             'trip_type': tripType,
@@ -123,14 +127,13 @@ class BookingDataSourceImpl implements BookingDataSource {
             'return_time': returnTime,
             'payment_proof_image': paymentProofImage,
             'transfer_number': transferNumber,
-            'status': 'confirmed', // Confirmed since money was deducted
-            'payment_status': 'paid', // Paid via wallet
-            'selection_type': selectionType.toJson(),
+            'status': 'confirmed',
+            'payment_status': 'paid',
+            'selection_type': selectionType.name,
             'passenger_count': passengerCount,
             'split_preference': splitPreference,
             'total_price': totalPrice,
             'is_ladies': isLadies,
-            'university_id': null, // Explicitly no university for standard booking
             'is_university_request': false,
             'created_at': now.toIso8601String(),
             'updated_at': now.toIso8601String(),
@@ -141,30 +144,25 @@ class BookingDataSourceImpl implements BookingDataSource {
       AppLogger.info('✅ Booking created successfully!');
       return BookingModel.fromJson(response);
     } on PostgrestException catch (e) {
-      // Log detailed error for debugging
-      AppLogger.error('❌ Database error creating booking:');
-      AppLogger.error('   Code: ${e.code}');
-      AppLogger.error('   Message: ${e.message}');
-      AppLogger.error('   Details: ${e.details}');
-      AppLogger.error('   Hint: ${e.hint}');
-      AppLogger.error('   Table: bookings');
-      AppLogger.error('   Payload: {pickup: $pickupStationId, dropoff: $dropoffStationId, type: $tripType}');
-      
-      throw Exception('Database error (FK constraint): ${e.message}');
+      AppLogger.error('❌ Database error creating booking: ${e.message}');
+      throw Exception('Database error: ${e.message}');
     } catch (e) {
       AppLogger.error('❌ Unexpected error creating booking: $e');
-      throw Exception('Unexpected error during booking creation: $e');
+      throw Exception('Unexpected error: $e');
     }
   }
 
   @override
   Future<BookingModel> createUniversityRequest({
     required String userId,
+    String? cityId,
     required DateTime bookingDate,
     required String universityId,
+    String? routeId,
+    String? uniBoardingPointId,
+    String? uniArrivalPointId,
     required bool isCustomUniversity,
     String? customUniversityName,
-    String? pickupStationId,
     String? departureTime,
     String? returnTime,
     required double totalPrice,
@@ -176,25 +174,23 @@ class BookingDataSourceImpl implements BookingDataSource {
     try {
       final now = DateTime.now();
       
-      // If it is a custom university, in a real scenario you would probably insert
-      // the university first, here we pass the name in the payload somehow, or 
-      // rely on a specific handling. For now, we will add it to a potential 
-      // `custom_university_name` metadata field or just rely on the ID.
-      
       final response = await _client
           .from('bookings')
           .insert({
             'user_id': userId,
+            'city_id': cityId,
             'booking_date': bookingDate.toIso8601String(),
             'trip_type': 'university_request',
             'university_id': universityId,
+            'route_id': routeId,
+            'uni_boarding_point_id': uniBoardingPointId,
+            'uni_arrival_point_id': uniArrivalPointId,
             'is_university_request': true,
-            'pickup_station_id': pickupStationId,
             'departure_time': departureTime,
             'return_time': returnTime,
             'status': 'pending',
             'payment_status': 'unpaid',
-            'selection_type': selectionType.toJson(),
+            'selection_type': selectionType.name,
             'passenger_count': passengerCount,
             'split_preference': splitPreference,
             'total_price': totalPrice,
@@ -207,13 +203,11 @@ class BookingDataSourceImpl implements BookingDataSource {
 
       return BookingModel.fromJson(response);
     } on PostgrestException catch (e) {
-      AppLogger.error('❌ Database error creating university request:');
-      AppLogger.error('   Code: ${e.code}');
-      AppLogger.error('   Message: ${e.message}');
+      AppLogger.error('❌ Database error creating university request: ${e.message}');
       throw Exception('Database error: ${e.message}');
     } catch (e) {
       AppLogger.error('❌ Unexpected error creating university request: $e');
-      throw Exception('Unexpected error during university request creation: $e');
+      throw Exception('Unexpected error: $e');
     }
   }
 
@@ -422,6 +416,7 @@ class BookingDataSourceImpl implements BookingDataSource {
   @override
   Future<BookingModel> updateBooking({
     required String bookingId,
+    String? cityId,
     required DateTime bookingDate,
     required String tripType,
     String? pickupStationId,
@@ -437,19 +432,18 @@ class BookingDataSourceImpl implements BookingDataSource {
     try {
       final now = DateTime.now();
       AppLogger.info('🔄 Updating booking $bookingId...');
-      AppLogger.info('   Trip Type: $tripType');
-      AppLogger.info('   Total Price: $totalPrice');
 
       final response = await _client
           .from('bookings')
           .update({
+            'city_id': cityId,
             'booking_date': bookingDate.toIso8601String(),
             'trip_type': tripType,
             'pickup_station_id': pickupStationId,
             'dropoff_station_id': dropoffStationId,
             'departure_time': departureTime,
             'return_time': returnTime,
-            'selection_type': selectionType.toJson(),
+            'selection_type': selectionType.name,
             'passenger_count': passengerCount,
             'split_preference': splitPreference,
             'total_price': totalPrice,
@@ -463,13 +457,11 @@ class BookingDataSourceImpl implements BookingDataSource {
       AppLogger.info('✅ Booking updated successfully');
       return BookingModel.fromJson(response);
     } on PostgrestException catch (e) {
-      AppLogger.error('❌ Database error updating booking:');
-      AppLogger.error('   Code: ${e.code}');
-      AppLogger.error('   Message: ${e.message}');
+      AppLogger.error('❌ Database error updating booking: ${e.message}');
       throw Exception('Database error: ${e.message}');
     } catch (e) {
       AppLogger.error('❌ Unexpected error updating booking: $e');
-      throw Exception('Unexpected error during booking update: $e');
+      throw Exception('Unexpected error: $e');
     }
   }
 

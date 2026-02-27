@@ -60,7 +60,7 @@ final upcomingBookingProvider =
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef UpcomingBookingRef = AutoDisposeFutureProviderRef<BookingEntity?>;
-String _$bookingStateHash() => r'7199a2bc27bbd11832129b87daf25a08b13ead6a';
+String _$bookingStateHash() => r'7a27a1433503e6d9151b75ef4db68caf70cefb1d';
 
 /// See also [BookingState].
 @ProviderFor(BookingState)

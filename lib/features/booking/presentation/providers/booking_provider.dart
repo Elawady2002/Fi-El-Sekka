@@ -11,6 +11,8 @@ import '../../domain/repositories/booking_repository.dart';
 import '../../data/repositories/booking_repository_impl.dart';
 import '../../data/datasources/booking_data_source.dart';
 import '../../domain/entities/schedule_entity.dart';
+import '../../domain/entities/university_boarding_point_entity.dart';
+import '../../domain/entities/university_arrival_point_entity.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 
 part 'booking_provider.g.dart';
@@ -137,16 +139,20 @@ class BookingState extends _$BookingState {
   void setLocationData({
     required CityEntity city,
     UniversityEntity? university,
-    required BoardingStationEntity pickupStation,
+    BoardingStationEntity? pickupStation,
     ArrivalStationEntity? arrivalStation,
+    UniversityBoardingPointEntity? uniBoardingPoint,
+    UniversityArrivalPointEntity? uniArrivalPoint,
     bool? isToUniversity,
   }) {
     // Debug logging to trace data flow
     debugPrint('🔵 setLocationData called:');
     debugPrint('   City: ${city.nameAr}');
     debugPrint('   University: ${university?.nameAr}');
-    debugPrint('   Pickup Station: ${pickupStation.nameAr}');
+    debugPrint('   Pickup Station: ${pickupStation?.nameAr}');
     debugPrint('   Arrival Station: ${arrivalStation?.nameAr}');
+    debugPrint('   Uni Boarding Point: ${uniBoardingPoint?.nameAr}');
+    debugPrint('   Uni Arrival Point: ${uniArrivalPoint?.nameAr}');
     debugPrint('   isToUniversity: $isToUniversity');
 
     state = state.copyWith(
@@ -154,6 +160,8 @@ class BookingState extends _$BookingState {
       selectedUniversity: university,
       selectedStation: pickupStation,
       selectedArrivalStation: arrivalStation,
+      selectedUniBoardingPoint: uniBoardingPoint,
+      selectedUniArrivalPoint: uniArrivalPoint,
       isToUniversity: isToUniversity ?? state.isToUniversity,
     );
 
@@ -174,10 +182,11 @@ class BookingState extends _$BookingState {
 
   bool get isBookingComplete {
     if (state.isToUniversity) {
-      return state.selectedDepartureSchedule != null ||
-          state.selectedReturnSchedule != null ||
-          state.selectedDepartureTime != null ||
-          state.selectedReturnTime != null;
+      // For University: Must have city, university, boarding point, and arrival point
+      return state.selectedCity != null &&
+          state.selectedUniversity != null &&
+          state.selectedUniBoardingPoint != null &&
+          state.selectedUniArrivalPoint != null;
     } else {
       // For Point-to-Point: Must have selected a pickup and arrival station, and a time
       return state.selectedStation != null &&
@@ -196,6 +205,14 @@ class BookingState extends _$BookingState {
     }
   }
 
+  void selectUniBoardingPoint(UniversityBoardingPointEntity? point) {
+    state = state.copyWith(selectedUniBoardingPoint: point);
+  }
+
+  void selectUniArrivalPoint(UniversityArrivalPointEntity? point) {
+    state = state.copyWith(selectedUniArrivalPoint: point);
+  }
+
   Future<String?> createBooking(
     BookingRepository repository, {
     String? paymentProofImage,
@@ -206,19 +223,17 @@ class BookingState extends _$BookingState {
     }
 
     try {
-      // Use selected schedule ID if available
       final scheduleId =
           state.selectedDepartureSchedule?.id ??
           state.selectedReturnSchedule?.id;
 
       final result = await repository.createBooking(
+        cityId: state.selectedCity?.id,
         scheduleId: scheduleId,
         bookingDate: state.selectedDate,
         tripType: state.tripType.toDbValue(),
         pickupStationId: state.selectedStation?.id,
-        dropoffStationId: state.isToUniversity
-            ? null
-            : state.selectedArrivalStation?.id,
+        dropoffStationId: state.selectedArrivalStation?.id,
         departureTime: state.selectedDepartureTime,
         returnTime: state.selectedReturnTime,
         paymentProofImage: paymentProofImage,
@@ -242,9 +257,8 @@ class BookingState extends _$BookingState {
   Future<String?> createUniversityRequestBooking(
     BookingRepository repository,
   ) async {
-    // Basic validation: must have selected a university (even if custom) and pickup station
-    if (state.selectedUniversity == null || state.selectedStation == null) {
-      return 'يرجى اختيار الجامعة ومحطة الركوب أولاً';
+    if (!isBookingComplete) {
+      return 'يرجى إكمال جميع بيانات طلب حجز الجامعة';
     }
 
     try {
@@ -252,17 +266,20 @@ class BookingState extends _$BookingState {
       final isCustom = university.id.startsWith('custom_');
       
       final result = await repository.createUniversityRequest(
+        cityId: state.selectedCity?.id,
         bookingDate: state.selectedDate,
         universityId: university.id,
+        routeId: state.selectedDepartureSchedule?.routeId ?? state.selectedReturnSchedule?.routeId,
+        uniBoardingPointId: state.selectedUniBoardingPoint?.id,
+        uniArrivalPointId: state.selectedUniArrivalPoint?.id,
         isCustomUniversity: isCustom,
         customUniversityName: isCustom ? university.nameAr : null,
-        pickupStationId: state.selectedStation?.id,
         departureTime: state.selectedDepartureTime,
         returnTime: state.selectedReturnTime,
         selectionType: state.selectionType,
         passengerCount: state.passengerCount,
         splitPreference: state.splitPreference,
-        totalPrice: 0, // Pending requests don't require immediate payment or we calculate later
+        totalPrice: 0, 
         isLadies: state.isLadiesOnly,
       );
 
@@ -286,12 +303,11 @@ class BookingState extends _$BookingState {
     try {
       final result = await repository.updateBooking(
         bookingId: bookingId,
+        cityId: state.selectedCity?.id,
         bookingDate: state.selectedDate,
         tripType: state.tripType.toDbValue(),
         pickupStationId: state.selectedStation?.id,
-        dropoffStationId: state.isToUniversity
-            ? null
-            : state.selectedArrivalStation?.id,
+        dropoffStationId: state.selectedArrivalStation?.id,
         departureTime: state.selectedDepartureTime,
         returnTime: state.selectedReturnTime,
         totalPrice: totalPrice,
@@ -324,6 +340,8 @@ class BookingStateModel {
   final UniversityEntity? selectedUniversity;
   final BoardingStationEntity? selectedStation;
   final ArrivalStationEntity? selectedArrivalStation;
+  final UniversityBoardingPointEntity? selectedUniBoardingPoint;
+  final UniversityArrivalPointEntity? selectedUniArrivalPoint;
   final BookingSelectionType selectionType;
   final int passengerCount;
   final bool splitPreference;
@@ -342,6 +360,8 @@ class BookingStateModel {
     this.selectedUniversity,
     this.selectedStation,
     this.selectedArrivalStation,
+    this.selectedUniBoardingPoint,
+    this.selectedUniArrivalPoint,
     this.selectionType = BookingSelectionType.seat,
     this.passengerCount = 1,
     this.splitPreference = true,
@@ -361,6 +381,8 @@ class BookingStateModel {
     UniversityEntity? selectedUniversity,
     BoardingStationEntity? selectedStation,
     ArrivalStationEntity? selectedArrivalStation,
+    UniversityBoardingPointEntity? selectedUniBoardingPoint,
+    UniversityArrivalPointEntity? selectedUniArrivalPoint,
     BookingSelectionType? selectionType,
     int? passengerCount,
     bool? splitPreference,
@@ -383,6 +405,10 @@ class BookingStateModel {
       selectedStation: selectedStation ?? this.selectedStation,
       selectedArrivalStation:
           selectedArrivalStation ?? this.selectedArrivalStation,
+      selectedUniBoardingPoint:
+          selectedUniBoardingPoint ?? this.selectedUniBoardingPoint,
+      selectedUniArrivalPoint:
+          selectedUniArrivalPoint ?? this.selectedUniArrivalPoint,
       selectionType: selectionType ?? this.selectionType,
       passengerCount: passengerCount ?? this.passengerCount,
       splitPreference: splitPreference ?? this.splitPreference,

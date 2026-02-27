@@ -163,5 +163,7 @@
   "passengerCount": "Passenger Count",
   "preferences": "Preferences",
   "sameCar": "Same Car",
-  "splitCars": "Split Cars"
+  "splitCars": "Split Cars",
+  "paymentSuccessful": "Payment Successful",
+  "requestSentSuccessfully": "Request Sent Successfully"
 }

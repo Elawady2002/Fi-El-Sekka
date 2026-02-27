@@ -5,17 +5,21 @@ import '../models/boarding_station_model.dart';
 import '../models/arrival_station_model.dart';
 import '../models/route_model.dart';
 import '../models/schedule_model.dart';
+import '../models/university_boarding_point_model.dart';
+import '../models/university_arrival_point_model.dart';
 
 abstract class HomeRemoteDataSource {
   Future<List<CityModel>> getCities();
   Future<List<UniversityModel>> getUniversities(String cityId);
   Future<List<BoardingStationModel>> getBoardingStations(String cityId);
-  Future<List<ArrivalStationModel>> getArrivalStations(String boardingStationId);
+  Future<List<ArrivalStationModel>> getArrivalStations(String pickupStationId);
   Future<List<RouteModel>> getRoutes(String universityId);
   Future<List<BoardingStationModel>> getAllBoardingStations();
   Future<List<ArrivalStationModel>> getAllArrivalStations();
   Future<List<UniversityModel>> getAllUniversities();
   Future<List<ScheduleModel>> getSchedules(String routeId);
+  Future<List<UniversityBoardingPointModel>> getUniversityBoardingPoints(String cityId);
+  Future<List<UniversityArrivalPointModel>> getUniversityArrivalPoints(String universityId);
 }
 
 class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
@@ -58,11 +62,11 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
   }
 
   @override
-  Future<List<ArrivalStationModel>> getArrivalStations(String boardingStationId) async {
+  Future<List<ArrivalStationModel>> getArrivalStations(String pickupStationId) async {
     final response = await _client
         .from('arrival_stations')
         .select()
-        .eq('boarding_station_id', boardingStationId)
+        .eq('pickup_station_id', pickupStationId)
         .order('name_ar');
 
     return (response as List).map((e) => ArrivalStationModel.fromJson(e)).toList();
@@ -121,5 +125,27 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
         .order('name_ar');
 
     return (response as List).map((e) => UniversityModel.fromJson(e)).toList();
+  }
+
+  @override
+  Future<List<UniversityBoardingPointModel>> getUniversityBoardingPoints(String cityId) async {
+    final response = await _client
+        .from('university_boarding_points')
+        .select()
+        .eq('city_id', cityId)
+        .order('name_ar');
+
+    return (response as List).map((e) => UniversityBoardingPointModel.fromJson(e)).toList();
+  }
+
+  @override
+  Future<List<UniversityArrivalPointModel>> getUniversityArrivalPoints(String universityId) async {
+    final response = await _client
+        .from('university_arrival_points')
+        .select()
+        .eq('university_id', universityId)
+        .order('name_ar');
+
+    return (response as List).map((e) => UniversityArrivalPointModel.fromJson(e)).toList();
   }
 }

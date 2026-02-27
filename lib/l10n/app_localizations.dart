@@ -901,6 +901,18 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'عربيات مختلفة'**
   String get splitCars;
+
+  /// No description provided for @paymentSuccessful.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم الدفع بنجاح'**
+  String get paymentSuccessful;
+
+  /// No description provided for @requestSentSuccessfully.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم إرسال طلبك بنجاح'**
+  String get requestSentSuccessfully;
 }
 
 class _AppLocalizationsDelegate

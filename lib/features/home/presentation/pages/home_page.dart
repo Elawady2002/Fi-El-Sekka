@@ -24,6 +24,8 @@ import '../widgets/wallet_widget.dart';
 import '../../../subscription/presentation/providers/subscription_provider.dart';
 import '../../../subscription/presentation/widgets/subscription_plans_sheet.dart';
 import '../widgets/empty_bookings_widget.dart';
+import '../../../booking/domain/entities/university_boarding_point_entity.dart';
+import '../../../booking/domain/entities/university_arrival_point_entity.dart';
 import '../../../../core/widgets/dashed_rect.dart';
 import '../../../../core/widgets/custom_input.dart';
 
@@ -493,6 +495,8 @@ class _LocationSelectionDrawerState
   UniversityEntity? selectedUniversity;
   BoardingStationEntity? selectedPickupStation;
   ArrivalStationEntity? selectedArrivalStation;
+  UniversityBoardingPointEntity? selectedUniBoardingPoint;
+  UniversityArrivalPointEntity? selectedUniArrivalPoint;
   bool isToUniversity = false;
 
   Widget _buildSelectionItem(
@@ -821,21 +825,31 @@ class _LocationSelectionDrawerState
     final universitiesAsync = isToUniversity
         ? ref.watch(allUniversitiesProvider)
         : const AsyncValue.data(<UniversityEntity>[]);
-    final boardingStationsAsync = isToUniversity
-        ? ref.watch(allBoardingStationsProvider)
-        : (selectedCity != null
-            ? ref.watch(boardingStationsProvider(selectedCity!.id))
-            : const AsyncValue.data(<BoardingStationEntity>[]));
+    
+    final boardingStationsAsync = (!isToUniversity && selectedCity != null)
+        ? ref.watch(boardingStationsProvider(selectedCity!.id))
+        : const AsyncValue.data(<BoardingStationEntity>[]);
 
     final arrivalStationsAsync = (!isToUniversity && selectedPickupStation != null)
         ? ref.watch(arrivalStationsProvider(selectedPickupStation!.id))
         : const AsyncValue.data(<ArrivalStationEntity>[]);
 
+    final uniBoardingPointsAsync = (isToUniversity && selectedCity != null)
+        ? ref.watch(universityBoardingPointsProvider(selectedCity!.id))
+        : const AsyncValue.data(<UniversityBoardingPointEntity>[]);
+
+    final uniArrivalPointsAsync = (isToUniversity && selectedUniversity != null)
+        ? ref.watch(universityArrivalPointsProvider(selectedUniversity!.id))
+        : const AsyncValue.data(<UniversityArrivalPointEntity>[]);
+
     final bool isComplete = isToUniversity
-        ? (selectedUniversity != null && selectedPickupStation != null)
+        ? (selectedUniversity != null && 
+           selectedCity != null && 
+           selectedUniBoardingPoint != null && 
+           selectedUniArrivalPoint != null)
         : (selectedCity != null &&
-              selectedPickupStation != null &&
-              selectedArrivalStation != null);
+           selectedPickupStation != null &&
+           selectedArrivalStation != null);
 
     return Material(
       color: Colors.transparent,
@@ -936,9 +950,12 @@ class _LocationSelectionDrawerState
                         onTap: () {
                           setState(() {
                             isToUniversity = false;
+                            selectedCity = null;
                             selectedUniversity = null;
                             selectedPickupStation = null;
                             selectedArrivalStation = null;
+                            selectedUniBoardingPoint = null;
+                            selectedUniArrivalPoint = null;
                           });
                         },
                       ),
@@ -948,9 +965,12 @@ class _LocationSelectionDrawerState
                         onTap: () {
                           setState(() {
                             isToUniversity = true;
+                            selectedCity = null;
                             selectedUniversity = null;
                             selectedPickupStation = null;
                             selectedArrivalStation = null;
+                            selectedUniBoardingPoint = null;
+                            selectedUniArrivalPoint = null;
                           });
                         },
                       ),
@@ -981,6 +1001,7 @@ class _LocationSelectionDrawerState
                     child: Column(
                       children: [
                         if (!isToUniversity) ...[
+                          // --- STATION TO STATION FLOW ---
                           // City Selection
                           citiesAsync.when(
                             data: (cities) => _buildSelectionItem(
@@ -1003,7 +1024,6 @@ class _LocationSelectionDrawerState
                                 onSelected: (city) {
                                   setState(() {
                                     selectedCity = city;
-                                    selectedUniversity = null;
                                     selectedPickupStation = null;
                                     selectedArrivalStation = null;
                                   });
@@ -1078,123 +1098,15 @@ class _LocationSelectionDrawerState
                                   Text('${l10n.error}: $err'),
                             ),
                           ],
-                        ] else ...[
-                          // University Selection
-                          universitiesAsync.when(
-                            data: (universities) => _buildSelectionItem(
-                              context,
-                              ref,
-                              title: l10n.university,
-                              value: selectedUniversity?.getLocalizedName(
-                                ref.read(localeProvider).languageCode,
-                              ),
-                              placeholder: l10n.selectUniversity,
-                              icon: CupertinoIcons.book_fill,
-                              onTap: () => _showPicker<UniversityEntity>(
-                                context,
-                                ref,
-                                title: l10n.selectUniversity,
-                                items: universities,
-                                labelBuilder: (uni) => uni.getLocalizedName(
-                                  ref.read(localeProvider).languageCode,
-                                ),
-                                onSelected: (uni) {
-                                  setState(() {
-                                    selectedUniversity = uni;
-                                    selectedPickupStation = null;
-                                  });
-                                },
-                                showAddOption: true,
-                                addOptionLabel: 'إضافة جامعة غير موجودة',
-                                onAddSubmit: (String val) {
-                                  setState(() {
-                                    selectedUniversity = UniversityEntity(
-                                      id: 'custom_${DateTime.now().millisecondsSinceEpoch}',
-                                      nameAr: val,
-                                      nameEn: val,
-                                      cityId: '',
-                                      isActive: true,
-                                      location: const Location(
-                                        latitude: 0,
-                                        longitude: 0,
-                                        address: '',
-                                      ),
-                                    );
-                                    selectedPickupStation = null;
-                                  });
-                                },
-                              ),
-                            ),
-                            loading: () => _buildSelectionItem(
-                              context,
-                              ref,
-                              title: l10n.university,
-                              value: null,
-                              placeholder: l10n.loading,
-                              icon: CupertinoIcons.book_fill,
-                              onTap: () {},
-                              isLoading: true,
-                              isEnabled: false,
-                            ),
-                            error: (err, stack) =>
-                                Text('${l10n.error}: $err'),
-                          ),
-                        ],
 
-                        if (isToUniversity
-                                ? selectedUniversity != null
-                                : (selectedCity != null && selectedPickupStation != null)) ...[
-                          Divider(
-                            height: 1,
-                            color: Colors.grey.shade100,
-                            indent: 16,
-                            endIndent: 16,
-                          ),
-                          if (isToUniversity) ...[
-                            // Station Selection (Pickup for University)
-                            boardingStationsAsync.when(
-                              data: (stations) => _buildSelectionItem(
-                                context,
-                                ref,
-                                title: l10n.station,
-                                value: selectedPickupStation?.getLocalizedName(
-                                  ref.read(localeProvider).languageCode,
-                                ),
-                                placeholder: l10n.selectStation,
-                                icon: CupertinoIcons.location_fill,
-                                onTap: () => _showPicker<BoardingStationEntity>(
-                                  context,
-                                  ref,
-                                  title: l10n.selectStation,
-                                  items: stations,
-                                  labelBuilder: (station) =>
-                                      station.getLocalizedName(
-                                        ref.read(localeProvider).languageCode,
-                                      ),
-                                  onSelected: (station) {
-                                    setState(() {
-                                      selectedPickupStation = station;
-                                    });
-                                  },
-                                  emptyMessage: l10n.emptyPickupStation,
-                                ),
-                              ),
-                              loading: () => _buildSelectionItem(
-                                context,
-                                ref,
-                                title: l10n.station,
-                                value: null,
-                                placeholder: l10n.loading,
-                                icon: CupertinoIcons.location_fill,
-                                onTap: () {},
-                                isLoading: true,
-                                isEnabled: false,
-                              ),
-                              error: (err, stack) =>
-                                  Text('${l10n.error}: $err'),
+                          if (selectedPickupStation != null) ...[
+                            Divider(
+                              height: 1,
+                              color: Colors.grey.shade100,
+                              indent: 16,
+                              endIndent: 16,
                             ),
-                          ] else ...[
-                            // Arrival Station Selection for Point to Point
+                            // Arrival Station Selection
                             arrivalStationsAsync.when(
                               data: (stations) => _buildSelectionItem(
                                 context,
@@ -1237,6 +1149,192 @@ class _LocationSelectionDrawerState
                                   Text('${l10n.error}: $err'),
                             ),
                           ],
+                        ] else ...[
+                          // --- UNIVERSITY FLOW ---
+                          // 1. University Selection
+                          universitiesAsync.when(
+                            data: (universities) => _buildSelectionItem(
+                              context,
+                              ref,
+                              title: l10n.university,
+                              value: selectedUniversity?.getLocalizedName(
+                                ref.read(localeProvider).languageCode,
+                              ),
+                              placeholder: l10n.selectUniversity,
+                              icon: CupertinoIcons.book_fill,
+                              onTap: () => _showPicker<UniversityEntity>(
+                                context,
+                                ref,
+                                title: l10n.selectUniversity,
+                                items: universities,
+                                labelBuilder: (uni) => uni.getLocalizedName(
+                                  ref.read(localeProvider).languageCode,
+                                ),
+                                onSelected: (uni) {
+                                  setState(() {
+                                    selectedUniversity = uni;
+                                    selectedUniArrivalPoint = null;
+                                  });
+                                },
+                                showAddOption: true,
+                                addOptionLabel: 'إضافة جامعة غير موجودة',
+                                onAddSubmit: (String val) {
+                                  setState(() {
+                                    selectedUniversity = UniversityEntity(
+                                      id: 'custom_${DateTime.now().millisecondsSinceEpoch}',
+                                      nameAr: val,
+                                      nameEn: val,
+                                      cityId: '',
+                                      isActive: true,
+                                      location: const Location(
+                                        latitude: 0,
+                                        longitude: 0,
+                                        address: '',
+                                      ),
+                                    );
+                                    selectedUniArrivalPoint = null;
+                                  });
+                                },
+                              ),
+                            ),
+                            loading: () => _buildSelectionItem(
+                              context,
+                              ref,
+                              title: l10n.university,
+                              value: null,
+                              placeholder: l10n.loading,
+                              icon: CupertinoIcons.book_fill,
+                              onTap: () {},
+                              isLoading: true,
+                              isEnabled: false,
+                            ),
+                            error: (err, stack) =>
+                                Text('${l10n.error}: $err'),
+                          ),
+
+                          if (selectedUniversity != null) ...[
+                            Divider(height: 1, color: Colors.grey.shade100, indent: 16, endIndent: 16),
+                            // 2. City Selection
+                            citiesAsync.when(
+                              data: (cities) => _buildSelectionItem(
+                                context,
+                                ref,
+                                title: l10n.city,
+                                value: selectedCity?.getLocalizedName(
+                                  ref.read(localeProvider).languageCode,
+                                ),
+                                placeholder: l10n.selectCity,
+                                icon: CupertinoIcons.building_2_fill,
+                                onTap: () => _showPicker<CityEntity>(
+                                  context,
+                                  ref,
+                                  title: l10n.selectCity,
+                                  items: cities,
+                                  labelBuilder: (city) => city.getLocalizedName(
+                                    ref.read(localeProvider).languageCode,
+                                  ),
+                                  onSelected: (city) {
+                                    setState(() {
+                                      selectedCity = city;
+                                      selectedUniBoardingPoint = null;
+                                    });
+                                  },
+                                ),
+                              ),
+                              loading: () => _buildSelectionItem(
+                                context,
+                                ref,
+                                title: l10n.city,
+                                value: null,
+                                placeholder: l10n.loading,
+                                icon: CupertinoIcons.building_2_fill,
+                                onTap: () {},
+                                isLoading: true,
+                                isEnabled: false,
+                              ),
+                              error: (err, stack) => Text('${l10n.error}: $err'),
+                            ),
+                          ],
+
+                          if (selectedCity != null && isToUniversity) ...[
+                            Divider(height: 1, color: Colors.grey.shade100, indent: 16, endIndent: 16),
+                            // 3. Boarding Point Selection
+                            uniBoardingPointsAsync.when(
+                              data: (points) => _buildSelectionItem(
+                                context,
+                                ref,
+                                title: 'نقطة الركوب',
+                                value: selectedUniBoardingPoint?.nameAr,
+                                placeholder: 'اختر نقطة الركوب من منطقتك',
+                                icon: CupertinoIcons.location_solid,
+                                onTap: () => _showPicker<UniversityBoardingPointEntity>(
+                                  context,
+                                  ref,
+                                  title: 'اختر نقطة الركوب',
+                                  items: points,
+                                  labelBuilder: (p) => p.nameAr,
+                                  onSelected: (p) {
+                                    setState(() {
+                                      selectedUniBoardingPoint = p;
+                                    });
+                                  },
+                                  emptyMessage: 'لا يوجد نقاط ركوب متاحة لهذه المدينة حالياً',
+                                ),
+                              ),
+                              loading: () => _buildSelectionItem(
+                                context,
+                                ref,
+                                title: 'نقطة الركوب',
+                                value: null,
+                                placeholder: l10n.loading,
+                                icon: CupertinoIcons.location_solid,
+                                onTap: () {},
+                                isLoading: true,
+                                isEnabled: false,
+                              ),
+                              error: (err, stack) => Text('${l10n.error}: $err'),
+                            ),
+                          ],
+
+                          if (selectedUniversity != null && isToUniversity) ...[
+                            Divider(height: 1, color: Colors.grey.shade100, indent: 16, endIndent: 16),
+                            // 4. Arrival Point Selection
+                            uniArrivalPointsAsync.when(
+                              data: (points) => _buildSelectionItem(
+                                context,
+                                ref,
+                                title: 'نقطة الوصول',
+                                value: selectedUniArrivalPoint?.nameAr,
+                                placeholder: 'اختر نقطة الوصول داخل الجامعة',
+                                icon: CupertinoIcons.flag_circle_fill,
+                                onTap: () => _showPicker<UniversityArrivalPointEntity>(
+                                  context,
+                                  ref,
+                                  title: 'اختر نقطة الوصول',
+                                  items: points,
+                                  labelBuilder: (p) => p.nameAr,
+                                  onSelected: (p) {
+                                    setState(() {
+                                      selectedUniArrivalPoint = p;
+                                    });
+                                  },
+                                  emptyMessage: 'لا يوجد نقاط وصول متاحة لهذه الجامعة حالياً',
+                                ),
+                              ),
+                              loading: () => _buildSelectionItem(
+                                context,
+                                ref,
+                                title: 'نقطة الوصول',
+                                value: null,
+                                placeholder: l10n.loading,
+                                icon: CupertinoIcons.flag_circle_fill,
+                                onTap: () {},
+                                isLoading: true,
+                                isEnabled: false,
+                              ),
+                              error: (err, stack) => Text('${l10n.error}: $err'),
+                            ),
+                          ],
                         ],
                       ],
                     ),
@@ -1268,8 +1366,10 @@ class _LocationSelectionDrawerState
                             .setLocationData(
                               city: selectedCity!,
                               university: selectedUniversity,
-                              pickupStation: selectedPickupStation!,
+                              pickupStation: selectedPickupStation,
                               arrivalStation: selectedArrivalStation,
+                              uniBoardingPoint: selectedUniBoardingPoint,
+                              uniArrivalPoint: selectedUniArrivalPoint,
                               isToUniversity: isToUniversity,
                             );
 

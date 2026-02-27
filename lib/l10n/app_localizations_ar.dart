@@ -418,4 +418,10 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get splitCars => 'عربيات مختلفة';
+
+  @override
+  String get paymentSuccessful => 'تم الدفع بنجاح';
+
+  @override
+  String get requestSentSuccessfully => 'تم إرسال طلبك بنجاح';
 }

@@ -52,23 +52,25 @@ enum PaymentStatus {
 class BookingEntity extends Equatable {
   final String id;
   final String userId;
-  final String?
-  scheduleId; // Made nullable - can be null for subscription bookings
-  final String?
-  subscriptionId; // Link to subscription if booking is from subscription
+  final String? cityId; // Common city context
+  final String? pickupStationId; // Mawkaf flow only
+  final String? dropoffStationId; // Mawkaf flow only
+  final String? universityId; // University flow only
+  final String? routeId; // University flow only
+  final String? uniBoardingPointId; // University flow: Boarding point
+  final String? uniArrivalPointId; // University flow: Arrival point
+  final bool isUniversityRequest;
+  final String? departureTime;
+  final String? returnTime;
+  final String? scheduleId;
+  final String? subscriptionId;
   final DateTime bookingDate;
-  final String tripType; // 'departure_only', 'return_only', 'round_trip'
-  final String? pickupStationId;
-  final String? dropoffStationId;
-  final String? universityId; // Added for university bookings
-  final bool isUniversityRequest; // True if this is a pending request for a university line
-  final String? departureTime; // e.g., 'AM 7:00'
-  final String? returnTime; // e.g., 'PM 3:00'
+  final String tripType;
   final String? paymentProofImage;
   final String? transferNumber;
   final BookingSelectionType selectionType;
   final int passengerCount;
-  final bool splitPreference; // true for "Same Car", false for "Split"
+  final bool splitPreference;
   final BookingStatus status;
   final PaymentStatus paymentStatus;
   final double totalPrice;
@@ -79,16 +81,20 @@ class BookingEntity extends Equatable {
   const BookingEntity({
     required this.id,
     required this.userId,
+    this.cityId,
+    this.pickupStationId,
+    this.dropoffStationId,
+    this.universityId,
+    this.routeId,
+    this.uniBoardingPointId,
+    this.uniArrivalPointId,
+    this.isUniversityRequest = false,
+    this.departureTime,
+    this.returnTime,
     this.scheduleId,
     this.subscriptionId,
     required this.bookingDate,
     required this.tripType,
-    this.pickupStationId,
-    this.dropoffStationId,
-    this.universityId,
-    this.isUniversityRequest = false,
-    this.departureTime,
-    this.returnTime,
     this.paymentProofImage,
     this.transferNumber,
     this.selectionType = BookingSelectionType.seat,
@@ -106,16 +112,20 @@ class BookingEntity extends Equatable {
   List<Object?> get props => [
     id,
     userId,
+    cityId,
+    pickupStationId,
+    dropoffStationId,
+    universityId,
+    routeId,
+    uniBoardingPointId,
+    uniArrivalPointId,
+    isUniversityRequest,
+    departureTime,
+    returnTime,
     scheduleId,
     subscriptionId,
     bookingDate,
     tripType,
-    pickupStationId,
-    dropoffStationId,
-    universityId,
-    isUniversityRequest,
-    departureTime,
-    returnTime,
     paymentProofImage,
     transferNumber,
     selectionType,

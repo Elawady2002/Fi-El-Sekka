@@ -13,7 +13,7 @@ import '../../../profile/presentation/providers/wallet_provider.dart';
 import '../../domain/entities/trip_type.dart';
 import '../providers/booking_provider.dart';
 // import '../widgets/student_packages_button.dart';
-import 'booking_success_page.dart';
+import '../../../../core/widgets/top_notification.dart';
 import '../widgets/booking_date_card.dart';
 import '../widgets/time_selection_card.dart';
 import '../../../home/presentation/providers/home_provider.dart';
@@ -129,18 +129,15 @@ class _BookingPageState extends ConsumerState<BookingPage> {
 
                           if (errorMessage == null) {
                             if (!context.mounted) return;
-                            // Navigate to Success Page for Pending Request
-                            Navigator.pushAndRemoveUntil(
+                            // Show Success Notification
+                            showTopNotification(
                               context,
-                              MaterialPageRoute(
-                                builder: (_) => BookingSuccessPage(
-                                  amount: 0,
-                                  tripType: 'طلب خط جامعة (قيد المراجعة)',
-                                  date: bookingState.selectedDate,
-                                ),
-                              ),
-                              (route) => route.isFirst,
+                              AppLocalizations.of(context)!.requestSentSuccessfully,
+                              isError: false,
                             );
+
+                            // Return to Home
+                            Navigator.popUntil(context, (route) => route.isFirst);
                           } else {
                             if (!context.mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -200,21 +197,15 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                         if (errorMessage == null) {
                           if (!context.mounted) return;
 
-                          // Navigate to Success Page
-                          Navigator.pushAndRemoveUntil(
+                          // Show Success Notification
+                          showTopNotification(
                             context,
-                            MaterialPageRoute(
-                              builder: (_) => BookingSuccessPage(
-                                amount: amount,
-                                tripType: _getTripTypeLabel(
-                                  context,
-                                  bookingState.tripType,
-                                ),
-                                date: bookingState.selectedDate,
-                              ),
-                            ),
-                            (route) => route.isFirst,
+                            AppLocalizations.of(context)!.paymentSuccessful,
+                            isError: false,
                           );
+
+                          // Return to Home
+                          Navigator.popUntil(context, (route) => route.isFirst);
                         } else {
                           // RECOVERY: If booking creation failed but we already deducted money, refund it!
                           await ref
@@ -568,8 +559,12 @@ class _BookingPageState extends ConsumerState<BookingPage> {
     BookingStateModel state, {
     bool isLadies = false,
   }) {
+    String pickupName = state.isToUniversity
+        ? (state.selectedUniBoardingPoint?.nameAr ?? state.selectedCity?.nameAr ?? '-')
+        : (state.selectedStation?.nameAr ?? '-');
+
     String destinationName = state.isToUniversity
-        ? (state.selectedUniversity?.nameAr ?? 'الجامعة')
+        ? (state.selectedUniArrivalPoint?.nameAr ?? state.selectedUniversity?.nameAr ?? 'الجامعة')
         : (state.selectedArrivalStation?.nameAr ?? 'موقف الوصول');
 
     final Color lineColor = isLadies
@@ -583,7 +578,7 @@ class _BookingPageState extends ConsumerState<BookingPage> {
           children: [
             _buildPathPoint(
               label: AppLocalizations.of(context)!.pickupStation,
-              value: state.selectedStation?.nameAr ?? '-',
+              value: pickupName,
               isFirst: true,
               isLadies: isLadies,
             ),

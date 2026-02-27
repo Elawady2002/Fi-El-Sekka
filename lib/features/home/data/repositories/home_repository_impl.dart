@@ -8,6 +8,8 @@ import '../../../booking/domain/entities/boarding_station_entity.dart';
 import '../../../booking/domain/entities/arrival_station_entity.dart';
 import '../../../booking/domain/entities/route_entity.dart';
 import '../../../booking/domain/entities/schedule_entity.dart';
+import '../../../booking/domain/entities/university_boarding_point_entity.dart';
+import '../../../booking/domain/entities/university_arrival_point_entity.dart';
 
 class HomeRepositoryImpl implements HomeRepository {
   final HomeRemoteDataSource remoteDataSource;
@@ -52,11 +54,11 @@ class HomeRepositoryImpl implements HomeRepository {
 
   @override
   Future<Either<Failure, List<ArrivalStationEntity>>> getArrivalStations(
-    String boardingStationId,
+    String pickupStationId,
   ) async {
     try {
       final stations = await remoteDataSource.getArrivalStations(
-        boardingStationId,
+        pickupStationId,
       );
       return Right(stations);
     } catch (e) {
@@ -113,6 +115,26 @@ class HomeRepositoryImpl implements HomeRepository {
     try {
       final universities = await remoteDataSource.getAllUniversities();
       return Right(universities);
+    } catch (e) {
+      return Left(ServerFailure(message: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<UniversityBoardingPointEntity>>> getUniversityBoardingPoints(String cityId) async {
+    try {
+      final points = await remoteDataSource.getUniversityBoardingPoints(cityId);
+      return Right(points.cast<UniversityBoardingPointEntity>().toList());
+    } catch (e) {
+      return Left(ServerFailure(message: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<UniversityArrivalPointEntity>>> getUniversityArrivalPoints(String universityId) async {
+    try {
+      final points = await remoteDataSource.getUniversityArrivalPoints(universityId);
+      return Right(points.cast<UniversityArrivalPointEntity>().toList());
     } catch (e) {
       return Left(ServerFailure(message: e.toString()));
     }

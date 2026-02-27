@@ -163,5 +163,7 @@
   "passengerCount": "انتو كام واحد؟",
   "preferences": "عايزهم ازاي",
   "sameCar": "في نفس العربية",
-  "splitCars": "عربيات مختلفة"
+  "splitCars": "عربيات مختلفة",
+  "paymentSuccessful": "تم الدفع بنجاح",
+  "requestSentSuccessfully": "تم إرسال طلبك بنجاح"
 }

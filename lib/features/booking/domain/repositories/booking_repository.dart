@@ -15,9 +15,12 @@ abstract class BookingRepository {
   Future<Either<Failure, BookingEntity>> createUniversityRequest({
     required DateTime bookingDate,
     required String universityId,
+    String? cityId,
+    String? routeId,
+    String? uniBoardingPointId,
+    String? uniArrivalPointId,
     required bool isCustomUniversity,
     String? customUniversityName,
-    String? pickupStationId,
     String? departureTime,
     String? returnTime,
     required double totalPrice,
@@ -29,6 +32,7 @@ abstract class BookingRepository {
 
   /// Create a new booking
   Future<Either<Failure, BookingEntity>> createBooking({
+    String? cityId,
     String? scheduleId,
     required DateTime bookingDate,
     required String tripType,
@@ -53,6 +57,7 @@ abstract class BookingRepository {
 
   Future<Either<Failure, BookingEntity>> updateBooking({
     required String bookingId,
+    String? cityId,
     required DateTime bookingDate,
     required String tripType,
     String? pickupStationId,

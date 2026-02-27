@@ -4,7 +4,7 @@ import 'package:equatable/equatable.dart';
 /// Each arrival station is linked to a specific boarding station
 class ArrivalStationEntity extends Equatable {
   final String id;
-  final String boardingStationId;
+  final String pickupStationId;
   final String nameAr;
   final String nameEn;
   final double price;
@@ -12,7 +12,7 @@ class ArrivalStationEntity extends Equatable {
 
   const ArrivalStationEntity({
     required this.id,
-    required this.boardingStationId,
+    required this.pickupStationId,
     required this.nameAr,
     required this.nameEn,
     required this.price,
@@ -20,7 +20,7 @@ class ArrivalStationEntity extends Equatable {
   });
 
   @override
-  List<Object?> get props => [id, boardingStationId, nameAr, nameEn, price, schedules];
+  List<Object?> get props => [id, pickupStationId, nameAr, nameEn, price, schedules];
 
   String getLocalizedName(String languageCode) {
     return languageCode == 'ar' ? nameAr : nameEn;
