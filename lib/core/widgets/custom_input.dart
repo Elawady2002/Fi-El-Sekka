@@ -12,6 +12,7 @@ class CustomInput extends StatefulWidget {
   final String? Function(String?)? validator;
   final TextInputType? keyboardType;
   final Widget? suffixIcon;
+  final Color? backgroundColor;
 
   const CustomInput({
     super.key,
@@ -22,6 +23,7 @@ class CustomInput extends StatefulWidget {
     this.validator,
     this.keyboardType,
     this.suffixIcon,
+    this.backgroundColor,
   });
 
   @override
@@ -55,7 +57,7 @@ class _CustomInputState extends State<CustomInput> {
         decoration: InputDecoration(
           hintText: widget.hintText,
           hintStyle: GoogleFonts.cairo(color: CupertinoColors.systemGrey),
-          fillColor: Colors.white,
+          fillColor: widget.backgroundColor ?? Colors.white,
           filled: true,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,

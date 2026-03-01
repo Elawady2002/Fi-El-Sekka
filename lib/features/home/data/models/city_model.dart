@@ -6,6 +6,8 @@ class CityModel extends CityEntity {
     required super.nameAr,
     required super.nameEn,
     required super.isActive,
+    super.hasPointToPoint = true,
+    super.hasUniversityService = false,
   });
 
   factory CityModel.fromJson(Map<String, dynamic> json) {
@@ -14,6 +16,8 @@ class CityModel extends CityEntity {
       nameAr: json['name_ar'] as String,
       nameEn: json['name_en'] as String,
       isActive: json['is_active'] as bool? ?? true,
+      hasPointToPoint: json['has_point_to_point'] as bool? ?? true,
+      hasUniversityService: json['has_university_service'] as bool? ?? false,
     );
   }
 
@@ -23,6 +27,8 @@ class CityModel extends CityEntity {
       'name_ar': nameAr,
       'name_en': nameEn,
       'is_active': isActive,
+      'has_point_to_point': hasPointToPoint,
+      'has_university_service': hasUniversityService,
     };
   }
 }

@@ -231,6 +231,28 @@ class BookingRepositoryImpl implements BookingRepository {
     throw UnimplementedError();
   }
 
+  @override
+  Future<Either<Failure, void>> createRouteRequest({
+    String? cityId,
+    String? cityName,
+    required String boardingStationName,
+    required String universityName,
+  }) async {
+    try {
+      final userId = _getUserId();
+      await _dataSource.createRouteRequest(
+        userId: userId,
+        cityId: cityId,
+        cityName: cityName,
+        boardingStationName: boardingStationName,
+        universityName: universityName,
+      );
+      return const Right(null);
+    } catch (e) {
+      return Left(_handleError(e));
+    }
+  }
+
   Failure _handleError(Object error) {
     if (error.toString().contains('Database error')) {
       return ServerFailure(message: error.toString());

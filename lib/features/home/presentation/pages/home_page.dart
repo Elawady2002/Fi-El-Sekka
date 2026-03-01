@@ -28,6 +28,7 @@ import '../../../booking/domain/entities/university_boarding_point_entity.dart';
 import '../../../booking/domain/entities/university_arrival_point_entity.dart';
 import '../../../../core/widgets/dashed_rect.dart';
 import '../../../../core/widgets/custom_input.dart';
+import '../../../../core/widgets/custom_button.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -499,6 +500,21 @@ class _LocationSelectionDrawerState
   UniversityArrivalPointEntity? selectedUniArrivalPoint;
   bool isToUniversity = false;
 
+  // Inline Route Request State
+  bool showInlineRouteRequest = false;
+  bool isSubmitting = false;
+  final TextEditingController requestCityController = TextEditingController();
+  final TextEditingController requestStationController = TextEditingController();
+  final TextEditingController requestUniversityController = TextEditingController();
+
+  @override
+  void dispose() {
+    requestCityController.dispose();
+    requestStationController.dispose();
+    requestUniversityController.dispose();
+    super.dispose();
+  }
+
   Widget _buildSelectionItem(
     BuildContext context,
     WidgetRef ref, {
@@ -593,8 +609,9 @@ class _LocationSelectionDrawerState
     String? addOptionLabel,
     ValueChanged<String>? onAddSubmit,
     String? emptyMessage,
+    String? emptyActionLabel,
+    VoidCallback? onEmptyActionTap,
   }) {
-    final l10n = AppLocalizations.of(context)!;
     final isAr = ref.watch(localeProvider).languageCode == 'ar';
     bool isAdding = false;
     final addController = TextEditingController();
@@ -663,13 +680,32 @@ class _LocationSelectionDrawerState
                         ? Center(
                             child: Padding(
                               padding: const EdgeInsets.all(24.0),
-                              child: Text(
-                                emptyMessage,
-                                style: AppTheme.textTheme.titleMedium?.copyWith(
-                                  color: AppTheme.textSecondary,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                                textAlign: TextAlign.center,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    emptyMessage,
+                                    style: AppTheme.textTheme.titleMedium?.copyWith(
+                                      color: AppTheme.textSecondary,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  if (emptyActionLabel != null && onEmptyActionTap != null) ...[
+                                    const SizedBox(height: 16),
+                                    SizedBox(
+                                      width: double.infinity,
+                                      child: CustomButton(
+                                        text: emptyActionLabel,
+                                        onPressed: () {
+                                          Navigator.pop(context);
+                                          onEmptyActionTap();
+                                        },
+                                        backgroundColor: AppTheme.primaryColor,
+                                      ),
+                                    ),
+                                  ],
+                                ],
                               ),
                             ),
                           )
@@ -816,6 +852,63 @@ class _LocationSelectionDrawerState
     );
   }
 
+  Future<void> _submitIntegratedRouteRequest() async {
+    if (requestCityController.text.isEmpty ||
+        requestStationController.text.isEmpty ||
+        requestUniversityController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('يرجى ملء جميع البيانات'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      isSubmitting = true;
+    });
+
+    final result = await ref
+        .read(bookingStateProvider.notifier)
+        .submitRouteRequest(
+          ref.read(bookingRepositoryProvider),
+          cityName: requestCityController.text,
+          boardingStationName: requestStationController.text,
+          universityName: requestUniversityController.text,
+        );
+
+    if (!mounted) return;
+
+    setState(() {
+      isSubmitting = false;
+    });
+
+    if (result == null) {
+      if (!mounted) return;
+      setState(() {
+        showInlineRouteRequest = false;
+        requestCityController.clear();
+        requestStationController.clear();
+        requestUniversityController.clear();
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('تم إرسال طلبك بنجاح وسنفحص إمكانية توفيره'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } else {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -950,6 +1043,7 @@ class _LocationSelectionDrawerState
                         onTap: () {
                           setState(() {
                             isToUniversity = false;
+                            showInlineRouteRequest = false;
                             selectedCity = null;
                             selectedUniversity = null;
                             selectedPickupStation = null;
@@ -965,6 +1059,7 @@ class _LocationSelectionDrawerState
                         onTap: () {
                           setState(() {
                             isToUniversity = true;
+                            showInlineRouteRequest = false;
                             selectedCity = null;
                             selectedUniversity = null;
                             selectedPickupStation = null;
@@ -1151,72 +1246,138 @@ class _LocationSelectionDrawerState
                           ],
                         ] else ...[
                           // --- UNIVERSITY FLOW ---
-                          // 1. University Selection
-                          universitiesAsync.when(
-                            data: (universities) => _buildSelectionItem(
-                              context,
-                              ref,
-                              title: l10n.university,
-                              value: selectedUniversity?.getLocalizedName(
-                                ref.read(localeProvider).languageCode,
-                              ),
-                              placeholder: l10n.selectUniversity,
-                              icon: CupertinoIcons.book_fill,
-                              onTap: () => _showPicker<UniversityEntity>(
-                                context,
-                                ref,
-                                title: l10n.selectUniversity,
-                                items: universities,
-                                labelBuilder: (uni) => uni.getLocalizedName(
-                                  ref.read(localeProvider).languageCode,
-                                ),
-                                onSelected: (uni) {
-                                  setState(() {
-                                    selectedUniversity = uni;
-                                    selectedUniArrivalPoint = null;
-                                  });
-                                },
-                                showAddOption: true,
-                                addOptionLabel: 'إضافة جامعة غير موجودة',
-                                onAddSubmit: (String val) {
-                                  setState(() {
-                                    selectedUniversity = UniversityEntity(
-                                      id: 'custom_${DateTime.now().millisecondsSinceEpoch}',
-                                      nameAr: val,
-                                      nameEn: val,
-                                      cityId: '',
-                                      isActive: true,
-                                      location: const Location(
-                                        latitude: 0,
-                                        longitude: 0,
-                                        address: '',
-                                      ),
-                                    );
-                                    selectedUniArrivalPoint = null;
-                                  });
-                                },
-                              ),
-                            ),
-                            loading: () => _buildSelectionItem(
-                              context,
-                              ref,
-                              title: l10n.university,
-                              value: null,
-                              placeholder: l10n.loading,
-                              icon: CupertinoIcons.book_fill,
-                              onTap: () {},
-                              isLoading: true,
-                              isEnabled: false,
-                            ),
-                            error: (err, stack) =>
-                                Text('${l10n.error}: $err'),
-                          ),
+                          // 1. City Selection
+                          citiesAsync.when(
+                            data: (cities) {
+                              final uniCities = cities
+                                  .where((c) => c.hasUniversityService)
+                                  .toList();
 
-                          if (selectedUniversity != null) ...[
-                            Divider(height: 1, color: Colors.grey.shade100, indent: 16, endIndent: 16),
-                            // 2. City Selection
-                            citiesAsync.when(
-                              data: (cities) => _buildSelectionItem(
+                              if (uniCities.isEmpty || showInlineRouteRequest) {
+                                return Padding(
+                                  padding: const EdgeInsets.all(24.0),
+                                  child: AnimatedSwitcher(
+                                    duration: const Duration(milliseconds: 300),
+                                    child: showInlineRouteRequest
+                                        ? Column(
+                                            key: const ValueKey('request_form'),
+                                            mainAxisSize: MainAxisSize.min,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.stretch,
+                                            children: [
+                                              const Text(
+                                                'طلب مسار جديد',
+                                                style: TextStyle(
+                                                  fontSize: 18,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                                textAlign: TextAlign.center,
+                                              ),
+                                              const SizedBox(height: 8),
+                                              Text(
+                                                'أدخل تفاصيل المسار وسنتواصل معك فور توفره',
+                                                style: TextStyle(
+                                                  color: AppTheme.textSecondary,
+                                                  fontSize: 14,
+                                                ),
+                                                textAlign: TextAlign.center,
+                                              ),
+                                              const SizedBox(height: 32),
+                                              CustomInput(
+                                                controller:
+                                                    requestCityController,
+                                                hintText: 'اسم المدينة (مثلاً: المنصورة)',
+                                                prefixIcon: CupertinoIcons
+                                                    .building_2_fill,
+                                                backgroundColor: Colors.grey.shade50,
+                                              ),
+                                              const SizedBox(height: 16),
+                                              CustomInput(
+                                                controller:
+                                                    requestStationController,
+                                                hintText: 'نقطة الركوب (مثلاً: المشاية)',
+                                                prefixIcon: CupertinoIcons
+                                                    .location_solid,
+                                                backgroundColor: Colors.grey.shade50,
+                                              ),
+                                              const SizedBox(height: 16),
+                                              CustomInput(
+                                                controller:
+                                                    requestUniversityController,
+                                                hintText: 'اسم الجامعة (مثلاً: جامعة المنصورة)',
+                                                prefixIcon:
+                                                    CupertinoIcons.book_fill,
+                                                backgroundColor: Colors.grey.shade50,
+                                              ),
+                                              const SizedBox(height: 16),
+                                              TextButton(
+                                                onPressed: isSubmitting ? null : () {
+                                                  setState(() {
+                                                    showInlineRouteRequest = false;
+                                                  });
+                                                },
+                                                child: Text(
+                                                  'رجوع',
+                                                  style: TextStyle(
+                                                    color: Colors.grey.shade500,
+                                                    fontSize: 14,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          )
+                                        : Column(
+                                            key: const ValueKey('empty_state'),
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.all(16),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.grey.shade50,
+                                                  shape: BoxShape.circle,
+                                                ),
+                                                child: Icon(
+                                                  CupertinoIcons
+                                                      .location_slash_fill,
+                                                  size: 40,
+                                                  color: Colors.grey.shade400,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 16),
+                                              const Text(
+                                                'لا توجد جامعات متاحة حالياً',
+                                                style: TextStyle(
+                                                  fontSize: 18,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 8),
+                                              Text(
+                                                'لم يتم العثور على أي مدينة تدعم خدمة الجامعات حالياً. يمكنك طلب إضافة مسار جديد وسنفوم بالتواصل معك فور توفره.',
+                                                textAlign: TextAlign.center,
+                                                style: TextStyle(
+                                                  color: Colors.grey.shade600,
+                                                  height: 1.4,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 24),
+                                              CustomButton(
+                                                text: 'اضافة مسار رحلة جديد',
+                                                onPressed: () {
+                                                  setState(() {
+                                                    showInlineRouteRequest =
+                                                        true;
+                                                  });
+                                                },
+                                              ),
+                                            ],
+                                          ),
+                                  ),
+                                );
+                              }
+
+                              return _buildSelectionItem(
                                 context,
                                 ref,
                                 title: l10n.city,
@@ -1229,7 +1390,7 @@ class _LocationSelectionDrawerState
                                   context,
                                   ref,
                                   title: l10n.selectCity,
-                                  items: cities,
+                                  items: uniCities,
                                   labelBuilder: (city) => city.getLocalizedName(
                                     ref.read(localeProvider).languageCode,
                                   ),
@@ -1237,28 +1398,30 @@ class _LocationSelectionDrawerState
                                     setState(() {
                                       selectedCity = city;
                                       selectedUniBoardingPoint = null;
+                                      selectedUniversity = null;
+                                      selectedUniArrivalPoint = null;
                                     });
                                   },
                                 ),
-                              ),
-                              loading: () => _buildSelectionItem(
-                                context,
-                                ref,
-                                title: l10n.city,
-                                value: null,
-                                placeholder: l10n.loading,
-                                icon: CupertinoIcons.building_2_fill,
-                                onTap: () {},
-                                isLoading: true,
-                                isEnabled: false,
-                              ),
-                              error: (err, stack) => Text('${l10n.error}: $err'),
+                              );
+                            },
+                            loading: () => _buildSelectionItem(
+                              context,
+                              ref,
+                              title: l10n.city,
+                              value: null,
+                              placeholder: l10n.loading,
+                              icon: CupertinoIcons.building_2_fill,
+                              onTap: () {},
+                              isLoading: true,
+                              isEnabled: false,
                             ),
-                          ],
+                            error: (err, stack) => Text('${l10n.error}: $err'),
+                          ),
 
-                          if (selectedCity != null && isToUniversity) ...[
+                          if (selectedCity != null) ...[
                             Divider(height: 1, color: Colors.grey.shade100, indent: 16, endIndent: 16),
-                            // 3. Boarding Point Selection
+                            // 2. Boarding Point Selection
                             uniBoardingPointsAsync.when(
                               data: (points) => _buildSelectionItem(
                                 context,
@@ -1276,9 +1439,24 @@ class _LocationSelectionDrawerState
                                   onSelected: (p) {
                                     setState(() {
                                       selectedUniBoardingPoint = p;
+                                      selectedUniversity = null;
+                                      selectedUniArrivalPoint = null;
                                     });
                                   },
                                   emptyMessage: 'لا يوجد نقاط ركوب متاحة لهذه المدينة حالياً',
+                                  emptyActionLabel: 'اضافة مسار رحلة جديد',
+                                  onEmptyActionTap: () {
+                                    Navigator.pop(context);
+                                    setState(() {
+                                      showInlineRouteRequest = true;
+                                      if (selectedCity != null) {
+                                        requestCityController.text =
+                                            selectedCity!.getLocalizedName(ref
+                                                .read(localeProvider)
+                                                .languageCode);
+                                      }
+                                    });
+                                  },
                                 ),
                               ),
                               loading: () => _buildSelectionItem(
@@ -1296,7 +1474,89 @@ class _LocationSelectionDrawerState
                             ),
                           ],
 
-                          if (selectedUniversity != null && isToUniversity) ...[
+                          if (selectedUniBoardingPoint != null) ...[
+                            Divider(height: 1, color: Colors.grey.shade100, indent: 16, endIndent: 16),
+                            // 3. University Selection
+                            universitiesAsync.when(
+                              data: (universities) => _buildSelectionItem(
+                                context,
+                                ref,
+                                title: l10n.university,
+                                value: selectedUniversity?.getLocalizedName(
+                                  ref.read(localeProvider).languageCode,
+                                ),
+                                placeholder: l10n.selectUniversity,
+                                icon: CupertinoIcons.book_fill,
+                                onTap: () => _showPicker<UniversityEntity>(
+                                  context,
+                                  ref,
+                                  title: l10n.selectUniversity,
+                                  items: universities,
+                                  labelBuilder: (uni) => uni.getLocalizedName(
+                                    ref.read(localeProvider).languageCode,
+                                  ),
+                                  onSelected: (uni) {
+                                    setState(() {
+                                      selectedUniversity = uni;
+                                      selectedUniArrivalPoint = null;
+                                    });
+                                  },
+                                  emptyMessage: 'لا يوجد جامعات متاحة لهذه المحطة حالياً',
+                                  emptyActionLabel: 'اضافة مسار جامعة جديد',
+                                  onEmptyActionTap: () {
+                                    Navigator.pop(context);
+                                    setState(() {
+                                      showInlineRouteRequest = true;
+                                      if (selectedCity != null) {
+                                        requestCityController.text =
+                                            selectedCity!.getLocalizedName(ref
+                                                .read(localeProvider)
+                                                .languageCode);
+                                      }
+                                      if (selectedUniBoardingPoint != null) {
+                                        requestStationController.text =
+                                            selectedUniBoardingPoint!.nameAr;
+                                      }
+                                    });
+                                  },
+                                  showAddOption: true,
+                                  addOptionLabel: 'إضافة جامعة غير موجودة',
+                                  onAddSubmit: (String val) {
+                                    setState(() {
+                                      selectedUniversity = UniversityEntity(
+                                        id: 'custom_${DateTime.now().millisecondsSinceEpoch}',
+                                        nameAr: val,
+                                        nameEn: val,
+                                        cityId: '',
+                                        isActive: true,
+                                        location: const Location(
+                                          latitude: 0,
+                                          longitude: 0,
+                                          address: '',
+                                        ),
+                                      );
+                                      selectedUniArrivalPoint = null;
+                                    });
+                                  },
+                                ),
+                              ),
+                              loading: () => _buildSelectionItem(
+                                context,
+                                ref,
+                                title: l10n.university,
+                                value: null,
+                                placeholder: l10n.loading,
+                                icon: CupertinoIcons.book_fill,
+                                onTap: () {},
+                                isLoading: true,
+                                isEnabled: false,
+                              ),
+                              error: (err, stack) =>
+                                  Text('${l10n.error}: $err'),
+                            ),
+                          ],
+
+                          if (selectedUniversity != null) ...[
                             Divider(height: 1, color: Colors.grey.shade100, indent: 16, endIndent: 16),
                             // 4. Arrival Point Selection
                             uniArrivalPointsAsync.when(
@@ -1358,40 +1618,43 @@ class _LocationSelectionDrawerState
                 ],
               ),
               child: IOSButton(
-                text: l10n.continueText,
-                onPressed: isComplete
-                    ? () {
-                        ref
-                            .read(bookingStateProvider.notifier)
-                            .setLocationData(
-                              city: selectedCity!,
-                              university: selectedUniversity,
-                              pickupStation: selectedPickupStation,
-                              arrivalStation: selectedArrivalStation,
-                              uniBoardingPoint: selectedUniBoardingPoint,
-                              uniArrivalPoint: selectedUniArrivalPoint,
-                              isToUniversity: isToUniversity,
-                            );
+                text: showInlineRouteRequest ? 'إرسال الطلب' : l10n.continueText,
+                isLoading: isSubmitting,
+                onPressed: (showInlineRouteRequest && !isSubmitting)
+                    ? _submitIntegratedRouteRequest
+                    : isComplete
+                        ? () {
+                            ref
+                                .read(bookingStateProvider.notifier)
+                                .setLocationData(
+                                  city: selectedCity!,
+                                  university: selectedUniversity,
+                                  pickupStation: selectedPickupStation,
+                                  arrivalStation: selectedArrivalStation,
+                                  uniBoardingPoint: selectedUniBoardingPoint,
+                                  uniArrivalPoint: selectedUniArrivalPoint,
+                                  isToUniversity: isToUniversity,
+                                );
 
-                        Navigator.pop(context);
+                            Navigator.pop(context);
 
-                        if (widget.navigateToSubscription) {
-                          showCupertinoModalPopup(
-                            context: context,
-                            builder: (context) =>
-                                const SubscriptionPlansSheet(),
-                          );
-                        } else {
-                          Navigator.push(
-                            context,
-                            CupertinoPageRoute(
-                              builder: (_) => const BookingPage(),
-                            ),
-                          );
-                        }
-                      }
-                    : null,
-                color: isComplete
+                            if (widget.navigateToSubscription) {
+                              showCupertinoModalPopup(
+                                context: context,
+                                builder: (context) =>
+                                    const SubscriptionPlansSheet(),
+                              );
+                            } else {
+                              Navigator.push(
+                                context,
+                                CupertinoPageRoute(
+                                  builder: (_) => const BookingPage(),
+                                ),
+                              );
+                            }
+                          }
+                        : null,
+                color: (showInlineRouteRequest || isComplete)
                     ? AppTheme.primaryColor
                     : AppTheme.dividerColor,
               ),

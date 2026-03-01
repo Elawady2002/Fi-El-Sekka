@@ -84,6 +84,14 @@ abstract class BookingDataSource {
     String? targetUserId,
     String? targetPhoneNumber,
   });
+
+  Future<void> createRouteRequest({
+    required String userId,
+    String? cityId,
+    String? cityName,
+    required String boardingStationName,
+    required String universityName,
+  });
 }
 
 class BookingDataSourceImpl implements BookingDataSource {
@@ -497,6 +505,37 @@ class BookingDataSourceImpl implements BookingDataSource {
       throw Exception('Database error transferring booking: ${e.message}');
     } catch (e) {
       throw Exception('Unexpected error during booking transfer: $e');
+    }
+  }
+
+  @override
+  Future<void> createRouteRequest({
+    required String userId,
+    String? cityId,
+    String? cityName,
+    required String boardingStationName,
+    required String universityName,
+  }) async {
+    try {
+      final now = DateTime.now();
+
+      await _client.from('route_requests').insert({
+        'user_id': userId,
+        'city_id': cityId,
+        'city_name': cityName,
+        'boarding_station_name': boardingStationName,
+        'university_name': universityName,
+        'status': 'pending',
+        'created_at': now.toIso8601String(),
+      });
+
+      AppLogger.info('✅ Route request created successfully');
+    } on PostgrestException catch (e) {
+      AppLogger.error('❌ Database error creating route request: ${e.message}');
+      throw Exception('Database error: ${e.message}');
+    } catch (e) {
+      AppLogger.error('❌ Unexpected error creating route request: $e');
+      throw Exception('Unexpected error: $e');
     }
   }
 }

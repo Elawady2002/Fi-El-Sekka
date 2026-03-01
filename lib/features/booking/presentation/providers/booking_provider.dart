@@ -292,6 +292,29 @@ class BookingState extends _$BookingState {
     }
   }
 
+  Future<String?> submitRouteRequest(
+    BookingRepository repository, {
+    String? cityName,
+    required String boardingStationName,
+    required String universityName,
+  }) async {
+    try {
+      final result = await repository.createRouteRequest(
+        cityId: state.selectedCity?.id,
+        cityName: cityName,
+        boardingStationName: boardingStationName,
+        universityName: universityName,
+      );
+
+      return result.fold(
+        (failure) => failure.message,
+        (_) => null, // Success
+      );
+    } catch (e) {
+      return 'حدث خطأ أثناء إرسال طلب المسار: $e';
+    }
+  }
+
   Future<String?> updateBooking(
     BookingRepository repository, {
     required String bookingId,

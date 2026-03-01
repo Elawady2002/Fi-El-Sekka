@@ -6,16 +6,27 @@ class CityEntity extends Equatable {
   final String nameAr;
   final String nameEn;
   final bool isActive;
+  final bool hasPointToPoint;
+  final bool hasUniversityService;
 
   const CityEntity({
     required this.id,
     required this.nameAr,
     required this.nameEn,
     required this.isActive,
+    this.hasPointToPoint = true,
+    this.hasUniversityService = false,
   });
 
   @override
-  List<Object?> get props => [id, nameAr, nameEn, isActive];
+  List<Object?> get props => [
+    id, 
+    nameAr, 
+    nameEn, 
+    isActive, 
+    hasPointToPoint, 
+    hasUniversityService,
+  ];
 
   String getLocalizedName(String languageCode) {
     return languageCode == 'ar' ? nameAr : nameEn;

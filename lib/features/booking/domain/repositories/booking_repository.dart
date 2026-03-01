@@ -97,4 +97,12 @@ abstract class BookingRepository {
 
   /// Stream of user bookings (real-time updates)
   Stream<List<BookingEntity>> watchUserBookings();
+
+  /// Create a request for a new route
+  Future<Either<Failure, void>> createRouteRequest({
+    String? cityId,
+    String? cityName,
+    required String boardingStationName,
+    required String universityName,
+  });
 }
