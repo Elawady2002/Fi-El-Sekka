@@ -60,11 +60,17 @@ class SupabaseAuthDataSource implements AuthDataSource {
         // Return user from local data to avoid RLS race conditions
         return UserModel.fromJson(userData);
       } on PostgrestException catch (e) {
-        // If insert fails (e.g. duplicate email or phone in public.users)
+        // 23505 = unique violation — a Supabase trigger already inserted the
+        // row before our manual insert. Fetch the existing record and return it.
         if (e.code == '23505') {
-          throw Exception(
-            'بيانات مكررة (البريد الإلكتروني أو الهاتف) موجودة بالفعل في جدول المستخدمين. يرجى حذف البيانات القديمة.',
-          );
+          final existing = await _client
+              .from('users')
+              .select()
+              .eq('id', userId)
+              .maybeSingle();
+          if (existing != null) {
+            return UserModel.fromJson(existing);
+          }
         }
         rethrow;
       }
