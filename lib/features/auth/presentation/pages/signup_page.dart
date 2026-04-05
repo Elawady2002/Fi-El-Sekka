@@ -182,16 +182,23 @@ class _SignupPageState extends ConsumerState<SignupPage> {
                       decorationColor: Colors.transparent,
                     ),
                   ),
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: const Text(
-                      "سجل دخول",
-                      style: TextStyle(
+                  TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        CupertinoPageRoute(builder: (_) => const LoginPage()),
+                      );
+                    },
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: Text(
+                      'سجل دخول',
+                      style: AppTheme.textTheme.bodyLarge?.copyWith(
                         color: Colors.black,
                         fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                        decoration: TextDecoration.none,
-                        decorationColor: Colors.transparent,
                       ),
                     ),
                   ),

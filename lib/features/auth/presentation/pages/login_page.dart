@@ -175,23 +175,23 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         decorationColor: Colors.transparent,
                       ),
                     ),
-                    GestureDetector(
-                      onTap: () {
+                    TextButton(
+                      onPressed: () {
                         Navigator.push(
                           context,
-                          CupertinoPageRoute(
-                            builder: (context) => const SignupPage(),
-                          ),
+                          CupertinoPageRoute(builder: (_) => const SignupPage()),
                         );
                       },
-                      child: const Text(
-                        "سجل دلوقتي",
-                        style: TextStyle(
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: Text(
+                        'سجل دلوقتي',
+                        style: AppTheme.textTheme.bodyLarge?.copyWith(
                           color: Colors.black,
                           fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                          decoration: TextDecoration.none,
-                          decorationColor: Colors.transparent,
                         ),
                       ),
                     ),
