@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/logger.dart';
 import '../../../payment/presentation/pages/payment_page.dart';
 import 'calendar_plan_card.dart';
 import '../../domain/entities/subscription_entity.dart';
@@ -207,7 +208,7 @@ class _SubscriptionPlansSheetState
                           }
                         });
                       } catch (e) {
-                        debugPrint('Error checking subscription: $e');
+                        AppLogger.error('Error checking subscription', e);
                         setState(() {
                           _isProcessing = false;
                         });

@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import '../config/supabase_config.dart';
+import '../config/env.dart';
 import '../services/logger_service.dart';
 
 /// Provider that handles all app-wide initialization synchronously
@@ -15,14 +15,11 @@ final appStartupProvider = FutureProvider<void>((ref) async {
   await initializeDateFormatting('en', null);
   LoggerService.info('Date formatting initialized');
 
-  // 2. Load environment variables
-  try {
-    await dotenv.load(fileName: '.env');
-    LoggerService.info('Environment variables loaded');
-  } catch (e) {
-    LoggerService.error('Failed to load .env file', error: e);
-    throw Exception('Failed to load configuration: $e');
+  // 2. Validate compile-time environment variables
+  if (!Env.isValid) {
+    throw Exception(Env.validationError);
   }
+  LoggerService.info('Environment variables validated');
 
   // 3. Initialize Supabase
   try {

@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -118,12 +119,6 @@ class _HomePageState extends ConsumerState<HomePage> {
                                       offset: const Offset(0, 4),
                                     ),
                                   ],
-                                  image: user?.avatarUrl != null
-                                      ? DecorationImage(
-                                          image: NetworkImage(user!.avatarUrl!),
-                                          fit: BoxFit.cover,
-                                        )
-                                      : null,
                                 ),
                                 child: user?.avatarUrl == null
                                     ? const Padding(
@@ -134,7 +129,31 @@ class _HomePageState extends ConsumerState<HomePage> {
                                           size: 24,
                                         ),
                                       )
-                                    : null,
+                                    : ClipOval(
+                                        child: CachedNetworkImage(
+                                          imageUrl: user!.avatarUrl!,
+                                          fit: BoxFit.cover,
+                                          width: 48,
+                                          height: 48,
+                                          placeholder: (_, __) => const Padding(
+                                            padding: EdgeInsets.all(8.0),
+                                            child: Icon(
+                                              CupertinoIcons.person_fill,
+                                              color: Colors.black,
+                                              size: 24,
+                                            ),
+                                          ),
+                                          errorWidget: (_, __, ___) =>
+                                              const Padding(
+                                            padding: EdgeInsets.all(8.0),
+                                            child: Icon(
+                                              CupertinoIcons.person_fill,
+                                              color: Colors.black,
+                                              size: 24,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
                               );
                             },
                           ),
@@ -272,13 +291,13 @@ class _HomePageState extends ConsumerState<HomePage> {
                                 loading: () => const Center(
                                   child: CircularProgressIndicator(),
                                 ),
-                                error: (e, s) => const SizedBox.shrink(),
+                                error: (e, s) => _buildHomeError(ref),
                               );
                             },
                             loading: () => const Center(
                               child: CircularProgressIndicator(),
                             ),
-                            error: (e, s) => const SizedBox.shrink(),
+                            error: (e, s) => _buildHomeError(ref),
                           );
                         },
                       ),
@@ -323,6 +342,38 @@ class _HomePageState extends ConsumerState<HomePage> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildHomeError(WidgetRef ref) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(CupertinoIcons.exclamationmark_circle,
+              color: AppTheme.textSecondary, size: 40),
+          const SizedBox(height: 12),
+          Text(
+            'تعذّر تحميل البيانات',
+            style: AppTheme.textTheme.bodyLarge
+                ?.copyWith(color: AppTheme.textSecondary),
+          ),
+          const SizedBox(height: 12),
+          CupertinoButton(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+            color: AppTheme.primaryColor,
+            borderRadius: BorderRadius.circular(12),
+            onPressed: () {
+              ref.invalidate(upcomingBookingProvider);
+              ref.invalidate(userBookingsProvider);
+              ref.invalidate(activeSubscriptionProvider);
+            },
+            child: const Text('إعادة المحاولة',
+                style: TextStyle(color: Colors.white)),
+          ),
+        ],
       ),
     );
   }

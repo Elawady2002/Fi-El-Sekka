@@ -178,21 +178,15 @@ class WalletNotifier extends StateNotifier<WalletState> {
   }
 }
 
-// Provider
+// Provider — recreates WalletNotifier whenever the authenticated user changes,
+// ensuring we never call the API with a stale or empty userId.
 final walletProvider = StateNotifierProvider<WalletNotifier, WalletState>((
   ref,
 ) {
-  final user = ref.watch(authProvider).value;
-  // Instead of throwing, return a notifier with a safe fallback
-  // This prevents the app from crashing if the provider is built before auth
-  if (user == null) {
-    // Return a dummy notifier that does nothing or handles re-auth
-    final repository = ref.watch(walletRepositoryProvider);
-    return WalletNotifier(repository, ''); 
-  }
-
   final repository = ref.watch(walletRepositoryProvider);
-  return WalletNotifier(repository, user.id);
+  // ref.watch guarantees this provider is rebuilt on auth changes.
+  final userId = ref.watch(authProvider).valueOrNull?.id ?? '';
+  return WalletNotifier(repository, userId);
 });
 
 final walletTransactionsProvider = FutureProvider<List<Map<String, dynamic>>>((

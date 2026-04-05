@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/logger.dart';
 import '../../../../core/widgets/insufficient_balance_dialog.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../profile/presentation/providers/wallet_provider.dart';
@@ -518,7 +519,7 @@ class _SubscriptionPlansPageState extends ConsumerState<SubscriptionPlansPage> {
         },
       );
     } catch (e) {
-      debugPrint('Error checking subscription: $e');
+      AppLogger.error('Error checking subscription', e);
       setState(() => _isProcessing = false);
 
       if (!mounted) return;

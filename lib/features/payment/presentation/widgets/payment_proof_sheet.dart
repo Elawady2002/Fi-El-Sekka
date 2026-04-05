@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path/path.dart' as path;
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/logger.dart';
 import '../../../../core/widgets/ios_components.dart';
 import '../../../../core/widgets/custom_input.dart';
 import '../../../../core/widgets/top_notification.dart';
@@ -41,7 +42,7 @@ class _PaymentProofSheetState extends State<PaymentProofSheet> {
       }
     } catch (e) {
       // Handle permission or other errors
-      debugPrint('Error picking image: $e');
+      AppLogger.error('Error picking image', e);
     }
   }
 
@@ -62,17 +63,15 @@ class _PaymentProofSheetState extends State<PaymentProofSheet> {
           );
 
       if (compressedFile != null) {
-        debugPrint(
-          '✅ Image compressed: ${file.lengthSync()} → ${File(compressedFile.path).lengthSync()} bytes',
-        );
+        AppLogger.info('Image compressed: ${file.lengthSync()} → ${File(compressedFile.path).lengthSync()} bytes');
         return File(compressedFile.path);
       }
 
       // If compression fails, return original file
-      debugPrint('⚠️ Compression failed, using original image');
+      AppLogger.warning('Compression failed, using original image');
       return file;
     } catch (e) {
-      debugPrint('⚠️ Error compressing image: $e, using original');
+      AppLogger.warning('Error compressing image: $e, using original');
       return file;
     }
   }
@@ -232,9 +231,7 @@ class _PaymentProofSheetState extends State<PaymentProofSheet> {
               });
 
               try {
-                debugPrint(
-                  '🔄 PaymentProofSheet: Calling onConfirm callback...',
-                );
+                AppLogger.info('PaymentProofSheet: Calling onConfirm callback...');
 
                 // Call the onConfirm callback which will save the booking
                 await widget.onConfirm(
@@ -242,20 +239,14 @@ class _PaymentProofSheetState extends State<PaymentProofSheet> {
                   _accountController.text,
                 );
 
-                debugPrint(
-                  '✅ PaymentProofSheet: onConfirm completed successfully!',
-                );
-                debugPrint(
-                  '✅ PaymentProofSheet: Closing sheet with result=true',
-                );
+                AppLogger.info('PaymentProofSheet: onConfirm completed successfully');
 
                 // Close sheet only if still mounted
                 if (mounted) {
                   Navigator.pop(context, true);
                 }
               } catch (e, stackTrace) {
-                debugPrint('❌ PaymentProofSheet: Error in onConfirm: $e');
-                debugPrint('❌ Stack trace: $stackTrace');
+                AppLogger.error('PaymentProofSheet: Error in onConfirm', e, stackTrace);
 
                 if (mounted) {
                   setState(() {

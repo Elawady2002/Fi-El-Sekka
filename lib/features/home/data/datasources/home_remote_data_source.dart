@@ -35,7 +35,7 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
         .eq('is_active', true)
         .order('name_ar');
 
-    return (response as List).map((e) => CityModel.fromJson(e)).toList();
+    return response.map((e) => CityModel.fromJson(e)).toList();
   }
 
   @override
@@ -47,7 +47,7 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
         .eq('is_active', true)
         .order('name_ar');
 
-    return (response as List).map((e) => UniversityModel.fromJson(e)).toList();
+    return response.map((e) => UniversityModel.fromJson(e)).toList();
   }
 
   @override
@@ -58,7 +58,7 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
         .eq('city_id', cityId)
         .order('name_ar');
 
-    return (response as List).map((e) => BoardingStationModel.fromJson(e)).toList();
+    return response.map((e) => BoardingStationModel.fromJson(e)).toList();
   }
 
   @override
@@ -69,7 +69,7 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
         .eq('pickup_station_id', pickupStationId)
         .order('name_ar');
 
-    return (response as List).map((e) => ArrivalStationModel.fromJson(e)).toList();
+    return response.map((e) => ArrivalStationModel.fromJson(e)).toList();
   }
 
   @override
@@ -81,7 +81,7 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
         .eq('is_active', true)
         .order('route_name_ar');
 
-    return (response as List).map((e) => RouteModel.fromJson(e)).toList();
+    return response.map((e) => RouteModel.fromJson(e)).toList();
   }
 
   @override
@@ -93,7 +93,7 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
         .eq('is_active', true)
         .order('departure_time');
 
-    return (response as List).map((e) => ScheduleModel.fromJson(e)).toList();
+    return response.map((e) => ScheduleModel.fromJson(e)).toList();
   }
 
   @override
@@ -103,7 +103,7 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
         .select()
         .order('name_ar');
 
-    return (response as List).map((e) => BoardingStationModel.fromJson(e)).toList();
+    return response.map((e) => BoardingStationModel.fromJson(e)).toList();
   }
 
   @override
@@ -113,7 +113,7 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
         .select()
         .order('name_ar');
 
-    return (response as List).map((e) => ArrivalStationModel.fromJson(e)).toList();
+    return response.map((e) => ArrivalStationModel.fromJson(e)).toList();
   }
 
   @override
@@ -124,7 +124,7 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
         .eq('is_active', true)
         .order('name_ar');
 
-    return (response as List).map((e) => UniversityModel.fromJson(e)).toList();
+    return response.map((e) => UniversityModel.fromJson(e)).toList();
   }
 
   @override
@@ -135,7 +135,7 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
         .eq('city_id', cityId)
         .order('name_ar');
 
-    return (response as List).map((e) => UniversityBoardingPointModel.fromJson(e)).toList();
+    return response.map((e) => UniversityBoardingPointModel.fromJson(e)).toList();
   }
 
   @override
@@ -146,6 +146,6 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
         .eq('university_id', universityId)
         .order('name_ar');
 
-    return (response as List).map((e) => UniversityArrivalPointModel.fromJson(e)).toList();
+    return response.map((e) => UniversityArrivalPointModel.fromJson(e)).toList();
   }
 }

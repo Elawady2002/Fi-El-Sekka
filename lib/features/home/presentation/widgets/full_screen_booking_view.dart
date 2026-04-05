@@ -15,6 +15,7 @@ import '../../../subscription/domain/entities/subscription_entity.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../booking/domain/entities/booking_entity.dart';
 import '../../../../core/domain/entities/user_entity.dart';
+import '../../../../core/utils/logger.dart';
 import '../../../../core/widgets/unified_calendar.dart';
 
 enum FullScreenView { bookingList, timeEditor }
@@ -161,22 +162,9 @@ class _FullScreenBookingViewState extends ConsumerState<FullScreenBookingView>
           break;
       }
 
-      debugPrint('📝 Saving booking...');
-      debugPrint('   User ID: ${currentUser.id}');
-      debugPrint('   Booking Date: $bookingDate');
-      debugPrint('   Trip Type: $_editingTripType');
-      debugPrint(
-        '   Departure: $_editingDepartureTime -> ${_toDbTime(_editingDepartureTime)}',
-      );
-      debugPrint(
-        '   Return: $_editingReturnTime -> ${_toDbTime(_editingReturnTime)}',
-      );
-      debugPrint('   Price: $price');
-      debugPrint('   Selected Booking ID: ${_selectedBooking?.id}');
+      AppLogger.info('Saving booking for user: ${currentUser.id}');
 
       if (_selectedBooking == null) {
-        // Create new booking
-        debugPrint('➕ Inserting new booking...');
 
         await supabase.from('bookings').insert({
           'user_id': currentUser.id,
@@ -198,10 +186,7 @@ class _FullScreenBookingViewState extends ConsumerState<FullScreenBookingView>
           'updated_at': DateTime.now().toIso8601String(),
         });
 
-        debugPrint('✅ New booking created successfully!');
       } else {
-        // Update existing booking
-        debugPrint('🔄 Updating booking ${_selectedBooking!.id}...');
 
         final response = await supabase
             .from('bookings')
@@ -220,12 +205,8 @@ class _FullScreenBookingViewState extends ConsumerState<FullScreenBookingView>
             .eq('id', _selectedBooking!.id)
             .select(); // Add .select() to get the updated row
 
-        debugPrint('✅ Booking update response: $response');
-
         if (response.isEmpty) {
-          debugPrint(
-            '⚠️ No rows were updated! Check RLS policies or booking ID.',
-          );
+          AppLogger.warning('No rows were updated for booking ${_selectedBooking!.id}. Check RLS policies.');
         }
       }
 
@@ -236,7 +217,7 @@ class _FullScreenBookingViewState extends ConsumerState<FullScreenBookingView>
         Navigator.of(context).pop();
       }
     } catch (e) {
-      debugPrint('❌ Error saving booking: $e');
+      AppLogger.error('Error saving booking', e);
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -272,7 +253,7 @@ class _FullScreenBookingViewState extends ConsumerState<FullScreenBookingView>
           payload: schedule,
         ));
       } catch (e) {
-        debugPrint('Invalid date string in schedules: $dateString');
+        AppLogger.warning('Invalid date string in schedules: $dateString');
       }
     });
 

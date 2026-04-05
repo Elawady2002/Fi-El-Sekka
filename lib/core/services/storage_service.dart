@@ -8,6 +8,17 @@ class StorageService {
   final SupabaseClient _client;
   static const String _bucketName = 'payment-proofs';
 
+  /// Maximum allowed file size: 5 MB
+  static const int _maxFileSizeBytes = 5 * 1024 * 1024;
+
+  /// Allowed image extensions
+  static const Set<String> _allowedExtensions = {
+    '.jpg',
+    '.jpeg',
+    '.png',
+    '.webp',
+  };
+
   StorageService(this._client);
 
   /// Upload a payment proof image and return the public URL
@@ -16,13 +27,26 @@ class StorageService {
   /// [userId] - The user ID (used for organizing files)
   ///
   /// Returns the public URL of the uploaded image
-  /// Throws an exception if upload fails
+  /// Throws an exception if upload fails or validation fails
   Future<String> uploadPaymentProof(File imageFile, String userId) async {
+    // Validate file size
+    final fileSize = await imageFile.length();
+    if (fileSize > _maxFileSizeBytes) {
+      throw Exception(
+          'حجم الصورة كبير جداً. الحد الأقصى هو ${_maxFileSizeBytes ~/ (1024 * 1024)} ميجابايت');
+    }
+
+    // Validate file extension
+    final ext = path.extension(imageFile.path).toLowerCase();
+    if (!_allowedExtensions.contains(ext)) {
+      throw Exception(
+          'نوع الملف غير مسموح به. يُرجى رفع صورة بصيغة JPG أو PNG أو WEBP فقط');
+    }
+
     try {
       // Generate unique filename
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final extension = path.extension(imageFile.path);
-      final fileName = '$userId/$timestamp$extension';
+      final fileName = '$userId/$timestamp$ext';
 
       LoggerService.info('📤 Uploading payment proof: $fileName');
 

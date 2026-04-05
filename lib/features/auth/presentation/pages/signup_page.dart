@@ -8,6 +8,7 @@ import '../../../../core/widgets/custom_input.dart';
 import '../../../../core/widgets/custom_toast.dart';
 import '../providers/auth_provider.dart';
 import '../../../home/presentation/pages/home_page.dart';
+import 'login_page.dart';
 
 class SignupPage extends ConsumerStatefulWidget {
   const SignupPage({super.key});

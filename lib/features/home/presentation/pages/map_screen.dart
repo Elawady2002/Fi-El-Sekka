@@ -20,6 +20,12 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   static const LatLng _kInitialPosition = LatLng(30.0444, 31.2357);
 
   @override
+  void dispose() {
+    _mapController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final mapState = ref.watch(mapStateProvider);
 

@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../domain/entities/trip_type.dart';
@@ -145,16 +144,6 @@ class BookingState extends _$BookingState {
     UniversityArrivalPointEntity? uniArrivalPoint,
     bool? isToUniversity,
   }) {
-    // Debug logging to trace data flow
-    debugPrint('🔵 setLocationData called:');
-    debugPrint('   City: ${city.nameAr}');
-    debugPrint('   University: ${university?.nameAr}');
-    debugPrint('   Pickup Station: ${pickupStation?.nameAr}');
-    debugPrint('   Arrival Station: ${arrivalStation?.nameAr}');
-    debugPrint('   Uni Boarding Point: ${uniBoardingPoint?.nameAr}');
-    debugPrint('   Uni Arrival Point: ${uniArrivalPoint?.nameAr}');
-    debugPrint('   isToUniversity: $isToUniversity');
-
     state = state.copyWith(
       selectedCity: city,
       selectedUniversity: university,
@@ -165,7 +154,6 @@ class BookingState extends _$BookingState {
       isToUniversity: isToUniversity ?? state.isToUniversity,
     );
 
-    debugPrint('🟢 State updated - City now: ${state.selectedCity?.nameAr}');
   }
 
   bool get isSameDayBookingAllowed {

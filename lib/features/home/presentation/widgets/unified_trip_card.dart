@@ -1,4 +1,5 @@
 import 'full_screen_booking_view.dart';
+import '../../../../core/utils/logger.dart';
 import '../../../subscription/domain/entities/subscription_schedule_entity.dart';
 import '../../../subscription/presentation/providers/subscription_provider.dart';
 import 'qr_details_sheet.dart';
@@ -122,7 +123,7 @@ class _UnifiedTripCardState extends ConsumerState<UnifiedTripCard> with SingleTi
       }
     } else {
       HapticFeedback.lightImpact();
-      debugPrint('No subscription found for pull-down navigation');
+      AppLogger.warning('No subscription found for pull-down navigation');
     }
   }
 

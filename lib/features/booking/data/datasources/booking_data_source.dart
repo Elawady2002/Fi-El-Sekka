@@ -285,7 +285,7 @@ class BookingDataSourceImpl implements BookingDataSource {
           .eq('user_id', userId)
           .order('booking_date', ascending: false);
 
-      return (response as List).map((e) => BookingModel.fromJson(e)).toList();
+      return response.map((e) => BookingModel.fromJson(e)).toList();
     } on PostgrestException catch (e) {
       throw Exception('Database error: ${e.message}');
     } catch (e) {
@@ -313,7 +313,7 @@ class BookingDataSourceImpl implements BookingDataSource {
       }
 
       // Convert all bookings to models
-      final bookings = (response as List)
+      final bookings = response
           .map((e) => BookingModel.fromJson(e))
           .toList();
 

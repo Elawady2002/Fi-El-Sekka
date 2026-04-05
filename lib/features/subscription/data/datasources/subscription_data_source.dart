@@ -117,7 +117,7 @@ class SubscriptionDataSourceImpl implements SubscriptionDataSource {
           .eq('user_id', userId)
           .order('created_at', ascending: false);
 
-      return List<Map<String, dynamic>>.from(response as List);
+      return List<Map<String, dynamic>>.from(response);
     } catch (e, stackTrace) {
       AppLogger.error('Failed to get user subscriptions', e, stackTrace);
       rethrow;
