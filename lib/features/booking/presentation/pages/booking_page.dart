@@ -121,11 +121,8 @@ class _BookingPageState extends ConsumerState<BookingPage> {
 
                         // If it's a university request, we don't deduct money immediately
                         if (bookingState.isToUniversity) {
-                          final repository = ref.read(
-                            bookingRepositoryProvider,
-                          );
                           final errorMessage = await bookingNotifier
-                              .createUniversityRequestBooking(repository);
+                              .createUniversityRequestBooking();
 
                           if (errorMessage == null) {
                             if (!context.mounted) return;
@@ -186,13 +183,10 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                         }
 
                         // Create booking
-                        final repository = ref.read(bookingRepositoryProvider);
-                        final errorMessage = await bookingNotifier
-                            .createBooking(
-                              repository,
-                              paymentProofImage: null,
-                              transferNumber: null,
-                            );
+                        final errorMessage = await bookingNotifier.createBooking(
+                          paymentProofImage: null,
+                          transferNumber: null,
+                        );
 
                         if (errorMessage == null) {
                           if (!context.mounted) return;

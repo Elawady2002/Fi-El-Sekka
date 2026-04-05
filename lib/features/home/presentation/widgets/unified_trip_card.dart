@@ -1,4 +1,4 @@
-import 'full_screen_booking_view.dart';
+import 'full_screen_booking_widget.dart';
 import '../../../../core/utils/logger.dart';
 import '../../../subscription/domain/entities/subscription_schedule_entity.dart';
 import '../../../subscription/presentation/providers/subscription_provider.dart';

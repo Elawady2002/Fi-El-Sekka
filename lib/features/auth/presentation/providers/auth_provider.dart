@@ -16,8 +16,7 @@ class Auth extends _$Auth {
   /// Login with email and password
   Future<String?> login(String email, String password) async {
     final result = await ref
-        .read(authRepositoryProvider)
-        .signIn(email: email, password: password);
+        .read(loginUseCaseProvider)(email: email, password: password);
 
     return result.fold((failure) => failure.message, (_) => null);
   }
@@ -31,16 +30,14 @@ class Auth extends _$Auth {
     String? studentId,
     String? universityId,
   }) async {
-    final result = await ref
-        .read(authRepositoryProvider)
-        .signUp(
-          email: email,
-          password: password,
-          fullName: name,
-          phone: phone,
-          studentId: studentId,
-          universityId: universityId,
-        );
+    final result = await ref.read(signupUseCaseProvider)(
+      email: email,
+      password: password,
+      fullName: name,
+      phone: phone,
+      studentId: studentId,
+      universityId: universityId,
+    );
 
     return result.fold((failure) => failure.message, (_) => null);
   }
@@ -134,7 +131,7 @@ class Auth extends _$Auth {
 
   /// Logout
   Future<String?> logout() async {
-    final result = await ref.read(authRepositoryProvider).signOut();
+    final result = await ref.read(logoutUseCaseProvider)();
 
     return result.fold((failure) => failure.message, (_) => null);
   }

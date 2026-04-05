@@ -6,20 +6,27 @@ import '../../domain/entities/university_entity.dart';
 import '../../domain/entities/boarding_station_entity.dart';
 import '../../domain/entities/arrival_station_entity.dart';
 import '../../domain/entities/booking_entity.dart';
-import '../../domain/repositories/booking_repository.dart';
+import '../../domain/repositories/booking_repository.dart'; // needed by bookingRepositoryProvider
 import '../../data/repositories/booking_repository_impl.dart';
-import '../../data/datasources/booking_data_source.dart';
 import '../../domain/entities/schedule_entity.dart';
 import '../../domain/entities/university_boarding_point_entity.dart';
 import '../../domain/entities/university_arrival_point_entity.dart';
+import '../../domain/usecases/get_user_bookings_use_case.dart';
+import '../../domain/usecases/get_upcoming_booking_use_case.dart';
+import '../../domain/usecases/create_booking_use_case.dart';
+import '../../domain/usecases/create_university_request_use_case.dart';
+import '../../domain/usecases/create_route_request_use_case.dart';
+import '../../domain/usecases/transfer_booking_use_case.dart';
+import '../../domain/constants/trip_type_pricing.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import 'booking_providers.dart';
 
 part 'booking_provider.g.dart';
 
 // Booking Repository Provider
 @riverpod
 BookingRepository bookingRepository(Ref ref) {
-  final dataSource = BookingDataSourceImpl();
+  final dataSource = ref.watch(bookingDataSourceProvider);
   // Watch auth provider to ensure repository is rebuilt when auth state changes
   final userAsync = ref.watch(authProvider);
   final user = userAsync.value;
@@ -33,8 +40,8 @@ BookingRepository bookingRepository(Ref ref) {
 // User Bookings Provider
 @riverpod
 Future<List<BookingEntity>> userBookings(Ref ref) async {
-  final repository = ref.watch(bookingRepositoryProvider);
-  final result = await repository.getUserBookings();
+  final useCase = ref.watch(getUserBookingsUseCaseProvider);
+  final result = await useCase();
   return result.fold(
     (failure) => throw Exception(failure.message),
     (bookings) => bookings,
@@ -44,13 +51,75 @@ Future<List<BookingEntity>> userBookings(Ref ref) async {
 // Upcoming Booking Provider
 @riverpod
 Future<BookingEntity?> upcomingBooking(Ref ref) async {
-  final repository = ref.watch(bookingRepositoryProvider);
-  final result = await repository.getUpcomingBooking();
+  final useCase = ref.watch(getUpcomingBookingUseCaseProvider);
+  final result = await useCase();
   return result.fold(
     (failure) => throw Exception(failure.message),
     (booking) => booking,
   );
 }
+
+// Derived selectors — keep filtering/sorting logic out of the UI layer
+
+/// Active bookings sorted by nearest date first.
+final upcomingBookingsListProvider = Provider<List<BookingEntity>>((ref) {
+  final bookings = ref.watch(userBookingsProvider).valueOrNull ?? [];
+  final now = DateTime.now();
+  final upcoming = bookings
+      .where(
+        (b) =>
+            !b.isCancelled &&
+            !b.isCompleted &&
+            (b.bookingDate.isAfter(now.subtract(const Duration(days: 1))) ||
+                b.bookingDate.day == now.day),
+      )
+      .toList()
+    ..sort((a, b) => a.bookingDate.compareTo(b.bookingDate));
+  return upcoming;
+});
+
+/// Past/completed bookings sorted by most recent first.
+final pastBookingsListProvider = Provider<List<BookingEntity>>((ref) {
+  final bookings = ref.watch(userBookingsProvider).valueOrNull ?? [];
+  final now = DateTime.now();
+  return bookings
+      .where(
+        (b) =>
+            b.isCancelled ||
+            b.isCompleted ||
+            b.bookingDate.isBefore(now.subtract(const Duration(days: 1))),
+      )
+      .toList()
+    ..sort((a, b) => b.bookingDate.compareTo(a.bookingDate));
+});
+
+// Use Case Providers
+final getUserBookingsUseCaseProvider = Provider<GetUserBookingsUseCase>((ref) {
+  return GetUserBookingsUseCase(ref.watch(bookingRepositoryProvider));
+});
+
+final getUpcomingBookingUseCaseProvider =
+    Provider<GetUpcomingBookingUseCase>((ref) {
+  return GetUpcomingBookingUseCase(ref.watch(bookingRepositoryProvider));
+});
+
+final createBookingUseCaseProvider = Provider<CreateBookingUseCase>((ref) {
+  return CreateBookingUseCase(ref.watch(bookingRepositoryProvider));
+});
+
+final createUniversityRequestUseCaseProvider =
+    Provider<CreateUniversityRequestUseCase>((ref) {
+  return CreateUniversityRequestUseCase(ref.watch(bookingRepositoryProvider));
+});
+
+final createRouteRequestUseCaseProvider =
+    Provider<CreateRouteRequestUseCase>((ref) {
+  return CreateRouteRequestUseCase(ref.watch(bookingRepositoryProvider));
+});
+
+final transferBookingUseCaseProvider = Provider<TransferBookingUseCase>((ref) {
+  return TransferBookingUseCase(ref.watch(bookingRepositoryProvider));
+});
 
 @Riverpod(keepAlive: true)
 class BookingState extends _$BookingState {
@@ -185,7 +254,7 @@ class BookingState extends _$BookingState {
 
   double get totalPrice {
     if (state.isToUniversity) {
-      return state.tripType.price;
+      return TripTypePricing.priceOf(state.tripType);
     } else {
       // For Point-to-Point: Use the price from the arrival station
       final basePrice = state.selectedArrivalStation?.price ?? 0.0;
@@ -201,8 +270,7 @@ class BookingState extends _$BookingState {
     state = state.copyWith(selectedUniArrivalPoint: point);
   }
 
-  Future<String?> createBooking(
-    BookingRepository repository, {
+  Future<String?> createBooking({
     String? paymentProofImage,
     String? transferNumber,
   }) async {
@@ -215,7 +283,7 @@ class BookingState extends _$BookingState {
           state.selectedDepartureSchedule?.id ??
           state.selectedReturnSchedule?.id;
 
-      final result = await repository.createBooking(
+      final result = await this.ref.read(createBookingUseCaseProvider)(
         cityId: state.selectedCity?.id,
         scheduleId: scheduleId,
         bookingDate: state.selectedDate,
@@ -235,16 +303,14 @@ class BookingState extends _$BookingState {
 
       return result.fold(
         (failure) => failure.message,
-        (_) => null, // Success
+        (_) => null,
       );
     } catch (e) {
       return 'حدث خطأ أثناء الحجز: $e';
     }
   }
 
-  Future<String?> createUniversityRequestBooking(
-    BookingRepository repository,
-  ) async {
+  Future<String?> createUniversityRequestBooking() async {
     if (!isBookingComplete) {
       return 'يرجى إكمال جميع بيانات طلب حجز الجامعة';
     }
@@ -252,12 +318,15 @@ class BookingState extends _$BookingState {
     try {
       final university = state.selectedUniversity!;
       final isCustom = university.id.startsWith('custom_');
-      
-      final result = await repository.createUniversityRequest(
+
+      final result = await this
+          .ref
+          .read(createUniversityRequestUseCaseProvider)(
         cityId: state.selectedCity?.id,
         bookingDate: state.selectedDate,
         universityId: university.id,
-        routeId: state.selectedDepartureSchedule?.routeId ?? state.selectedReturnSchedule?.routeId,
+        routeId: state.selectedDepartureSchedule?.routeId ??
+            state.selectedReturnSchedule?.routeId,
         uniBoardingPointId: state.selectedUniBoardingPoint?.id,
         uniArrivalPointId: state.selectedUniArrivalPoint?.id,
         isCustomUniversity: isCustom,
@@ -267,27 +336,27 @@ class BookingState extends _$BookingState {
         selectionType: state.selectionType,
         passengerCount: state.passengerCount,
         splitPreference: state.splitPreference,
-        totalPrice: 0, 
+        totalPrice: 0,
         isLadies: state.isLadiesOnly,
       );
 
       return result.fold(
         (failure) => failure.message,
-        (_) => null, // Success
+        (_) => null,
       );
     } catch (e) {
       return 'حدث خطأ أثناء إرسال طلب الجامعة: $e';
     }
   }
 
-  Future<String?> submitRouteRequest(
-    BookingRepository repository, {
+  Future<String?> submitRouteRequest({
     String? cityName,
     required String boardingStationName,
     required String universityName,
   }) async {
     try {
-      final result = await repository.createRouteRequest(
+      final result =
+          await this.ref.read(createRouteRequestUseCaseProvider)(
         cityId: state.selectedCity?.id,
         cityName: cityName,
         boardingStationName: boardingStationName,
@@ -296,23 +365,20 @@ class BookingState extends _$BookingState {
 
       return result.fold(
         (failure) => failure.message,
-        (_) => null, // Success
+        (_) => null,
       );
     } catch (e) {
       return 'حدث خطأ أثناء إرسال طلب المسار: $e';
     }
   }
 
-  Future<String?> updateBooking(
-    BookingRepository repository, {
-    required String bookingId,
-  }) async {
+  Future<String?> updateBooking({required String bookingId}) async {
     if (!isBookingComplete) {
       return 'يرجى إكمال جميع بيانات الحجز';
     }
 
     try {
-      final result = await repository.updateBooking(
+      final result = await this.ref.read(bookingRepositoryProvider).updateBooking(
         bookingId: bookingId,
         cityId: state.selectedCity?.id,
         bookingDate: state.selectedDate,
@@ -330,7 +396,7 @@ class BookingState extends _$BookingState {
 
       return result.fold(
         (failure) => failure.message,
-        (_) => null, // Success
+        (_) => null,
       );
     } catch (e) {
       return 'حدث خطأ أثناء تعديل الحجز: $e';

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../domain/entities/trip_type.dart';
+import '../../domain/constants/trip_type_pricing.dart';
 
 class TripTypeSelector extends StatelessWidget {
   final TripType selectedType;
@@ -61,7 +62,7 @@ class TripTypeSelector extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${type.price.toStringAsFixed(0)} ${AppLocalizations.of(context)!.egp}',
+                      '${TripTypePricing.priceOf(type).toStringAsFixed(0)} ${AppLocalizations.of(context)!.egp}',
                       style: AppTheme.textTheme.bodySmall?.copyWith(
                         color: isSelected
                             ? AppTheme.primaryDark

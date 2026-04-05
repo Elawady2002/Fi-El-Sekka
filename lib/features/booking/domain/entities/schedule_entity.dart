@@ -72,6 +72,4 @@ class ScheduleEntity extends Equatable {
     return days[(weekday - 1) % 7];
   }
 
-  String get directionLabel =>
-      direction == RouteDirection.toUniversity ? 'ذهاب' : 'عودة';
 }

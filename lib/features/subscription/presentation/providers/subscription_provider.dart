@@ -1,13 +1,16 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../booking/data/datasources/booking_data_source.dart';
 import '../../domain/repositories/subscription_repository.dart';
 import '../../data/datasources/subscription_data_source.dart';
 import '../../domain/entities/subscription_entity.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../../core/services/logger_service.dart';
 import '../../data/repositories/subscription_repository_impl.dart';
+import '../../../booking/presentation/providers/booking_providers.dart';
+import '../../domain/usecases/create_subscription_use_case.dart';
+import '../../domain/usecases/get_active_subscription_use_case.dart';
+import '../../domain/usecases/cancel_subscription_use_case.dart';
 
 part 'subscription_provider.g.dart';
 
@@ -19,10 +22,27 @@ SubscriptionDataSource subscriptionDataSource(Ref ref) {
 @riverpod
 SubscriptionRepository subscriptionRepository(Ref ref) {
   final dataSource = ref.watch(subscriptionDataSourceProvider);
-  // Create BookingDataSource directly instead of using a provider
-  final bookingDataSource = BookingDataSourceImpl();
+  final bookingDataSource = ref.watch(bookingDataSourceProvider);
   return SubscriptionRepositoryImpl(dataSource, bookingDataSource);
 }
+
+// Use Case Providers (non-generated, plain Riverpod)
+final createSubscriptionUseCaseProvider =
+    Provider<CreateSubscriptionUseCase>((ref) {
+  return CreateSubscriptionUseCase(ref.watch(subscriptionRepositoryProvider));
+});
+
+final getActiveSubscriptionUseCaseProvider =
+    Provider<GetActiveSubscriptionUseCase>((ref) {
+  return GetActiveSubscriptionUseCase(
+    ref.watch(subscriptionRepositoryProvider),
+  );
+});
+
+final cancelSubscriptionUseCaseProvider =
+    Provider<CancelSubscriptionUseCase>((ref) {
+  return CancelSubscriptionUseCase(ref.watch(subscriptionRepositoryProvider));
+});
 
 // User Subscriptions Provider (all subscriptions)
 @riverpod

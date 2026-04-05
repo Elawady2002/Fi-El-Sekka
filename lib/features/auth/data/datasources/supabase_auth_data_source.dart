@@ -3,10 +3,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/services/logger_service.dart';
 import '../../../../core/domain/entities/user_entity.dart';
 import '../models/user_model.dart';
+import 'auth_data_source.dart';
 
-/// Supabase authentication data source
-/// Handles all direct communication with Supabase Auth
-class SupabaseAuthDataSource {
+/// Supabase implementation of [AuthDataSource].
+/// Handles all direct communication with Supabase Auth.
+class SupabaseAuthDataSource implements AuthDataSource {
   final SupabaseClient _client;
 
   SupabaseAuthDataSource(this._client);

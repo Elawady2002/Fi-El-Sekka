@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/entities/subscription_entity.dart';
-import 'calendar_plan_card_views/plan_calendar_view.dart';
-import 'calendar_plan_card_views/plan_details_view.dart';
-import 'calendar_plan_card_views/plan_time_selection_view.dart';
+import 'calendar_plan_card_widgets/plan_calendar_widget.dart';
+import 'calendar_plan_card_widgets/plan_details_widget.dart';
+import 'calendar_plan_card_widgets/plan_time_selection_widget.dart';
 
 enum CardViewState { details, calendar, timeSelection }
 

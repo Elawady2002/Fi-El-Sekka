@@ -201,21 +201,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                           );
 
                           return userBookingsAsync.when(
-                            data: (bookings) {
-                              final now = DateTime.now();
-                              final upcomingBookings = bookings.where((b) {
-                                return !b.isCancelled &&
-                                    !b.isCompleted &&
-                                    (b.bookingDate.isAfter(
-                                          now.subtract(const Duration(days: 1)),
-                                        ) ||
-                                        b.bookingDate.day == now.day);
-                              }).toList();
-
-                              // Sort by date ascending, pick nearest
-                              upcomingBookings.sort(
-                                (a, b) =>
-                                    a.bookingDate.compareTo(b.bookingDate),
+                            data: (_) {
+                              final upcomingBookings = ref.watch(
+                                upcomingBookingsListProvider,
                               );
                               final nearestBooking =
                                   upcomingBookings.firstOrNull;
@@ -923,7 +911,6 @@ class _LocationSelectionDrawerState
     final result = await ref
         .read(bookingStateProvider.notifier)
         .submitRouteRequest(
-          ref.read(bookingRepositoryProvider),
           cityName: requestCityController.text,
           boardingStationName: requestStationController.text,
           universityName: requestUniversityController.text,

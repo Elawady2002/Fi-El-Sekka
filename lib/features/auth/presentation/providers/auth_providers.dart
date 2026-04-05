@@ -1,11 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/core_providers.dart';
+import '../../data/datasources/auth_data_source.dart';
 import '../../data/datasources/supabase_auth_data_source.dart';
 import '../../data/repositories/auth_repository_impl.dart';
 import '../../domain/repositories/auth_repository.dart';
+import '../../domain/usecases/login_use_case.dart';
+import '../../domain/usecases/signup_use_case.dart';
+import '../../domain/usecases/logout_use_case.dart';
 
-// Data Source Provider
-final authDataSourceProvider = Provider<SupabaseAuthDataSource>((ref) {
+// Data Source Provider — typed as the abstract interface, not the implementation
+final authDataSourceProvider = Provider<AuthDataSource>((ref) {
   final supabaseClient = ref.watch(supabaseClientProvider);
   return SupabaseAuthDataSource(supabaseClient);
 });
@@ -14,4 +18,17 @@ final authDataSourceProvider = Provider<SupabaseAuthDataSource>((ref) {
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   final dataSource = ref.watch(authDataSourceProvider);
   return AuthRepositoryImpl(dataSource);
+});
+
+// Use Case Providers
+final loginUseCaseProvider = Provider<LoginUseCase>((ref) {
+  return LoginUseCase(ref.watch(authRepositoryProvider));
+});
+
+final signupUseCaseProvider = Provider<SignupUseCase>((ref) {
+  return SignupUseCase(ref.watch(authRepositoryProvider));
+});
+
+final logoutUseCaseProvider = Provider<LogoutUseCase>((ref) {
+  return LogoutUseCase(ref.watch(authRepositoryProvider));
 });

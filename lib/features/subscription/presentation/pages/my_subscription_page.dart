@@ -6,8 +6,8 @@ import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../../core/utils/logger.dart';
 import '../providers/subscription_provider.dart';
 import '../../domain/entities/subscription_entity.dart';
-import '../widgets/active_subscription_view.dart';
-import '../widgets/no_subscription_view.dart';
+import '../widgets/active_subscription_widget.dart';
+import '../widgets/no_subscription_widget.dart';
 
 class MySubscriptionPage extends ConsumerStatefulWidget {
   const MySubscriptionPage({super.key});

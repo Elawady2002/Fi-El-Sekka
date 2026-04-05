@@ -1,11 +1,7 @@
 enum TripType {
-  departureOnly(50.0),
-  returnOnly(50.0),
-  roundTrip(80.0);
-
-  final double price;
-
-  const TripType(this.price);
+  departureOnly,
+  returnOnly,
+  roundTrip;
 
   String get displayName {
     switch (this) {

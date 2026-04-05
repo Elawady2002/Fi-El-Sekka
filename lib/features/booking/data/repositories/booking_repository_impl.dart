@@ -203,8 +203,12 @@ class BookingRepositoryImpl implements BookingRepository {
 
   @override
   Future<Either<Failure, BookingEntity>> cancelBooking(String bookingId) async {
-    // NOTE: Implement cancel booking
-    throw UnimplementedError();
+    try {
+      final booking = await _dataSource.cancelBooking(bookingId);
+      return Right(booking);
+    } catch (e) {
+      return Left(_handleError(e));
+    }
   }
 
   @override
@@ -212,8 +216,15 @@ class BookingRepositoryImpl implements BookingRepository {
     required String bookingId,
     required PaymentStatus paymentStatus,
   }) async {
-    // NOTE: Implement update payment status
-    throw UnimplementedError();
+    try {
+      final booking = await _dataSource.updatePaymentStatus(
+        bookingId: bookingId,
+        paymentStatus: paymentStatus.name,
+      );
+      return Right(booking);
+    } catch (e) {
+      return Left(_handleError(e));
+    }
   }
 
   @override
@@ -221,14 +232,16 @@ class BookingRepositoryImpl implements BookingRepository {
     required String universityId,
     required DateTime date,
   }) async {
-    // NOTE: Implement get schedules
-    throw UnimplementedError();
+    return Left(
+      ServerFailure(message: 'getSchedules via booking is not yet implemented'),
+    );
   }
 
   @override
   Stream<List<BookingEntity>> watchUserBookings() {
-    // NOTE: Implement real-time booking updates
-    throw UnimplementedError();
+    return Stream.error(
+      ServerFailure(message: 'Real-time booking updates are not yet implemented'),
+    );
   }
 
   @override

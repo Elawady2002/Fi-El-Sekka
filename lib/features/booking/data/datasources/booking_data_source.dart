@@ -3,6 +3,7 @@ import '../../../../core/config/supabase_config.dart';
 import '../../../../core/utils/logger.dart';
 import '../../domain/entities/booking_entity.dart';
 import '../models/booking_model.dart';
+import '../constants/booking_constants.dart';
 
 abstract class BookingDataSource {
   Future<BookingModel> createBooking({
@@ -85,6 +86,13 @@ abstract class BookingDataSource {
     String? targetPhoneNumber,
   });
 
+  Future<BookingModel> cancelBooking(String bookingId);
+
+  Future<BookingModel> updatePaymentStatus({
+    required String bookingId,
+    required String paymentStatus,
+  });
+
   Future<void> createRouteRequest({
     required String userId,
     String? cityId,
@@ -135,8 +143,8 @@ class BookingDataSourceImpl implements BookingDataSource {
             'return_time': returnTime,
             'payment_proof_image': paymentProofImage,
             'transfer_number': transferNumber,
-            'status': 'confirmed',
-            'payment_status': 'paid',
+            'status': BookingConstants.statusConfirmed,
+            'payment_status': BookingConstants.paymentPaid,
             'selection_type': selectionType.name,
             'passenger_count': passengerCount,
             'split_preference': splitPreference,
@@ -188,7 +196,7 @@ class BookingDataSourceImpl implements BookingDataSource {
             'user_id': userId,
             'city_id': cityId,
             'booking_date': bookingDate.toIso8601String(),
-            'trip_type': 'university_request',
+            'trip_type': BookingConstants.typeUniversityRequest,
             'university_id': universityId,
             'route_id': routeId,
             'uni_boarding_point_id': uniBoardingPointId,
@@ -196,8 +204,8 @@ class BookingDataSourceImpl implements BookingDataSource {
             'is_university_request': true,
             'departure_time': departureTime,
             'return_time': returnTime,
-            'status': 'pending',
-            'payment_status': 'unpaid',
+            'status': BookingConstants.statusPending,
+            'payment_status': BookingConstants.paymentUnpaid,
             'selection_type': selectionType.name,
             'passenger_count': passengerCount,
             'split_preference': splitPreference,
@@ -251,8 +259,8 @@ class BookingDataSourceImpl implements BookingDataSource {
                 null, // No payment proof for subscription bookings
             'transfer_number':
                 null, // No transfer number for subscription bookings
-            'status': 'pending', // Pending until admin approval
-            'payment_status': 'paid', // Already paid via subscription
+            'status': BookingConstants.statusPending, // Pending until admin approval
+            'payment_status': BookingConstants.paymentPaid, // Already paid via subscription
             'total_price': totalPrice,
             'is_ladies': isLadies,
             'created_at': now.toIso8601String(),
@@ -305,7 +313,7 @@ class BookingDataSourceImpl implements BookingDataSource {
           .select()
           .eq('user_id', userId)
           .gte('booking_date', today.toIso8601String())
-          .inFilter('status', ['pending', 'confirmed'])
+          .inFilter('status', [BookingConstants.statusPending, BookingConstants.statusConfirmed])
           .order('booking_date', ascending: true);
 
       if (response.isEmpty) {
@@ -525,7 +533,7 @@ class BookingDataSourceImpl implements BookingDataSource {
         'city_name': cityName,
         'boarding_station_name': boardingStationName,
         'university_name': universityName,
-        'status': 'pending',
+        'status': BookingConstants.statusPending,
         'created_at': now.toIso8601String(),
       });
 
@@ -535,6 +543,59 @@ class BookingDataSourceImpl implements BookingDataSource {
       throw Exception('Database error: ${e.message}');
     } catch (e) {
       AppLogger.error('❌ Unexpected error creating route request: $e');
+      throw Exception('Unexpected error: $e');
+    }
+  }
+
+  @override
+  Future<BookingModel> cancelBooking(String bookingId) async {
+    try {
+      AppLogger.info('🔴 Cancelling booking $bookingId...');
+      final response = await _client
+          .from('bookings')
+          .update({
+            'status': BookingConstants.statusCancelled,
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', bookingId)
+          .select()
+          .single();
+
+      AppLogger.info('✅ Booking cancelled successfully');
+      return BookingModel.fromJson(response);
+    } on PostgrestException catch (e) {
+      AppLogger.error('❌ Database error cancelling booking: ${e.message}');
+      throw Exception('Database error: ${e.message}');
+    } catch (e) {
+      AppLogger.error('❌ Unexpected error cancelling booking: $e');
+      throw Exception('Unexpected error: $e');
+    }
+  }
+
+  @override
+  Future<BookingModel> updatePaymentStatus({
+    required String bookingId,
+    required String paymentStatus,
+  }) async {
+    try {
+      AppLogger.info('💳 Updating payment status for booking $bookingId...');
+      final response = await _client
+          .from('bookings')
+          .update({
+            'payment_status': paymentStatus,
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', bookingId)
+          .select()
+          .single();
+
+      AppLogger.info('✅ Payment status updated to $paymentStatus');
+      return BookingModel.fromJson(response);
+    } on PostgrestException catch (e) {
+      AppLogger.error('❌ Database error updating payment status: ${e.message}');
+      throw Exception('Database error: ${e.message}');
+    } catch (e) {
+      AppLogger.error('❌ Unexpected error updating payment status: $e');
       throw Exception('Unexpected error: $e');
     }
   }

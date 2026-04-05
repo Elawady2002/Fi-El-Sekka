@@ -280,15 +280,11 @@ class _PaymentPageState extends ConsumerState<PaymentPage>
                         AppLogger.info('   Image URL: $imageUrl');
                         AppLogger.info('   Transfer number: $accountNumber');
 
-                        final bookingRepository = ref.read(
-                          bookingRepositoryProvider,
-                        );
                         final bookingNotifier = ref.read(
                           bookingStateProvider.notifier,
                         );
 
                         final error = await bookingNotifier.createBooking(
-                          bookingRepository,
                           paymentProofImage: imageUrl,
                           transferNumber: accountNumber,
                         );

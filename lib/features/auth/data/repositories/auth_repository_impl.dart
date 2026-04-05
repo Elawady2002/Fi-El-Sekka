@@ -3,11 +3,11 @@ import 'package:dartz/dartz.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/domain/entities/user_entity.dart';
 import '../../domain/repositories/auth_repository.dart';
-import '../datasources/supabase_auth_data_source.dart';
+import '../datasources/auth_data_source.dart';
 
 /// Implementation of AuthRepository using Supabase
 class AuthRepositoryImpl implements AuthRepository {
-  final SupabaseAuthDataSource _dataSource;
+  final AuthDataSource _dataSource;
 
   AuthRepositoryImpl(this._dataSource);
 
