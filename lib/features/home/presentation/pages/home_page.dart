@@ -4,12 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:my_app/core/theme/app_theme.dart';
-import 'package:my_app/core/utils/logger.dart';
-import 'package:my_app/l10n/app_localizations.dart';
-import 'package:my_app/core/providers/locale_provider.dart';
-import 'package:my_app/features/booking/presentation/pages/booking_page.dart';
-import 'package:my_app/core/widgets/ios_components.dart';
+import 'package:fielsekkia_user/core/theme/app_theme.dart';
+import 'package:fielsekkia_user/core/utils/logger.dart';
+import 'package:fielsekkia_user/l10n/app_localizations.dart';
+import 'package:fielsekkia_user/core/providers/locale_provider.dart';
+import 'package:fielsekkia_user/features/booking/presentation/pages/booking_page.dart';
+import 'package:fielsekkia_user/core/widgets/ios_components.dart';
 import '../../../profile/presentation/pages/profile_page.dart';
 import '../providers/home_provider.dart';
 import '../../../booking/domain/entities/city_entity.dart';
