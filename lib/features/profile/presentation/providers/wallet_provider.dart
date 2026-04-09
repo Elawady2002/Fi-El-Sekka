@@ -91,7 +91,7 @@ class WalletNotifier extends StateNotifier<WalletState> {
       );
     } catch (e) {
       AppLogger.error('Error deducting amount: $e');
-      state = state.copyWith(isLoading: false, error: 'حدث خطأ في خصم المبلغ');
+      state = state.copyWith(isLoading: false, error: 'حدث خطأ في خصم المبلغ: $e');
       return false;
     }
   }

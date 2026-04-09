@@ -415,12 +415,14 @@ class _SubscriptionPlansPageState extends ConsumerState<SubscriptionPlansPage> {
         setState(() => _isProcessing = false);
 
         if (!mounted) return;
+        final walletState = ref.read(walletProvider);
         showCupertinoDialog(
           context: context,
           builder: (context) => CupertinoAlertDialog(
             title: const Text('خطأ'),
-            content: const Text(
-              'حدث خطأ أثناء خصم المبلغ. يرجى المحاولة مرة أخرى.',
+            content: Text(
+              walletState.error ??
+                  'حدث خطأ أثناء خصم المبلغ. يرجى المحاولة مرة أخرى.',
             ),
             actions: [
               CupertinoDialogAction(

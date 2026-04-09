@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'package:fielsekkia_user/core/theme/app_theme.dart';
 import 'package:fielsekkia_user/core/utils/logger.dart';
@@ -654,6 +655,8 @@ class _LocationSelectionDrawerState
     final isAr = ref.watch(localeProvider).languageCode == 'ar';
     bool isAdding = false;
     final addController = TextEditingController();
+    final searchController = TextEditingController();
+    List<T> filteredItems = List.from(items);
 
     showModalBottomSheet(
       context: context,
@@ -666,84 +669,82 @@ class _LocationSelectionDrawerState
               bottom: MediaQuery.of(context).viewInsets.bottom,
             ),
             child: Container(
-              height: MediaQuery.of(context).size.height * 0.6,
+              height: MediaQuery.of(context).size.height * 0.7,
               decoration: const BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
               ),
               child: Column(
                 children: [
                   const SizedBox(height: 12),
+                  // Drag Handle
                   Container(
                     width: 40,
-                    height: 5,
+                    height: 4,
                     decoration: BoxDecoration(
-                      color: Colors.grey.withValues(alpha: 0.3),
-                      borderRadius: BorderRadius.circular(10),
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
+                  // Centered Title
+                  Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.cairo(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Search Bar
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          title,
-                          style: AppTheme.textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () => Navigator.pop(context),
-                          child: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade100,
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              CupertinoIcons.clear,
-                              size: 18,
-                              color: Colors.black54,
-                            ),
-                          ),
-                        ),
-                      ],
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: CupertinoSearchTextField(
+                      controller: searchController,
+                      placeholder: isAr ? 'ابحث هنا...' : 'Search here...',
+                      style: GoogleFonts.cairo(fontSize: 14),
+                      placeholderStyle: GoogleFonts.cairo(
+                        color: CupertinoColors.systemGrey,
+                        fontSize: 14,
+                      ),
+                      onChanged: (value) {
+                        setModalState(() {
+                          if (value.isEmpty) {
+                            filteredItems = List.from(items);
+                          } else {
+                            filteredItems = items.where((item) {
+                              final label = labelBuilder(item).toLowerCase();
+                              return label.contains(value.toLowerCase());
+                            }).toList();
+                          }
+                        });
+                      },
                     ),
                   ),
                   const SizedBox(height: 16),
                   Expanded(
-                    child: items.isEmpty && emptyMessage != null
+                    child: filteredItems.isEmpty && (items.isNotEmpty || emptyMessage != null)
                         ? Center(
                             child: Padding(
                               padding: const EdgeInsets.all(24.0),
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
+                                  Icon(CupertinoIcons.search, size: 48, color: Colors.grey.shade300),
+                                  const SizedBox(height: 16),
                                   Text(
-                                    emptyMessage,
+                                    searchController.text.isNotEmpty 
+                                      ? (isAr ? 'لا توجد نتائج مطابقة' : 'No results found')
+                                      : (emptyMessage ?? 'القائمة فارغة'),
                                     style: AppTheme.textTheme.titleMedium?.copyWith(
                                       color: AppTheme.textSecondary,
                                       fontWeight: FontWeight.w600,
                                     ),
                                     textAlign: TextAlign.center,
                                   ),
-                                  if (emptyActionLabel != null && onEmptyActionTap != null) ...[
-                                    const SizedBox(height: 16),
-                                    SizedBox(
-                                      width: double.infinity,
-                                      child: CustomButton(
-                                        text: emptyActionLabel,
-                                        onPressed: () {
-                                          Navigator.pop(context);
-                                          onEmptyActionTap();
-                                        },
-                                        backgroundColor: AppTheme.primaryColor,
-                                      ),
-                                    ),
-                                  ],
                                 ],
                               ),
                             ),
@@ -753,11 +754,11 @@ class _LocationSelectionDrawerState
                         horizontal: 24,
                         vertical: 8,
                       ),
-                      itemCount: items.length + (showAddOption ? 1 : 0),
+                      itemCount: filteredItems.length + (showAddOption ? 1 : 0),
                       separatorBuilder: (context, index) =>
                           Divider(height: 1, color: Colors.grey.shade100),
                       itemBuilder: (context, index) {
-                        if (showAddOption && index == items.length) {
+                        if (showAddOption && index == filteredItems.length) {
                           if (isAdding) {
                             return Padding(
                               padding: const EdgeInsets.symmetric(
@@ -846,7 +847,7 @@ class _LocationSelectionDrawerState
                           );
                         }
 
-                        final item = items[index];
+                        final item = filteredItems[index];
                         return GestureDetector(
                           onTap: () {
                             onSelected(item);
@@ -860,19 +861,18 @@ class _LocationSelectionDrawerState
                                 Expanded(
                                   child: Text(
                                     labelBuilder(item),
-                                    style: AppTheme.textTheme.titleMedium
-                                        ?.copyWith(
-                                          color: Colors.black87,
-                                          fontWeight: FontWeight.w600,
-                                        ),
+                                    textAlign: TextAlign.right,
+                                    style: GoogleFonts.cairo(
+                                      color: AppTheme.textPrimary,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                    ),
                                   ),
                                 ),
                                 Icon(
-                                  isAr
-                                      ? CupertinoIcons.chevron_left
-                                      : CupertinoIcons.chevron_right,
-                                  color: Colors.grey.shade400,
-                                  size: 18,
+                                  CupertinoIcons.chevron_left,
+                                  color: Colors.grey.shade300,
+                                  size: 16,
                                 ),
                               ],
                             ),

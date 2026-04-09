@@ -13,6 +13,8 @@ class CustomInput extends StatefulWidget {
   final TextInputType? keyboardType;
   final Widget? suffixIcon;
   final Color? backgroundColor;
+  final ValueChanged<String>? onChanged;
+  final ValueChanged<String>? onFieldSubmitted;
 
   const CustomInput({
     super.key,
@@ -24,6 +26,8 @@ class CustomInput extends StatefulWidget {
     this.keyboardType,
     this.suffixIcon,
     this.backgroundColor,
+    this.onChanged,
+    this.onFieldSubmitted,
   });
 
   @override
@@ -54,6 +58,8 @@ class _CustomInputState extends State<CustomInput> {
         obscureText: widget.isPassword ? _obscure : false,
         keyboardType: widget.keyboardType,
         validator: widget.validator,
+        onChanged: widget.onChanged,
+        onFieldSubmitted: widget.onFieldSubmitted,
         style: GoogleFonts.cairo(color: AppTheme.textPrimary, fontSize: 16),
         decoration: InputDecoration(
           hintText: widget.hintText,

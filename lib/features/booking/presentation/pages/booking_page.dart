@@ -169,12 +169,14 @@ class _BookingPageState extends ConsumerState<BookingPage> {
 
                         if (!success) {
                           if (!context.mounted) return;
+                          final walletState = ref.read(walletProvider);
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(
-                                AppLocalizations.of(
-                                  context,
-                                )!.errorDeductingAmount,
+                                walletState.error ??
+                                    AppLocalizations.of(
+                                      context,
+                                    )!.errorDeductingAmount,
                               ),
                               backgroundColor: Colors.red,
                             ),
