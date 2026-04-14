@@ -133,8 +133,28 @@ class HomeRepositoryImpl implements HomeRepository {
   @override
   Future<Either<Failure, List<UniversityArrivalPointEntity>>> getUniversityArrivalPoints(String universityId) async {
     try {
-      final points = await remoteDataSource.getUniversityArrivalPoints(universityId);
-      return Right(points.cast<UniversityArrivalPointEntity>().toList());
+      final models = await remoteDataSource.getUniversityArrivalPoints(universityId);
+      return Right(models);
+    } catch (e) {
+      return Left(ServerFailure(message: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<String>>> getUniqueOrigins(String cityId) async {
+    try {
+      final origins = await remoteDataSource.getUniqueOrigins(cityId);
+      return Right(origins);
+    } catch (e) {
+      return Left(ServerFailure(message: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<String>>> getAvailableDestinations(String originName, {String? cityId}) async {
+    try {
+      final destinations = await remoteDataSource.getAvailableDestinations(originName, cityId: cityId);
+      return Right(destinations);
     } catch (e) {
       return Left(ServerFailure(message: e.toString()));
     }

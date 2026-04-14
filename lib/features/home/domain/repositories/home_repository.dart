@@ -27,4 +27,6 @@ abstract class HomeRepository {
   Future<Either<Failure, List<UniversityEntity>>> getAllUniversities();
   Future<Either<Failure, List<UniversityBoardingPointEntity>>> getUniversityBoardingPoints(String cityId);
   Future<Either<Failure, List<UniversityArrivalPointEntity>>> getUniversityArrivalPoints(String universityId);
+  Future<Either<Failure, List<String>>> getUniqueOrigins(String cityId);
+  Future<Either<Failure, List<String>>> getAvailableDestinations(String originName, {String? cityId});
 }

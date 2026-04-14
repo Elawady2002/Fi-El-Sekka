@@ -536,6 +536,8 @@ class _LocationSelectionDrawerState
   UniversityEntity? selectedUniversity;
   BoardingStationEntity? selectedPickupStation;
   ArrivalStationEntity? selectedArrivalStation;
+  String? selectedPickupStationName;
+  String? selectedArrivalStationName;
   UniversityBoardingPointEntity? selectedUniBoardingPoint;
   UniversityArrivalPointEntity? selectedUniArrivalPoint;
   bool isToUniversity = false;
@@ -957,13 +959,13 @@ class _LocationSelectionDrawerState
         ? ref.watch(allUniversitiesProvider)
         : const AsyncValue.data(<UniversityEntity>[]);
     
-    final boardingStationsAsync = (!isToUniversity && selectedCity != null)
-        ? ref.watch(boardingStationsProvider(selectedCity!.id))
-        : const AsyncValue.data(<BoardingStationEntity>[]);
+    final originsAsync = (!isToUniversity && selectedCity != null)
+        ? ref.watch(uniqueOriginsProvider(selectedCity!.id))
+        : const AsyncValue.data(<String>[]);
 
-    final arrivalStationsAsync = (!isToUniversity && selectedPickupStation != null)
-        ? ref.watch(arrivalStationsProvider(selectedPickupStation!.id))
-        : const AsyncValue.data(<ArrivalStationEntity>[]);
+    final availableDestinationsAsync = (!isToUniversity && selectedPickupStationName != null)
+        ? ref.watch(availableDestinationsProvider((originName: selectedPickupStationName!, cityId: selectedCity?.id)))
+        : const AsyncValue.data(<String>[]);
 
     final uniBoardingPointsAsync = (isToUniversity && selectedCity != null)
         ? ref.watch(universityBoardingPointsProvider(selectedCity!.id))
@@ -979,8 +981,8 @@ class _LocationSelectionDrawerState
            selectedUniBoardingPoint != null && 
            selectedUniArrivalPoint != null)
         : (selectedCity != null &&
-           selectedPickupStation != null &&
-           selectedArrivalStation != null);
+           selectedPickupStationName != null &&
+           selectedArrivalStationName != null);
 
     return Material(
       color: Colors.transparent,
@@ -1084,8 +1086,9 @@ class _LocationSelectionDrawerState
                             showInlineRouteRequest = false;
                             selectedCity = null;
                             selectedUniversity = null;
-                            selectedPickupStation = null;
                             selectedArrivalStation = null;
+                            selectedPickupStationName = null;
+                            selectedArrivalStationName = null;
                             selectedUniBoardingPoint = null;
                             selectedUniArrivalPoint = null;
                           });
@@ -1100,8 +1103,9 @@ class _LocationSelectionDrawerState
                             showInlineRouteRequest = false;
                             selectedCity = null;
                             selectedUniversity = null;
-                            selectedPickupStation = null;
                             selectedArrivalStation = null;
+                            selectedPickupStationName = null;
+                            selectedArrivalStationName = null;
                             selectedUniBoardingPoint = null;
                             selectedUniArrivalPoint = null;
                           });
@@ -1188,98 +1192,97 @@ class _LocationSelectionDrawerState
                               endIndent: 16,
                             ),
                             // Departure Station Selection
-                            boardingStationsAsync.when(
-                              data: (stations) => _buildSelectionItem(
-                                context,
-                                ref,
-                                title: l10n.pickupStation,
-                                value: selectedPickupStation?.getLocalizedName(
-                                  ref.read(localeProvider).languageCode,
-                                ),
-                                placeholder: l10n.selectPickupPoint,
-                                icon: CupertinoIcons.location_fill,
-                                onTap: () => _showPicker<BoardingStationEntity>(
-                                  context,
-                                  ref,
-                                  title: l10n.selectPickupPoint,
-                                  items: stations,
-                                  labelBuilder: (station) =>
-                                      station.getLocalizedName(
-                                        ref.read(localeProvider).languageCode,
-                                      ),
-                                  onSelected: (station) {
-                                    setState(() {
-                                      selectedPickupStation = station;
-                                      selectedArrivalStation = null;
-                                    });
-                                  },
-                                  emptyMessage: l10n.emptyPickupStation,
-                                ),
-                              ),
-                              loading: () => _buildSelectionItem(
-                                context,
-                                ref,
-                                title: l10n.pickupStation,
-                                value: null,
-                                placeholder: l10n.loading,
-                                icon: CupertinoIcons.location_fill,
-                                onTap: () {},
-                                isLoading: true,
-                                isEnabled: false,
-                              ),
-                              error: (err, stack) =>
-                                  Text('${l10n.error}: $err'),
+                            // New Trip-based Selection
+                            Consumer(
+                              builder: (context, ref, _) {
+                                final originsAsync = ref.watch(uniqueOriginsProvider(selectedCity!.id));
+                                
+                                return originsAsync.when(
+                                  data: (origins) => _buildSelectionItem(
+                                    context,
+                                    ref,
+                                    title: l10n.selectPickupPoint,
+                                    value: selectedPickupStationName,
+                                    placeholder: l10n.selectPickupPoint,
+                                    icon: CupertinoIcons.location_fill,
+                                    onTap: () => _showPicker<String>(
+                                      context,
+                                      ref,
+                                      title: l10n.selectPickupPoint,
+                                      items: origins,
+                                      labelBuilder: (name) => name,
+                                      onSelected: (name) {
+                                        setState(() {
+                                          selectedPickupStationName = name;
+                                          selectedArrivalStationName = null;
+                                        });
+                                      },
+                                      emptyMessage: 'لا توجد محطات انطلاق متاحة حالياً',
+                                    ),
+                                  ),
+                                  loading: () => _buildSelectionItem(
+                                    context,
+                                    ref,
+                                    title: l10n.pickupStation,
+                                    value: null,
+                                    placeholder: l10n.loading,
+                                    icon: CupertinoIcons.location_fill,
+                                    onTap: () {},
+                                    isLoading: true,
+                                    isEnabled: false,
+                                  ),
+                                  error: (err, stack) => Text('${l10n.error}: $err'),
+                                );
+                              },
                             ),
                           ],
 
-                          if (selectedPickupStation != null) ...[
-                            Divider(
-                              height: 1,
-                              color: Colors.grey.shade100,
-                              indent: 16,
-                              endIndent: 16,
-                            ),
-                            // Arrival Station Selection
-                            arrivalStationsAsync.when(
-                              data: (stations) => _buildSelectionItem(
-                                context,
-                                ref,
-                                title: l10n.arrivalPoint,
-                                value: selectedArrivalStation?.getLocalizedName(
-                                  ref.read(localeProvider).languageCode,
-                                ),
-                                placeholder: l10n.selectArrivalPoint,
-                                icon: CupertinoIcons.flag_fill,
-                                onTap: () => _showPicker<ArrivalStationEntity>(
-                                  context,
-                                  ref,
-                                  title: l10n.selectArrivalPoint,
-                                  items: stations,
-                                  labelBuilder: (station) =>
-                                      station.getLocalizedName(
-                                        ref.read(localeProvider).languageCode,
-                                      ),
-                                  onSelected: (station) {
-                                    setState(() {
-                                      selectedArrivalStation = station;
-                                    });
-                                  },
-                                  emptyMessage: l10n.emptyArrivalStation,
-                                ),
-                              ),
-                              loading: () => _buildSelectionItem(
-                                context,
-                                ref,
-                                title: l10n.arrivalPoint,
-                                value: null,
-                                placeholder: l10n.loading,
-                                icon: CupertinoIcons.flag_fill,
-                                onTap: () {},
-                                isLoading: true,
-                                isEnabled: false,
-                              ),
-                              error: (err, stack) =>
-                                  Text('${l10n.error}: $err'),
+                          if (selectedPickupStationName != null) ...[
+                            Divider(height: 1, color: Colors.grey.shade100, indent: 16, endIndent: 16),
+                            // Arrival Point Selection from Schedules
+                            Consumer(
+                              builder: (context, ref, _) {
+                                final destinationsAsync = ref.watch(availableDestinationsProvider((
+                                  originName: selectedPickupStationName!,
+                                  cityId: selectedCity!.id,
+                                )));
+
+                                return destinationsAsync.when(
+                                  data: (destinations) => _buildSelectionItem(
+                                    context,
+                                    ref,
+                                    title: l10n.arrivalPoint,
+                                    value: selectedArrivalStationName,
+                                    placeholder: l10n.selectArrivalPoint,
+                                    icon: CupertinoIcons.flag_fill,
+                                    onTap: () => _showPicker<String>(
+                                      context,
+                                      ref,
+                                      title: l10n.selectArrivalPoint,
+                                      items: destinations,
+                                      labelBuilder: (name) => name,
+                                      onSelected: (name) {
+                                        setState(() {
+                                          selectedArrivalStationName = name;
+                                        });
+                                      },
+                                      emptyMessage: 'لا توجد وجهات متاحة حالياً من هذه المحطة',
+                                    ),
+                                  ),
+                                  loading: () => _buildSelectionItem(
+                                    context,
+                                    ref,
+                                    title: l10n.arrivalPoint,
+                                    value: null,
+                                    placeholder: l10n.loading,
+                                    icon: CupertinoIcons.flag_fill,
+                                    onTap: () {},
+                                    isLoading: true,
+                                    isEnabled: false,
+                                  ),
+                                  error: (err, stack) => Text('${l10n.error}: $err'),
+                                );
+                              },
                             ),
                           ],
                         ] else ...[
@@ -1666,9 +1669,25 @@ class _LocationSelectionDrawerState
                                 .read(bookingStateProvider.notifier)
                                 .setLocationData(
                                   city: selectedCity!,
-                                  university: selectedUniversity,
-                                  pickupStation: selectedPickupStation,
-                                  arrivalStation: selectedArrivalStation,
+                                  university: isToUniversity ? selectedUniversity : null,
+                                  pickupStation: isToUniversity 
+                                      ? null 
+                                      : BoardingStationEntity(
+                                          id: 'virtual_${selectedPickupStationName}',
+                                          nameAr: selectedPickupStationName!,
+                                          nameEn: selectedPickupStationName!,
+                                          cityId: selectedCity!.id,
+                                        ),
+                                  arrivalStation: isToUniversity 
+                                      ? null 
+                                      : ArrivalStationEntity(
+                                          id: 'virtual_${selectedArrivalStationName}',
+                                          nameAr: selectedArrivalStationName!,
+                                          nameEn: selectedArrivalStationName!,
+                                          pickupStationId: '',
+                                          price: 0,
+                                          schedules: const [],
+                                        ),
                                   uniBoardingPoint: selectedUniBoardingPoint,
                                   uniArrivalPoint: selectedUniArrivalPoint,
                                   isToUniversity: isToUniversity,

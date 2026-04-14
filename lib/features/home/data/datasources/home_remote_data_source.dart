@@ -20,6 +20,8 @@ abstract class HomeRemoteDataSource {
   Future<List<ScheduleModel>> getSchedules(String routeId);
   Future<List<UniversityBoardingPointModel>> getUniversityBoardingPoints(String cityId);
   Future<List<UniversityArrivalPointModel>> getUniversityArrivalPoints(String universityId);
+  Future<List<String>> getUniqueOrigins(String cityId);
+  Future<List<String>> getAvailableDestinations(String originName, {String? cityId});
 }
 
 class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
@@ -87,7 +89,7 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
   @override
   Future<List<ScheduleModel>> getSchedules(String routeId) async {
     final response = await _client
-        .from('schedules')
+        .from('trip_schedules')
         .select()
         .eq('route_id', routeId)
         .eq('is_active', true)
@@ -147,5 +149,43 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
         .order('name_ar');
 
     return response.map((e) => UniversityArrivalPointModel.fromJson(e)).toList();
+  }
+
+  @override
+  Future<List<String>> getUniqueOrigins(String cityId) async {
+    final response = await _client
+        .from('trip_schedules')
+        .select('origin')
+        .eq('city_id', cityId)
+        .eq('is_active', true);
+
+    return (response as List)
+        .where((e) => e['origin'] != null)
+        .map((e) => (e['origin'] as String).trim())
+        .toSet()
+        .toList();
+  }
+
+  @override
+  Future<List<String>> getAvailableDestinations(String originName, {String? cityId}) async {
+    var query = _client
+        .from('trip_schedules')
+        .select('destination')
+        .eq('origin', originName.trim())
+        .eq('is_active', true);
+    
+    if (cityId != null) {
+      query = query.eq('city_id', cityId);
+    }
+
+    final response = await query;
+
+    final List<String> destinations = (response as List)
+        .where((e) => e['destination'] != null)
+        .map((e) => (e['destination'] as String).trim())
+        .toSet() // Remove duplicates
+        .toList();
+    
+    return destinations;
   }
 }

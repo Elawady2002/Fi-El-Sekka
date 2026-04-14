@@ -148,3 +148,23 @@ Future<List<UniversityArrivalPointEntity>> universityArrivalPoints(
     (points) => points,
   );
 }
+
+final uniqueOriginsProvider = FutureProvider.family<List<String>, String>((ref, cityId) async {
+  if (cityId.isEmpty) return [];
+  final repository = ref.watch(homeRepositoryProvider);
+  final result = await repository.getUniqueOrigins(cityId);
+  return result.fold(
+    (failure) => throw Exception(failure.message),
+    (origins) => origins,
+  );
+});
+
+final availableDestinationsProvider = FutureProvider.family<List<String>, ({String originName, String? cityId})>((ref, arg) async {
+  if (arg.originName.isEmpty) return [];
+  final repository = ref.watch(homeRepositoryProvider);
+  final result = await repository.getAvailableDestinations(arg.originName, cityId: arg.cityId);
+  return result.fold(
+    (failure) => throw Exception(failure.message),
+    (destinations) => destinations,
+  );
+});
