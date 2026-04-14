@@ -35,8 +35,8 @@ class BookingModel extends BookingEntity {
   /// Create BookingModel from Supabase JSON
   factory BookingModel.fromJson(Map<String, dynamic> json) {
     return BookingModel(
-      id: json['id'] as String,
-      userId: json['user_id'] as String,
+      id: (json['id'] as String?) ?? '',
+      userId: (json['user_id'] as String?) ?? '',
       cityId: json['city_id'] as String?,
       pickupStationId: json['pickup_station_id'] as String?,
       dropoffStationId: json['dropoff_station_id'] as String?,
@@ -49,7 +49,9 @@ class BookingModel extends BookingEntity {
       returnTime: json['return_time'] as String?,
       scheduleId: json['schedule_id'] as String?,
       subscriptionId: json['subscription_id'] as String?,
-      bookingDate: DateTime.parse(json['booking_date'] as String),
+      bookingDate: json['booking_date'] != null
+          ? DateTime.tryParse(json['booking_date'] as String) ?? DateTime.now()
+          : DateTime.now(),
       tripType: (json['trip_type'] as String?) ?? 'round_trip',
       paymentProofImage: json['payment_proof_image'] as String?,
       transferNumber: json['transfer_number'] as String?,
@@ -60,8 +62,12 @@ class BookingModel extends BookingEntity {
       splitPreference: (json['split_preference'] as bool?) ?? true,
       totalPrice: (json['total_price'] as num?)?.toDouble() ?? 0.0,
       isLadies: (json['is_ladies'] as bool?) ?? false,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: DateTime.parse(json['updated_at'] as String),
+      createdAt: json['created_at'] != null
+          ? DateTime.tryParse(json['created_at'] as String) ?? DateTime.now()
+          : DateTime.now(),
+      updatedAt: json['updated_at'] != null
+          ? DateTime.tryParse(json['updated_at'] as String) ?? DateTime.now()
+          : DateTime.now(),
     );
   }
 

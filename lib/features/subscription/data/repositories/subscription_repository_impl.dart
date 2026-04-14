@@ -112,27 +112,34 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
       final data = await _dataSource.getUserSubscription(userId);
       if (data == null) return const Right(null);
 
-      // Convert to entity
+      // Convert to entity with safe casting
       final subscription = SubscriptionEntity(
         userId: userId,
         planType: SubscriptionPlanType.fromJson(
-          data['subscription_type'] as String,
+          (data['subscription_type'] as String?) ?? 'semester',
         ),
         amount: SubscriptionPlanType.fromJson(
-          data['subscription_type'] as String,
+          (data['subscription_type'] as String?) ?? 'semester',
         ).price,
         status: SubscriptionStatus.fromJson(
-          data['subscription_status'] as String,
+          (data['subscription_status'] as String?) ?? 'expired',
         ),
-        startDate: DateTime.parse(data['subscription_start_date'] as String),
-        endDate: DateTime.parse(data['subscription_end_date'] as String),
-        createdAt: DateTime.parse(data['subscription_start_date'] as String),
-        tripType: data['trip_type'] as String? ?? 'round_trip',
+        startDate: data['subscription_start_date'] != null
+            ? DateTime.tryParse(data['subscription_start_date'] as String) ?? DateTime.now()
+            : DateTime.now(),
+        endDate: data['subscription_end_date'] != null
+            ? DateTime.tryParse(data['subscription_end_date'] as String) ?? DateTime.now()
+            : DateTime.now(),
+        createdAt: data['subscription_start_date'] != null
+            ? DateTime.tryParse(data['subscription_start_date'] as String) ?? DateTime.now()
+            : DateTime.now(),
+        tripType: (data['trip_type'] as String?) ?? 'round_trip',
       );
 
       return Right(subscription);
     } catch (e) {
-      return Left(ServerFailure(message: e.toString()));
+      AppLogger.error('Error mapping user subscription: $e');
+      return Left(ServerFailure(message: 'حدث خطأ في قراءة بيانات الاشتراك: $e'));
     }
   }
 
@@ -145,27 +152,28 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
       AppLogger.info(
         'DEBUG: Fetched ${dataList.length} subscriptions for user $userId',
       );
-      for (var d in dataList) {
-        AppLogger.info(
-          'DEBUG: Sub: ${d['id']}, Status: ${d['status']}, End: ${d['end_date']}',
-        );
-      }
 
       final subscriptions = dataList.map((data) {
         return SubscriptionEntity(
           id: data['id'] as String?,
-          userId: data['user_id'] as String,
-          planType: SubscriptionPlanType.fromJson(data['plan_type'] as String),
-          amount: (data['total_price'] as num).toDouble(),
+          userId: (data['user_id'] as String?) ?? userId,
+          planType: SubscriptionPlanType.fromJson((data['plan_type'] as String?) ?? 'semester'),
+          amount: (data['total_price'] as num?)?.toDouble() ?? 0.0,
           paymentProofUrl: data['payment_proof_url'] as String?,
           transferNumber: data['transfer_number'] as String?,
-          status: SubscriptionStatus.fromJson(data['status'] as String),
-          startDate: DateTime.parse(data['start_date'] as String),
-          endDate: DateTime.parse(data['end_date'] as String),
-          createdAt: DateTime.parse(data['created_at'] as String),
-          allowLocationChange: data['allow_location_change'] as bool? ?? false,
-          isInstallment: data['is_installment'] as bool? ?? false,
-          tripType: data['trip_type'] as String? ?? 'round_trip',
+          status: SubscriptionStatus.fromJson((data['status'] as String?) ?? 'expired'),
+          startDate: data['start_date'] != null
+              ? DateTime.tryParse(data['start_date'] as String) ?? DateTime.now()
+              : DateTime.now(),
+          endDate: data['end_date'] != null
+              ? DateTime.tryParse(data['end_date'] as String) ?? DateTime.now()
+              : DateTime.now(),
+          createdAt: data['created_at'] != null
+              ? DateTime.tryParse(data['created_at'] as String) ?? DateTime.now()
+              : DateTime.now(),
+          allowLocationChange: (data['allow_location_change'] as bool?) ?? false,
+          isInstallment: (data['is_installment'] as bool?) ?? false,
+          tripType: (data['trip_type'] as String?) ?? 'round_trip',
           pickupStationId: data['pickup_station_id'] as String?,
           dropoffStationId: data['dropoff_station_id'] as String?,
         );
@@ -173,7 +181,8 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
 
       return Right(subscriptions);
     } catch (e) {
-      return Left(ServerFailure(message: e.toString()));
+      AppLogger.error('Error mapping user subscriptions: $e');
+      return Left(ServerFailure(message: 'حدث خطأ في قراءة قائمة الاشتراكات: $e'));
     }
   }
 
