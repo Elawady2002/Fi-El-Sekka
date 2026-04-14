@@ -4,6 +4,7 @@ import '../../../core/services/logger_service.dart';
 import '../../features/auth/presentation/providers/auth_provider.dart';
 import '../../features/auth/presentation/pages/onboarding_page.dart';
 import '../../features/home/presentation/pages/home_page.dart';
+import '../providers/user_session_validator.dart';
 
 /// Authentication wrapper that routes based on auth state
 class AuthWrapper extends ConsumerWidget {
@@ -11,6 +12,9 @@ class AuthWrapper extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Activate the session validator to handle background account deletions
+    ref.listen(userSessionValidatorProvider, (_, __) {});
+
     final authState = ref.watch(authProvider);
 
     LoggerService.debug('AuthWrapper build called. State: $authState');

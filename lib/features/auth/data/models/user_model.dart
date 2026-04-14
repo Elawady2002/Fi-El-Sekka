@@ -17,6 +17,11 @@ class UserModel extends UserEntity {
     super.subscriptionStartDate,
     super.subscriptionEndDate,
     super.subscriptionStatus,
+    super.officeName,
+    super.stationName,
+    super.businessName,
+    super.city,
+    super.cityId,
   });
 
   /// Create UserModel from Supabase JSON
@@ -40,6 +45,11 @@ class UserModel extends UserEntity {
           ? DateTime.parse(json['subscription_end_date'] as String)
           : null,
       subscriptionStatus: json['subscription_status'] as String?,
+      officeName: json['office_name'] as String?,
+      stationName: json['station_name'] as String?,
+      businessName: json['business_name'] as String?,
+      city: json['city'] as String?,
+      cityId: json['city_id'] as String?,
     );
   }
 
@@ -60,6 +70,11 @@ class UserModel extends UserEntity {
       'subscription_start_date': subscriptionStartDate?.toIso8601String(),
       'subscription_end_date': subscriptionEndDate?.toIso8601String(),
       'subscription_status': subscriptionStatus,
+      'office_name': officeName,
+      'station_name': stationName,
+      'business_name': businessName,
+      'city': city,
+      'city_id': cityId,
     };
   }
 
@@ -80,6 +95,11 @@ class UserModel extends UserEntity {
       subscriptionStartDate: entity.subscriptionStartDate,
       subscriptionEndDate: entity.subscriptionEndDate,
       subscriptionStatus: entity.subscriptionStatus,
+      officeName: entity.officeName,
+      stationName: entity.stationName,
+      businessName: entity.businessName,
+      city: entity.city,
+      cityId: entity.cityId,
     );
   }
 
@@ -100,6 +120,11 @@ class UserModel extends UserEntity {
       subscriptionStartDate: subscriptionStartDate,
       subscriptionEndDate: subscriptionEndDate,
       subscriptionStatus: subscriptionStatus,
+      officeName: officeName,
+      stationName: stationName,
+      businessName: businessName,
+      city: city,
+      cityId: cityId,
     );
   }
 }

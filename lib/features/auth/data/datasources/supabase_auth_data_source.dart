@@ -20,9 +20,25 @@ class SupabaseAuthDataSource implements AuthDataSource {
     required String phone,
     String? studentId,
     String? universityId,
+    String userType = 'student',
+    String? city,
+    String? cityId,
   }) async {
     try {
-      // Sign up with Supabase Auth
+      LoggerService.info('Auth: Starting signup for $email as $userType');
+
+      // 1. Pre-check for phone uniqueness to provide better UX
+      final phoneCheck = await _client
+          .from('users')
+          .select('id')
+          .eq('phone', phone)
+          .maybeSingle();
+
+      if (phoneCheck != null) {
+        throw Exception('رقم الهاتف مسجل بالفعل. الرجاء استخدام رقم آخر أو تسجيل الدخول.');
+      }
+
+      // 2. Sign up with Supabase Auth
       final authResponse = await _client.auth.signUp(
         email: email,
         password: password,
@@ -31,17 +47,20 @@ class SupabaseAuthDataSource implements AuthDataSource {
           'phone': phone,
           'student_id': studentId,
           'university_id': universityId,
+          'user_type': userType,
+          'city': city,
+          'city_id': cityId,
         },
       );
 
       if (authResponse.user == null) {
-        throw Exception('Failed to create user account');
+        throw Exception('فشل إنشاء الحساب. الرجاء المحاولة مرة أخرى.');
       }
 
       final userId = authResponse.user!.id;
       final isVerified = authResponse.session != null;
 
-      // Insert user data into users table and return it immediately
+      // 2. Prepare user data for the database
       final userData = {
         'id': userId,
         'email': email,
@@ -49,40 +68,60 @@ class SupabaseAuthDataSource implements AuthDataSource {
         'full_name': fullName,
         'student_id': studentId,
         'university_id': universityId,
-        'user_type': 'student', // Default to student
+        'user_type': userType,
         'is_verified': isVerified,
         'created_at': DateTime.now().toIso8601String(),
+        'city': city,
+        'city_id': cityId,
       };
 
       try {
-        await _client.from('users').insert(userData);
-
-        // Return user from local data to avoid RLS race conditions
+        // 3. Attempt manual insert (upsert handles triggers already having inserted the row)
+        await _client.from('users').upsert(userData);
+        LoggerService.info('Auth: User profile created/synced for $userId');
         return UserModel.fromJson(userData);
-      } on PostgrestException catch (e) {
-        // 23505 = unique violation — a Supabase trigger already inserted the
-        // row before our manual insert. Fetch the existing record and return it.
-        if (e.code == '23505') {
-          final existing = await _client
-              .from('users')
-              .select()
-              .eq('id', userId)
-              .maybeSingle();
-          if (existing != null) {
-            return UserModel.fromJson(existing);
-          }
+      } catch (e) {
+        LoggerService.warning(
+            'Auth: Manual upsert failed, fetching existing profile: $e');
+        final existing = await _client
+            .from('users')
+            .select()
+            .eq('id', userId)
+            .maybeSingle();
+
+        if (existing != null) {
+          return UserModel.fromJson(existing);
         }
-        rethrow;
+
+        // Final fallback: use the local data if DB fetch fails but Auth succeeded
+        return UserModel.fromJson(userData);
       }
     } on AuthException catch (e) {
-      throw Exception('Authentication error: ${e.message}');
-    } on PostgrestException catch (e) {
-      if (e.message.contains('users_email_key')) {
-        throw Exception('البريد الإلكتروني مسجل بالفعل. الرجاء تسجيل الدخول.');
+      LoggerService.error('Auth Exception during signup', error: e);
+      final message = e.message.toLowerCase();
+      if (message.contains('user already registered')) {
+        throw Exception('هذا البريد الإلكتروني مسجل بالفعل. يمكنك تسجيل الدخول بدلاً من ذلك.');
       }
-      throw Exception('Database error: ${e.message}');
+      if (message.contains('database error saving new user')) {
+        throw Exception('عذراً، يبدو أن رقم الهاتف أو البريد الإلكتروني مستخدم بالفعل في حساب آخر. يرجى التأكد من بياناتك.');
+      }
+      throw Exception('عذراً، حدث خطأ أثناء إنشاء الحساب: ${e.message}');
+    } on PostgrestException catch (e) {
+      LoggerService.error('Database Exception during signup', error: e);
+      if (e.message.contains('users_phone_key') || e.code == '23505') {
+        throw Exception('رقم الهاتف هذا مسجل بالفعل. يرجى استخدام رقم آخر.');
+      }
+      if (e.message.contains('users_email_key')) {
+        throw Exception('البريد الإلكتروني مسجل بالفعل. يمكنك تسجيل الدخول بدلاً من ذلك.');
+      }
+      throw Exception('عذراً، حدث خطأ في قاعدة البيانات. يرجى المحاولة لاحقاً.');
     } catch (e) {
-      throw Exception('Unexpected error during sign up: $e');
+      LoggerService.error('Unexpected Exception during signup', error: e);
+      final errorStr = e.toString().toLowerCase();
+      if (errorStr.contains('database error saving new user')) {
+        throw Exception('عذراً، هذا الحساب أو رقم الهاتف مسجل لدينا بالفعل. يرجى تسجيل الدخول.');
+      }
+      throw Exception('حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.');
     }
   }
 
@@ -103,42 +142,20 @@ class SupabaseAuthDataSource implements AuthDataSource {
 
       final userId = authResponse.user!.id;
 
-      // Fetch user data from users table
+      // Fetch user data from users table - MUST exist
       final response = await _client
           .from('users')
           .select()
           .eq('id', userId)
-          .maybeSingle(); // Use maybeSingle() to handle 0 or 1 results
+          .maybeSingle();
 
       if (response == null) {
-        // Row not visible — may be an RLS race condition right after sign-in.
-        // The sign-in itself succeeded, so build the model from Auth metadata
-        // and return immediately. The DB record will be readable on the next
-        // request once the session is fully propagated.
         LoggerService.warning(
-          'User $userId not found in public.users via SELECT. '
-          'Falling back to Auth metadata.',
-        );
-
-        final authUser = authResponse.user!;
-        final metadata = authUser.userMetadata ?? {};
-
-        return UserModel(
-          id: authUser.id,
-          email: authUser.email ?? email,
-          phone: metadata['phone'] ?? '',
-          fullName: metadata['full_name'] ?? '',
-          userType: UserType.fromJson(
-            metadata['user_type'] ?? 'student',
-          ),
-          studentId: metadata['student_id'],
-          universityId: metadata['university_id'],
-          avatarUrl: metadata['avatar_url'],
-          isVerified: true,
-          createdAt: DateTime.tryParse(authUser.createdAt) ?? DateTime.now(),
-        );
+            'User $userId not found in database during sign in.');
+        await signOut();
+        throw Exception(
+            'هذا الحساب غير موجود في النظام. الرجاء التواصل مع الإدارة.');
       }
-
       return UserModel.fromJson(response);
     } on AuthException catch (e) {
       if (e.message.contains('Invalid login credentials')) {
@@ -187,11 +204,8 @@ class SupabaseAuthDataSource implements AuthDataSource {
           .maybeSingle(); // Use maybeSingle() instead of single() to handle 0 or 1 results
 
       if (response == null) {
-        // User not found in database, but has auth session
-        // This shouldn't happen, but we'll return null gracefully
-        LoggerService.warning(
-          'User $userId has auth session but no database record',
-        );
+        LoggerService.warning('User $userId has auth session but no database record. Logging out.');
+        await signOut();
         return null;
       }
 
@@ -237,6 +251,11 @@ class SupabaseAuthDataSource implements AuthDataSource {
           avatarUrl: metadata['avatar_url'],
           isVerified: true,
           createdAt: DateTime.tryParse(authUser.createdAt) ?? DateTime.now(),
+          officeName: metadata['office_name'],
+          stationName: metadata['station_name'],
+          businessName: metadata['business_name'],
+          city: metadata['city'],
+          cityId: metadata['city_id'],
         );
 
         // 2. Fetch full profile from DB in background
@@ -251,7 +270,9 @@ class SupabaseAuthDataSource implements AuthDataSource {
           LoggerService.info('Auth: Full profile loaded for $userId');
           yield UserModel.fromJson(response);
         } else {
-          LoggerService.warning('Auth: No database record found for $userId');
+          LoggerService.warning('Auth: No database record found for $userId. Triggering logout.');
+          await signOut();
+          yield null;
         }
       } catch (e) {
         LoggerService.error('Error in authStateChanges', error: e);

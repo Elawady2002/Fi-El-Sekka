@@ -4,15 +4,33 @@ import 'package:equatable/equatable.dart';
 enum UserType {
   student,
   driver,
-  admin;
+  admin,
+  officeOwner, // Mapped to office_owner
+  coordinator; // Mapped to office_owner variant
 
-  String toJson() => name;
+  String toJson() {
+    switch (this) {
+      case UserType.officeOwner:
+      case UserType.coordinator:
+        return 'office_owner';
+      default:
+        return name;
+    }
+  }
 
   static UserType fromJson(String value) {
-    return UserType.values.firstWhere(
-      (type) => type.name == value,
-      orElse: () => UserType.student,
-    );
+    switch (value) {
+      case 'office_owner':
+      case 'coordinator':
+      case 'station_owner':
+      case 'business_owner':
+        return UserType.officeOwner;
+      default:
+        return UserType.values.firstWhere(
+          (type) => type.name == value,
+          orElse: () => UserType.student,
+        );
+    }
   }
 }
 
@@ -32,6 +50,11 @@ class UserEntity extends Equatable {
   final DateTime? subscriptionStartDate;
   final DateTime? subscriptionEndDate;
   final String? subscriptionStatus;
+  final String? officeName;
+  final String? stationName;
+  final String? businessName;
+  final String? city;
+  final String? cityId;
 
   const UserEntity({
     required this.id,
@@ -48,34 +71,45 @@ class UserEntity extends Equatable {
     this.subscriptionStartDate,
     this.subscriptionEndDate,
     this.subscriptionStatus,
+    this.officeName,
+    this.stationName,
+    this.businessName,
+    this.city,
+    this.cityId,
   });
 
   @override
   List<Object?> get props => [
-    id,
-    email,
-    phone,
-    fullName,
-    studentId,
-    universityId,
-    userType,
-    avatarUrl,
-    isVerified,
-    createdAt,
-    subscriptionType,
-    subscriptionStartDate,
-    subscriptionEndDate,
-    subscriptionStatus,
-  ];
+        id,
+        email,
+        phone,
+        fullName,
+        studentId,
+        universityId,
+        userType,
+        avatarUrl,
+        isVerified,
+        createdAt,
+        subscriptionType,
+        subscriptionStartDate,
+        subscriptionEndDate,
+        subscriptionStatus,
+        officeName,
+        stationName,
+        businessName,
+        city,
+        cityId,
+      ];
 
-  /// Check if user is a student
+  /// Role Getters
   bool get isStudent => userType == UserType.student;
-
-  /// Check if user is a driver
   bool get isDriver => userType == UserType.driver;
-
-  /// Check if user is an admin
   bool get isAdmin => userType == UserType.admin;
+  bool get isOfficeOwner => userType == UserType.officeOwner || userType == UserType.coordinator;
+
+  /// Display name for the business/office/station
+  String get entityName =>
+      businessName ?? officeName ?? stationName ?? fullName;
 
   /// Check if user has an active subscription
   bool get hasActiveSubscription {
@@ -106,6 +140,11 @@ class UserEntity extends Equatable {
     DateTime? subscriptionStartDate,
     DateTime? subscriptionEndDate,
     String? subscriptionStatus,
+    String? officeName,
+    String? stationName,
+    String? businessName,
+    String? city,
+    String? cityId,
   }) {
     return UserEntity(
       id: id ?? this.id,
@@ -123,6 +162,11 @@ class UserEntity extends Equatable {
           subscriptionStartDate ?? this.subscriptionStartDate,
       subscriptionEndDate: subscriptionEndDate ?? this.subscriptionEndDate,
       subscriptionStatus: subscriptionStatus ?? this.subscriptionStatus,
+      officeName: officeName ?? this.officeName,
+      stationName: stationName ?? this.stationName,
+      businessName: businessName ?? this.businessName,
+      city: city ?? this.city,
+      cityId: cityId ?? this.cityId,
     );
   }
 }
