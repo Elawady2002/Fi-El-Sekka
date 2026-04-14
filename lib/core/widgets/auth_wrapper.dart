@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/services/logger_service.dart';
 import '../../features/auth/presentation/providers/auth_provider.dart';
-import '../../features/auth/presentation/pages/onboarding_page.dart';
+import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/home/presentation/pages/home_page.dart';
 import '../providers/user_session_validator.dart';
 
@@ -27,7 +27,7 @@ class AuthWrapper extends ConsumerWidget {
         if (user != null) {
           return const HomePage();
         } else {
-          return const OnboardingPage();
+          return const LoginPage();
         }
       },
       loading: () {

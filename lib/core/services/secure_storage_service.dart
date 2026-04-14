@@ -4,10 +4,20 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class SecureStorageService extends LocalStorage {
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
   static const _key = 'supabase_persist_session';
+  static const _firstTimeKey = 'is_first_time';
 
   @override
   Future<void> initialize() async {
     // No initialization needed for FlutterSecureStorage
+  }
+
+  Future<bool> isFirstTime() async {
+    final value = await _storage.read(key: _firstTimeKey);
+    return value == null; // It's first time if no value exists
+  }
+
+  Future<void> setNotFirstTime() async {
+    await _storage.write(key: _firstTimeKey, value: 'false');
   }
 
   @override

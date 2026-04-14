@@ -6,8 +6,8 @@ import 'package:google_fonts/google_fonts.dart';
 class AppTheme {
   // InDrive Colors - Adjusted for better contrast
   static const Color primaryColor = Color(
-    0xFFA8E600,
-  ); // Darker Green for visibility
+    0xFFC9D420,
+  ); // Updated brand color
   static const Color primaryDark = Color(0xFF90CC00);
   static const Color primaryLight = Color(0xFFC7FF00);
 

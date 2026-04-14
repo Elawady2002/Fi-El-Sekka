@@ -9,6 +9,7 @@ import 'core/theme/app_theme.dart';
 import 'core/widgets/auth_wrapper.dart';
 import 'core/providers/locale_provider.dart';
 import 'core/providers/app_startup_provider.dart';
+import 'features/auth/presentation/pages/splash_page.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -141,7 +142,7 @@ class MyApp extends ConsumerWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: AppLocalizations.supportedLocales,
-      home: const AuthWrapper(),
+      home: const SplashPage(),
     );
   }
 }
